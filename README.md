@@ -17,6 +17,7 @@
   - IC 2602
 
 * 100- 150 Myr
+  - Pisces-Eridani (120)
   - Pleiades (125)
   - AB Dor (150)
 
@@ -33,6 +34,7 @@
 
 * 2.5 Gyr
   - NGC 6819
+  - Ruprecht 147 (2.7 Gyr)
 
 ## Isochrones
 * MIST
@@ -51,9 +53,15 @@
 * V-K_s
 
 ## Prot vs Teff
-* [Rebull+2016,2017]()
+* [Rebull+2016]()
+* [Rebull+2017]()
 * Melange: [Tofflemire+2021]()
 * Group X: [Newton+2022]() & [Messina+2022]()
+* Praesepe: [Rampalli+2021]()
+* Pleiades: [Curtis+2020]()
+* Pis-Eri: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/AJ/158/77)
+* NGC 6811: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJ/879/49)
+*  Stars with TESS contamination ratios > 0.2, RUWE > 1.3, or C*>0.04 (corrected GBP and GRP flux excess factor) were not analyzed and are not included in figures. C* calculated from phot_bp_rp_excess_factor following Riello et al. (2021, Table 2 and Equation (6)).
 
 ## Chromospheric activity indicator
 * log(R'_HK)
