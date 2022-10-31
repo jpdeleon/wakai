@@ -1,6 +1,8 @@
 import os
+import os
 import matplotlib.pyplot as pl
 
+sys.path.insert(0, '../code')
 assert os.environ["CONDA_DEFAULT_ENV"] == 'wakai'
 
 plotpar = {'axes.labelsize': 16,
@@ -8,5 +10,8 @@ plotpar = {'axes.labelsize': 16,
            'legend.fontsize': 16,
            'xtick.labelsize': 16,
            'ytick.labelsize': 16,
-           'text.usetex': False}
+           'text.usetex': False,
+           'xtick.direction': 'in',
+           'ytick.direction': 'in'
+           }
 pl.rcParams.update(plotpar)
