@@ -61,7 +61,7 @@
 * Pleiades: [Curtis+2020]()
 * Pis-Eri: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/AJ/158/77)
 * NGC 6811: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJ/879/49)
-*  Stars with TESS contamination ratios > 0.2, RUWE > 1.3, or C*>0.04 (corrected GBP and GRP flux excess factor) were not analyzed and are not included in figures. C* calculated from phot_bp_rp_excess_factor following Riello et al. (2021, Table 2 and Equation (6)).
+*  Stars with TESS contamination ratios > 0.2, RUWE > 1.3 (likely binary), or C*>0.04 (corrected GBP and GRP flux excess factor) were not analyzed and are not included in figures. C* calculated from phot_bp_rp_excess_factor following Riello et al. (2021, Table 2 and Equation (6)).
 
 ## Chromospheric activity indicator
 * log(R'_HK)
@@ -81,6 +81,8 @@
 ## Li I doublet absorption
 * 6708 Å: 6707.78 & 6707.91 Å
 * See description in [Bouma+2021]()
+* Pleiades: [Bouvier+2018](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/A+A/613/A63)
+* Hyades & Praesepe: [Cummings+2017](https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=J/AJ/153/128)
 
 ## Xray and UV emission
 * detection by GALEX with (NUV, 1750–2750 Å) and far-UV (FUV, 1350–1750 Å)

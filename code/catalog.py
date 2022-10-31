@@ -1,4 +1,5 @@
 import os
+from re import M
 import numpy as np
 import pandas as pd
 
@@ -97,16 +98,20 @@ def get_tois(
     return d.sort_values("TOI")
 
 
+VIZIER_KEYS_LiEW_CATALOG = {
+    "Bouvier2018_Pleiades": "J/A+A/613/A63",
+    "Cummings2017_HyadesPraesepe": "J/AJ/153/128"
+}
 VIZIER_KEYS_PROT_CATALOG = {
     # See table1: https://arxiv.org/pdf/1905.10588.pdf
+    "Curtis2019_Rup147": "J/ApJ/904/140", #Pleiades, Praesepe, NGC 6811, NGC 752, NGC 6819, and Ruprecht 147 
+    "Curtis2019_PisEri": "J/AJ/158/77",  # 250Gyr
+    "Curtis2019_NGC6811": "J/ApJ/879/49",  # 1Gyr    
     "Feinstein2020_NYMG": "See data/Feinstein2020_NYMG.txt",
     "McQuillan2014_Kepler": "J/ApJS/211/24",
     "Nielsen2013_KeplerMS": "J/A+A/557/L10",
     "Barnes2015_NGC2548": "J/A+A/583/A73",  # , M48/NGC2548
     "Meibom2011_NGC6811": "J/ApJ/733/L9",
-    "Curtis2019_PisEri": "J/AJ/158/77",  # 250Gyr
-    "Curtis2019_NGC6811": "J/ApJ/879/49",  # 1Gyr
-    "Curtis2019_Rup147": "J/ApJ/904/140", #Pleiades, Praesepe, NGC 6811, NGC 752, NGC 6819, and Ruprecht 147 
     "Douglas2017_Praesepe": "J/ApJ/842/83",  # 680 Myr
     "Rebull2016_Pleiades": "J/AJ/152/114",  # 100 Myr
     "Rebull2017_Praesepe": "J/ApJ/839/92/table1",
@@ -120,9 +125,8 @@ VIZIER_KEYS_PROT_CATALOG = {
     "Gillen2020_BlancoI": "2020MNRAS.492.1008G",
     "Canto2020_TOIs": "J/ApJS/250/20",
     # https://filtergraph.com/tess_rotation_tois
-}
+    }
 
-PROT_CATALOG_LIST = [key for key in VIZIER_KEYS_PROT_CATALOG.keys()]
 
 class CatalogDownloader:
     """download tables from vizier
@@ -133,10 +137,14 @@ class CatalogDownloader:
     """
 
     def __init__(
-        self, catalog_name, data_loc=DATA_PATH, verbose=True, clobber=False
-    ):
+        self, catalog_name, catalog_type="prot", data_loc=DATA_PATH, verbose=True, clobber=False
+        ):
         self.catalog_name = catalog_name
-        self.catalog_dict = VIZIER_KEYS_PROT_CATALOG
+        self.catalog_type = catalog_type
+        if catalog_type.lower()=="prot":
+            self.catalog_dict = VIZIER_KEYS_PROT_CATALOG
+        elif catalog_type.lower()=="liew":
+            self.catalog_dict = VIZIER_KEYS_LiEW_CATALOG
         self.verbose = verbose
         self.clobber = clobber
         if not Path(data_loc).exists():
@@ -151,9 +159,15 @@ class CatalogDownloader:
             msg = "Downloading all tables in "
         else:
             msg = f"Downloading the first {row_limit} rows of each table "
-        msg += f"{self.catalog_dict[self.catalog_name]} from vizier."
-        if self.verbose:
-            print(msg)
+        try:
+            msg += f"{self.catalog_dict[self.catalog_name]} from vizier."
+            if self.verbose:
+                print(msg)
+        except:
+            errmsg = f"'{self.catalog_name}' not in {list(self.catalog_dict.keys())}.\n"
+            errmsg+=f"\nUsing catalog_type={self.catalog_type}."
+            raise ValueError(errmsg)
+
         # set row limit
         Vizier.ROW_LIMIT = row_limit
 
@@ -204,99 +218,3 @@ class CatalogDownloader:
                     args.append(f"{key}={val}")
         args = ", ".join(args)
         return f"{type(self).__name__}({args})"
-
-
-class ProtCatalog(CatalogDownloader):
-    """read and parse downloaded catalog data from vizier"""
-
-    def __init__(
-        self,
-        catalog_name,
-        # df_mem_path=None,
-        verbose=True,
-        clobber=False,
-        data_loc=DATA_PATH,
-    ):
-        super().__init__(
-            catalog_name=catalog_name,
-            data_loc=data_loc,
-            verbose=verbose,
-            clobber=clobber,
-        )
-        """Initialize the catalog
-        # Parameters
-        # ----------
-        # df_mem_path : str
-        #     path to the cluster members file
-        Attributes
-        ----------
-        data_loc : str
-            data directory
-        all_members: pd.DataFrame
-            list of all members in catalog
-        all_clusters : pd.DataFrame
-            list of all clusters in catalog
-        Note:
-        setting `all_members` as a method (as opposed to attribute)
-        seems not
-        """
-        self.catalog_list = PROT_CATALOG_LIST
-        # self.df_mem_path = df_mem_path
-        self.all_clusters = None  # self.query_catalog(return_members=False)
-        self.all_members = None  # self.query_catalog(return_members=True)
-
-        # files = glob(join(self.data_loc, "*.txt"))
-        if self.data_loc.exists():  # & len(files)<2:
-            if self.clobber:
-                _ = self.get_tables_from_vizier(
-                    row_limit=-1, save=True, clobber=self.clobber
-                )
-        else:
-            _ = self.get_tables_from_vizier(
-                row_limit=-1, save=True, clobber=self.clobber
-            )
-        if self.verbose:
-            print("Data url:", self.get_vizier_url())
-
-        # if self.df_mem_path is not None:
-        #     self.all_members = pd.read_csv(self.df_mem_path)
-
-    def query_catalog(
-        self, name=None, return_members=False, verbose=None, **kwargs
-    ):
-        """Query catalogs
-        Parameters
-        ----------
-        name : str
-            catalog name; see `self.catalog_list`
-        return_members : bool
-            return parameters for all members instead of the default
-        Returns
-        -------
-        df : pandas.DataFrame
-            dataframe parameters of the cluster or its individual members
-        Note:
-        1. See self.vizier_url() for details
-        2. Use the following:
-        if np.any(df["parallax"] < 0):
-            df = df[(df["parallax"] >= 0) | (df["parallax"].isnull())]
-            if verbose:
-                print("Some parallaxes are negative!")
-                print("These are removed for the meantime.")
-                print("For proper treatment, see:")
-                print("https://arxiv.org/pdf/1804.09366.pdf\n")
-        FIXME: self.all_clusters and self.all_members are repeated each if else block
-        """
-        self.catalog_name = name if name is not None else self.catalog_name
-        verbose = verbose if verbose is not None else self.verbose
-        if verbose:
-            print(f"Using {self.catalog_name} catalog.")
-        if self.catalog_name == "Rebull2016":
-            if return_members:
-                df_mem = self.get_members_Hao2022()
-                self.all_members = df_mem
-                return df_mem
-            else:
-                df = self.get_clusters_Hao2022()
-                self.all_clusters = df
-                return df
