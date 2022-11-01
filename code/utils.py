@@ -1,6 +1,11 @@
-from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+import itertools
 import matplotlib.pyplot as pl
 import pandas as pd
+from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+
+def flatten_list(lol):
+    """flatten list of list (lol)"""
+    return list(itertools.chain.from_iterable(lol))
 
 def get_relative_err_index(df, par='st_age', rel_err=0.1):
     return df.apply(lambda x: ((x[par+'err1']/x[par]<=rel_err) \

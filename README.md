@@ -22,8 +22,15 @@
   - AB Dor (150)
 
 * 250 Myr
+  - M 34 (220 Myr)
   - Melange I
   - Group X
+
+* 300 Myr
+  - NGC 3532 
+
+* 400 Myr
+  - M 48 (450 Myr)
 
 * 600 - 800 Myr
   - Praesepe (670)
@@ -51,17 +58,19 @@
 ## Prot vs color
 * B-V
 * V-K_s
-
+* M 48 (Barnes+2015)
+* M 34 (Meibom+2011)
 ## Prot vs Teff
 * [Rebull+2016]()
 * [Rebull+2017]()
 * Melange: [Tofflemire+2021]()
+* NGC 3532: [Fritzewski+2021](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/A+A/652/A60)
 * Group X: [Newton+2022]() & [Messina+2022]()
 * Praesepe: [Rampalli+2021]()
 * Pleiades: [Curtis+2020]()
 * Pis-Eri: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/AJ/158/77)
 * NGC 6811: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJ/879/49)
-*  Stars with TESS contamination ratios > 0.2, RUWE > 1.3 (likely binary), or C*>0.04 (corrected GBP and GRP flux excess factor) were not analyzed and are not included in figures. C* calculated from phot_bp_rp_excess_factor following Riello et al. (2021, Table 2 and Equation (6)).
+* Stars with TESS contamination ratios > 0.2, RUWE > 1.3 (likely binary), or C*>0.04 (corrected GBP and GRP flux excess factor) were not analyzed and are not included in figures. C* calculated from phot_bp_rp_excess_factor following Riello et al. (2021, Table 2 and Equation (6)).
 
 ## Chromospheric activity indicator
 * log(R'_HK)
