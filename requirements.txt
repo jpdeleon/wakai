@@ -1,0 +1,8 @@
+autopep8
+jupyter
+pandas
+isochrones=2.1
+astroquery=0.4.6
+astropy
+matplotlib
+

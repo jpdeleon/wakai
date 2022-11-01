@@ -6,8 +6,12 @@ import pandas as pd
 from pathlib import Path
 from pprint import pprint
 
+import astropy.units as u
+from astropy.coordinates import SkyCoord, Distance
 from astropy.table import Table
 from astroquery.vizier import Vizier
+
+from utils import flatten_list
 
 DATA_PATH = '../data/'
 
@@ -106,7 +110,8 @@ VIZIER_KEYS_PROT_CATALOG = {
     # See table1: https://arxiv.org/pdf/1905.10588.pdf
     "Curtis2019_Rup147": "J/ApJ/904/140", #Pleiades, Praesepe, NGC 6811, NGC 752, NGC 6819, and Ruprecht 147 
     "Curtis2019_PisEri": "J/AJ/158/77",  # 250Gyr
-    "Curtis2019_NGC6811": "J/ApJ/879/49",  # 1Gyr    
+    "Curtis2019_NGC6811": "J/ApJ/879/49",  # 1Gyr
+    "Fritzewski2021_NGC3532": "J/A+A/652/A60",    #300 Myr
     "Feinstein2020_NYMG": "See data/Feinstein2020_NYMG.txt",
     "McQuillan2014_Kepler": "J/ApJS/211/24",
     "Nielsen2013_KeplerMS": "J/A+A/557/L10",
@@ -127,6 +132,102 @@ VIZIER_KEYS_PROT_CATALOG = {
     # https://filtergraph.com/tess_rotation_tois
     }
 
+class Target:
+    def __init__(self, ra_deg, dec_deg, gaiaDR2id=None, verbose=True):
+        self.gaiaid = gaiaDR2id  # e.g. Gaia DR2 5251470948229949568
+        self.ra = ra_deg
+        self.dec = dec_deg
+        self.target_coord = SkyCoord(ra=ra_deg * u.deg, dec=dec_deg * u.deg)
+        self.verbose = verbose
+        self.vizier_tables = None
+        self.search_radius = 1 * u.arcmin
+
+    def query_vizier(self, radius=3, verbose=None):
+        """
+        Useful to get relevant catalogs from literature
+        See:
+        https://astroquery.readthedocs.io/en/latest/vizier/vizier.html
+        """
+        verbose = self.verbose if verbose is None else verbose
+        radius = self.search_radius if radius is None else radius * u.arcsec
+        if verbose:
+            print(
+                f"Searching Vizier: ({self.target_coord.to_string()}) with radius={radius}."
+            )
+        # standard column sorted in increasing distance
+        v = Vizier(
+            columns=["*", "+_r"],
+            # column_filters={"Vmag":">10"},
+            # keywords=['stars:white_dwarf']
+        )
+        if self.vizier_tables is None:
+            tables = v.query_region(self.target_coord, radius=radius)
+            if tables is None:
+                print("No result from Vizier.")
+            else:
+                if verbose:
+                    print(f"{len(tables)} tables found.")
+                    pprint(
+                        {
+                            k: tables[k]._meta["description"]
+                            for k in tables.keys()
+                        }
+                    )
+                self.vizier_tables = tables
+        else:
+            tables = self.vizier_tables
+        return tables
+
+    def query_vizier_param(self, param=None, radius=3):
+        """looks for value of param in each vizier table"""
+        if self.vizier_tables is None:
+            tabs = self.query_vizier(radius=radius, verbose=False)
+        else:
+            tabs = self.vizier_tables
+
+        if param is not None:
+            idx = [param in i.columns for i in tabs]
+            vals = {
+                tabs.keys()[int(i)]: tabs[int(i)][param][0]
+                for i in np.argwhere(idx).flatten()
+            }
+            if self.verbose:
+                print(f"Found {sum(idx)} references in Vizier with `{param}`.")
+            return vals
+        else:
+            cols = [i.to_pandas().columns.tolist() for i in tabs]
+            print(f"Choose parameter:\n{list(np.unique(flatten_list(cols)))}")
+    
+    def __repr__(self):
+        """Override to print a readable string representation of class"""
+        # params = signature(self.__init__).parameters
+        # val = repr(getattr(self, key))
+
+        included_args = [
+            # ===target attributes===
+            # "name",
+            # "toiid",
+            # "ctoiid",
+            # "ticid",
+            # "epicid",
+            "gaiaDR2id",
+            "ra_deg",
+            "dec_deg",
+            "target_coord",
+            "search_radius",
+        ]
+        args = []
+        for key in self.__dict__.keys():
+            val = self.__dict__.get(key)
+            if key in included_args:
+                if key == "target_coord":
+                    # format coord
+                    coord = self.target_coord.to_string("decimal")
+                    args.append(f"{key}=({coord.replace(' ',',')})")
+                elif val is not None:
+                    args.append(f"{key}={val}")
+        args = ", ".join(args)
+        return f"{type(self).__name__}({args})"
 
 class CatalogDownloader:
     """download tables from vizier
@@ -205,7 +306,10 @@ class CatalogDownloader:
             catalog_name = self.catalog_name
         base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
         vizier_key = self.catalog_dict[catalog_name]
-        return base_url + vizier_key
+        url = base_url + vizier_key
+        if self.verbose:
+            print("Data url:", url)
+        return url
 
     def __repr__(self):
         """Override to print a readable string representation of class"""
