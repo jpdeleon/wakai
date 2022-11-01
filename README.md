@@ -85,10 +85,15 @@
 * Ca II K: 3933.5 Å 
 * Ca II H: 3968.5 Å
 * H epsilon: 3970 Å
-* c.f. H alpha absorption 6562.5 Å
+
+## Hα absorption
+* 6562.8 Å
+
+## Na I doublet absorption
+* 5889.95 and 5895.92Å
 
 ## Li I doublet absorption
-* 6708 Å: 6707.78 & 6707.91 Å
+* Li I resonance: 6708 Å: 6707.78 & 6707.91 Å
 * See description in [Bouma+2021]()
 * Pleiades: [Bouvier+2018](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/A+A/613/A63)
 * Hyades & Praesepe: [Cummings+2017](https://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=J/AJ/153/128)
@@ -106,7 +111,7 @@
 
 ## Summary plot
 * violin plot e.g. Fig. 14 in [David+2018]()
-* 
+* weighted posterior distribution e.g. [Stanford-Moore+2020]()
 
 ## Cooling and contraction models
 * [Linder+2019](): See Fig. 10 in [Dong+2022](https://ui.adsabs.harvard.edu/abs/2022ApJ...926L...7D/abstract)

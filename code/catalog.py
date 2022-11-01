@@ -175,7 +175,7 @@ class Target:
                     )
                 self.vizier_tables = tables
         else:
-            tables = self.vizier_tables
+            tables = self.vizier_tables.filled(fill_value)
         return tables
 
     def query_vizier_param(self, param=None, radius=3):
@@ -186,16 +186,20 @@ class Target:
             tabs = self.vizier_tables
 
         if param is not None:
-            idx = [param in i.columns for i in tabs]
-            vals = {
-                tabs.keys()[int(i)]: tabs[int(i)][param][0]
-                for i in np.argwhere(idx).flatten()
-            }
+            idx = [param in tab.columns for tab in tabs]
+            vals = {}
+            for i in np.argwhere(idx).flatten():
+                k = tabs.keys()[int(i)]
+                v = tabs[int(i)][param][0] #nearest match
+                if isinstance(v, np.ma.core.MaskedConstant):
+                    v = np.nan
+                vals[k] = v
             if self.verbose:
                 print(f"Found {sum(idx)} references in Vizier with `{param}`.")
             return vals
         else:
-            cols = [i.to_pandas().columns.tolist() for i in tabs]
+            #print all available keys
+            cols = [tab.to_pandas().columns.tolist() for tab in tabs]
             print(f"Choose parameter:\n{list(np.unique(flatten_list(cols)))}")
     
     def __repr__(self):
