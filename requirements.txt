@@ -1,8 +1,11 @@
 autopep8
 jupyter
+matplotlib==3.3.4 #so pl.gca has projection; astroplan will work
 pandas
 isochrones=2.1
 astroquery=0.4.6
 astropy
 matplotlib
-
+seaborn
+uncertainties
+scipy
