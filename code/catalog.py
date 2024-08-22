@@ -144,6 +144,9 @@ VIZIER_KEYS_PROT_CATALOG = {
     # https://filtergraph.com/tess_rotation_tois
     }
 VIZIER_KEYS_CLUSTER_CATALOG = {
+    #https://ui.adsabs.harvard.edu/abs/2024arXiv240305143H/abstract
+    #"Hunt2024": "",
+    # https://ucc.ar/; https://ui.adsabs.harvard.edu/abs/2023arXiv230804546P/abstract
     # An all-sky cluster catalogue with Gaia DR3; 7167 total clusters, 2387 new
     "Hunt2023": "J/A+A/673/A114",
     # 3794 open clusters parameters
