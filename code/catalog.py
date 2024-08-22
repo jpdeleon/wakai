@@ -13,96 +13,7 @@ from astropy.coordinates import SkyCoord, Distance, Galactocentric
 from astropy.table import Table
 from astroquery.vizier import Vizier
 
-from util_funcs import flatten_list
-
 DATA_PATH = '../data/'
-
-def get_tois(
-    clobber=False,
-    outdir=DATA_PATH,
-    verbose=False,
-    remove_FP=True,
-    remove_known_planets=False,
-    add_FPP=False,
-):
-    """Download TOI list from TESS Alert/TOI Release.
-
-    Parameters
-    ----------
-    clobber : bool
-        re-download table and save as csv file
-    outdir : str
-        download directory location
-    verbose : bool
-        print texts
-
-    Returns
-    -------
-    d : pandas.DataFrame
-        TOI table as dataframe
-    """
-    dl_link = "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv"
-    fp = os.path.join(outdir, "TOIs.csv")
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-
-    if not os.path.exists(fp) or clobber:
-        d = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
-        msg = f"Downloading {dl_link}\n"
-        if add_FPP:
-            fp2 = os.path.join(outdir, "Giacalone2020/tab4.txt")
-            classified = ascii.read(fp2).to_pandas()
-            fp3 = os.path.join(outdir, "Giacalone2020/tab5.txt")
-            unclassified = ascii.read(fp3).to_pandas()
-            fpp = pd.concat(
-                [
-                    classified[["TOI", "FPP-2m", "FPP-30m"]],
-                    unclassified[["TOI", "FPP"]],
-                ],
-                sort=True,
-            )
-            d = pd.merge(d, fpp, how="outer").drop_duplicates()
-        d.to_csv(fp, index=False)
-    else:
-        d = pd.read_csv(fp).drop_duplicates()
-        msg = f"Loaded: {fp}\n"
-    assert len(d) > 1000, f"{fp} likely has been overwritten!"
-
-    # remove False Positives
-    if remove_FP:
-        d = d[d["TFOPWG Disposition"] != "FP"]
-        msg += "TOIs with TFPWG disposition==FP are removed.\n"
-    if remove_known_planets:
-        planet_keys = [
-            "HD",
-            "GJ",
-            "LHS",
-            "XO",
-            "Pi Men" "WASP",
-            "SWASP",
-            "HAT",
-            "HATS",
-            "KELT",
-            "TrES",
-            "QATAR",
-            "CoRoT",
-            "K2",  # , "EPIC"
-            "Kepler",  # "KOI"
-        ]
-        keys = []
-        for key in planet_keys:
-            idx = ~np.array(
-                d["Comments"].str.contains(key).tolist(), dtype=bool
-            )
-            d = d[idx]
-            if idx.sum() > 0:
-                keys.append(key)
-        msg += f"{keys} planets are removed.\n"
-    msg += f"Saved: {fp}\n"
-    if verbose:
-        print(msg)
-    return d.sort_values("TOI")
-
 
 # See more keywords here: http://vizier.cds.unistra.fr/vizier/vizHelp/cats/U.htx
 VIZIER_KEYS_LiEW_CATALOG = {
@@ -144,9 +55,14 @@ VIZIER_KEYS_PROT_CATALOG = {
     # https://filtergraph.com/tess_rotation_tois
     }
 VIZIER_KEYS_CLUSTER_CATALOG = {
-    #https://ui.adsabs.harvard.edu/abs/2024arXiv240305143H/abstract
-    #"Hunt2024": "",
-    # https://ucc.ar/; https://ui.adsabs.harvard.edu/abs/2023arXiv230804546P/abstract
+    # Melange4: A 27 Myr Extended Population of Lower Centaurus Crux with a Transiting Two-planet System
+    "Wood2023": "J/AJ/165/85",
+    # Melange3: A Pleiades-age Association Harboring Two Transiting Planetary Systems from Kepler
+    "Barber2023": "J/AJ/164/88",
+    # Melange2: Membership, Rotation, and Lithium in the Young Cluster Group-X and a New Young Exoplane
+    "Newton2022": "J/AJ/164/115",
+    # Melange1: Three Small Planets Orbiting a 120 Myr Old Star in the Pisces-Eridanus Stream
+    "Tofflemire2021": "J/AJ/161/171",
     # An all-sky cluster catalogue with Gaia DR3; 7167 total clusters, 2387 new
     "Hunt2023": "J/A+A/673/A114",
     # 3794 open clusters parameters
@@ -244,6 +160,103 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Lu2021": "https://cfn-live-content-bucket-iop-org.s3.amazonaws.com/journals/1538-3881/161/4/189/1/"
     + "ajabe4d6t1_mrt.txt?AWSAccessKeyId=AKIAYDKQL6LTV7YY2HIK&Expires=1622511816&Signature=CVdNivtn2MJv1%2FY%2F4ztoZKBPzaw%3D",
 }
+
+def load_plot_params():
+    """ Load in plt.rcParams and set (based on paper defaults).
+    """
+    params = Table.read('../rcParams.txt', format='csv')
+    for i, name in enumerate(params['name']):
+        try:
+            pl.rcParams[name] = float(params['value'][i])
+        except:
+            pl.rcParams[name] = params['value'][i]
+    return params
+    
+def get_tois(
+    clobber=False,
+    outdir=DATA_PATH,
+    verbose=False,
+    remove_FP=True,
+    remove_known_planets=False,
+    add_FPP=False,
+):
+    """Download TOI list from TESS Alert/TOI Release.
+
+    Parameters
+    ----------
+    clobber : bool
+        re-download table and save as csv file
+    outdir : str
+        download directory location
+    verbose : bool
+        print texts
+
+    Returns
+    -------
+    d : pandas.DataFrame
+        TOI table as dataframe
+    """
+    dl_link = "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv"
+    fp = os.path.join(outdir, "TOIs.csv")
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    if not os.path.exists(fp) or clobber:
+        d = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
+        msg = f"Downloading {dl_link}\n"
+        if add_FPP:
+            fp2 = os.path.join(outdir, "Giacalone2020/tab4.txt")
+            classified = ascii.read(fp2).to_pandas()
+            fp3 = os.path.join(outdir, "Giacalone2020/tab5.txt")
+            unclassified = ascii.read(fp3).to_pandas()
+            fpp = pd.concat(
+                [
+                    classified[["TOI", "FPP-2m", "FPP-30m"]],
+                    unclassified[["TOI", "FPP"]],
+                ],
+                sort=True,
+            )
+            d = pd.merge(d, fpp, how="outer").drop_duplicates()
+        d.to_csv(fp, index=False)
+    else:
+        d = pd.read_csv(fp).drop_duplicates()
+        msg = f"Loaded: {fp}\n"
+    assert len(d) > 1000, f"{fp} likely has been overwritten!"
+
+    # remove False Positives
+    if remove_FP:
+        d = d[d["TFOPWG Disposition"] != "FP"]
+        msg += "TOIs with TFPWG disposition==FP are removed.\n"
+    if remove_known_planets:
+        planet_keys = [
+            "HD",
+            "GJ",
+            "LHS",
+            "XO",
+            "Pi Men" "WASP",
+            "SWASP",
+            "HAT",
+            "HATS",
+            "KELT",
+            "TrES",
+            "QATAR",
+            "CoRoT",
+            "K2",  # , "EPIC"
+            "Kepler",  # "KOI"
+        ]
+        keys = []
+        for key in planet_keys:
+            idx = ~np.array(
+                d["Comments"].str.contains(key).tolist(), dtype=bool
+            )
+            d = d[idx]
+            if idx.sum() > 0:
+                keys.append(key)
+        msg += f"{keys} planets are removed.\n"
+    msg += f"Saved: {fp}\n"
+    if verbose:
+        print(msg)
+    return d.sort_values("TOI")
 
 class Target:
     def __init__(self, ra_deg, dec_deg, gaiaDR2id=None, verbose=True):
@@ -355,7 +368,7 @@ class CatalogDownloader:
     """
 
     def __init__(
-        self, catalog_name, catalog_type="prot", data_loc=DATA_PATH, verbose=True, clobber=False
+        self, catalog_name, catalog_type="cluster", data_loc=DATA_PATH, verbose=True, clobber=False
         ):
         self.catalog_name = catalog_name
         self.catalog_type = catalog_type
@@ -452,6 +465,11 @@ def get_absolute_gmag(gmag, distance, a_g):
         distance in pc
     a_g : float
         extinction in the G-band
+
+    Returns
+    -------
+    gmag : float
+        Gaia magnitude
     """
     assert (gmag is not None) & (str(gmag) != "nan"), "gma is nan"
     assert (distance is not None) & (str(distance) != "nan"), "distance is nan"
@@ -506,15 +524,6 @@ def plot_cmd(
     errmsg = f"color={color} not in {df.columns}"
     assert color in df.columns, errmsg
 
-    if "distance" not in df.columns.any():
-        df["parallax"] = df["parallax"].astype(float)
-        idx = ~np.isnan(df["parallax"]) & (df["parallax"] > 0)
-        df = df[idx]
-        if sum(~idx) > 0:
-            print(f"{sum(~idx)} removed NaN or negative parallaxes")
-
-        df["distance"] = Distance(parallax=df["parallax"].values * u.mas).pc
-
     if ax is None:
         fig, ax = pl.subplots(1, 1, figsize=figsize, constrained_layout=True)
 
@@ -524,6 +533,16 @@ def plot_cmd(
         ax.set_xlabel(xaxis, fontsize=16)
         ax.set_ylabel(yaxis, fontsize=16)
     else:
+        #compute Gmag and BP-RP
+        if "distance" not in df.columns:
+            df["parallax"] = df["parallax"].astype(float)
+            idx = ~np.isnan(df["parallax"]) & (df["parallax"] > 0)
+            df = df[idx]
+            if sum(~idx) > 0:
+                print(f"{sum(~idx)} removed NaN or negative parallaxes")
+    
+            df["distance"] = Distance(parallax=df["parallax"].values * u.mas).pc
+            
         # compute absolute Gmag
         df["abs_gmag"] = get_absolute_gmag(
             df["phot_g_mean_mag"], df["distance"], df["a_g_val"]
@@ -765,6 +784,10 @@ def plot_rdp_pmrv(
         contains ra, dec, parallax, pmra, pmdec, rv columns
     target_gaiaid : int
         target gaia DR2 id
+
+    Returns
+    -------
+    fig : matplotlib.pyplot.Figure
     """
     assert len(df) > 0, "df is empty"
     fig, axs = pl.subplots(2, 2, figsize=figsize, constrained_layout=True)
@@ -872,7 +895,7 @@ def plot_rdp_pmrv(
     n = 2
     par = "radial_velocity"
     errmsg = f"{par} is not available in {df.columns}"
-    assert df.columns.isin([par]).any(), errmsg
+    assert df.columns.isin([par]), errmsg
     try:
         df[par].plot.kde(ax=ax[n])
         ax[n].plot(
@@ -933,7 +956,7 @@ def get_transformed_coord(df, frame="galactocentric", verbose=True):
     http://learn.astropy.org/rst-tutorials/gaia-galactic-orbits.html?highlight=filtertutorials
     """
     assert len(df) > 0, "df is empty"
-    if np.any(df["parallax"] < 0):
+    if any(df["parallax"] < 0):
         # retain non-negative parallaxes including nan
         df = df[(df["parallax"] >= 0) | (df["parallax"].isnull())]
         if verbose:
@@ -942,7 +965,7 @@ def get_transformed_coord(df, frame="galactocentric", verbose=True):
             print("For proper treatment, see:")
             print("https://arxiv.org/pdf/1804.09366.pdf\n")
     errmsg = f"radial_velocity is not in {df.columns}"
-    assert df.columns.isin(["radial_velocity"]).any(), errmsg
+    assert any(df.columns.isin(["radial_velocity"])), errmsg
     df2 = df.copy()
     icrs = SkyCoord(
         ra=df2["ra"].values * u.deg,
@@ -1004,6 +1027,10 @@ def plot_xyz_uvw(
         target gaia DR2 id
     df_target : pandas.Series
         target's gaia parameters
+
+    Returns
+    -------
+    fig : matplotlib.pyplot.Figure
 
     Note: U is positive towards the direction of the Galactic center (GC);
     V is positive for a star with the same rotational direction as the Sun going around the galaxy,
@@ -1130,6 +1157,10 @@ def plot_xyz_3d(
         target gaia DR2 id
     xlim,ylim,zlim : tuple
         lower and upper bounds
+
+    Returns
+    -------
+    fig : matplotlib.pyplot.Figure
     """
     fig = pl.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="3d")
@@ -1191,6 +1222,8 @@ def plot_xyz_3d(
 
 
 def get_mamajek_table(clobber=False, verbose=True, data_loc=DATA_PATH):
+    """
+    """
     fp = join(data_loc, "mamajek_table.csv")
     if not exists(fp) or clobber:
         url = "http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt"
@@ -1261,7 +1294,8 @@ def interpolate_mamajek_table(
 
         Returns
         -------
-        interpolated spectral type
+        spt: str
+            interpolated spectral type
 
         Notes:
         It may be good to check which color index yields most accurate result
@@ -1292,3 +1326,8 @@ def interpolate_mamajek_table(
             return spt, samples
         else:
             return spt
+
+
+def flatten_list(lol):
+    """flatten list of list (lol)"""
+    return list(itertools.chain.from_iterable(lol))

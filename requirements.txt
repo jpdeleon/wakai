@@ -1,9 +1,10 @@
 autopep8
 jupyter
-matplotlib==3.3.4 #so pl.gca has projection; astroplan will work
+#matplotlib==3.3.4 #so pl.gca has projection; astroplan will work
+matplotlib==3.5
 pandas
-isochrones=2.1
-astroquery=0.4.6
+isochrones==2.1
+astroquery==0.4.6
 astropy
 matplotlib
 seaborn
