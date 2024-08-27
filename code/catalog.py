@@ -55,6 +55,7 @@ VIZIER_KEYS_PROT_CATALOG = {
     # https://filtergraph.com/tess_rotation_tois
     }
 VIZIER_KEYS_CLUSTER_CATALOG = {
+    "Perren2023": "local",
     # Melange4: A 27 Myr Extended Population of Lower Centaurus Crux with a Transiting Two-planet System
     "Wood2023": "J/AJ/165/85",
     # Melange3: A Pleiades-age Association Harboring Two Transiting Planetary Systems from Kepler
@@ -177,8 +178,7 @@ def get_tois(
     outdir=DATA_PATH,
     verbose=False,
     remove_FP=True,
-    remove_known_planets=False,
-    add_FPP=False,
+    remove_known_planets=False
 ):
     """Download TOI list from TESS Alert/TOI Release.
 
@@ -204,20 +204,8 @@ def get_tois(
     if not os.path.exists(fp) or clobber:
         d = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
         msg = f"Downloading {dl_link}\n"
-        if add_FPP:
-            fp2 = os.path.join(outdir, "Giacalone2020/tab4.txt")
-            classified = ascii.read(fp2).to_pandas()
-            fp3 = os.path.join(outdir, "Giacalone2020/tab5.txt")
-            unclassified = ascii.read(fp3).to_pandas()
-            fpp = pd.concat(
-                [
-                    classified[["TOI", "FPP-2m", "FPP-30m"]],
-                    unclassified[["TOI", "FPP"]],
-                ],
-                sort=True,
-            )
-            d = pd.merge(d, fpp, how="outer").drop_duplicates()
         d.to_csv(fp, index=False)
+        print("Saved: ", fp)
     else:
         d = pd.read_csv(fp).drop_duplicates()
         msg = f"Loaded: {fp}\n"
@@ -257,6 +245,35 @@ def get_tois(
     if verbose:
         print(msg)
     return d.sort_values("TOI")
+
+def get_nexsci_data(table_name="ps", method="Transit", outdir=DATA_PATH, clobber=False):
+    """
+    ps: self-consistent set of parameters
+    pscomppars: a more complete, though not necessarily self-consistent set of parameters
+    See also 
+    https://exoplanetarchive.ipac.caltech.edu/docs/TAP/usingTAP.html
+    """
+    try:
+        from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+    except Exception as e:
+        print(e)
+    assert table_name in ["ps", "pscomppars"]
+    url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
+    print("Column definitions: ", url)
+    fp = Path(outdir, f'nexsci_{table_name}.csv')        
+    if not fp.exists() or clobber:
+        #pstable combines data from the Confirmed Planets and Extended Planet Parameters tables
+        print(f"Downloading NExSci {table_name} table...")
+        tab = NasaExoplanetArchive.query_criteria(table=table_name, 
+                                                  where=f"discoverymethod like '{method}'")
+        df = tab.to_pandas()
+        df.to_csv(fp, index=False)
+        print("Saved: ", fp)
+    else:
+        df = pd.read_csv(fp)
+        print("Loaded: ", fp)
+    return df
+    
 
 class Target:
     def __init__(self, ra_deg, dec_deg, gaiaDR2id=None, verbose=True):
@@ -387,7 +404,10 @@ class CatalogDownloader:
         self.vizier_url = self.get_vizier_url()
 
     def get_tables_from_vizier(self, row_limit=50, save=False, clobber=None):
-        """row_limit-1 to download all rows"""
+        """
+        row_limit-1 to download all rows
+        TODO: Load data when save=True
+        """
         clobber = self.clobber if clobber is None else clobber
         if row_limit == -1:
             msg = "Downloading all tables in "
@@ -405,16 +425,19 @@ class CatalogDownloader:
         # set row limit
         Vizier.ROW_LIMIT = row_limit
 
-        tables = Vizier.get_catalogs(self.catalog_dict[self.catalog_name])
-        errmsg = "No data returned from Vizier."
-        assert tables is not None, errmsg
-        self.tables = tables
+        if self.catalog_dict[self.catalog_name]=="local":
+            raise ValueError("Read the csv data locally.")
+        else:
+            tables = Vizier.get_catalogs(self.catalog_dict[self.catalog_name])
+            errmsg = "No data returned from Vizier."
+            assert tables is not None, errmsg
+            self.tables = tables
+    
+            if self.verbose:
+                pprint({k: tables[k]._meta["description"] for k in tables.keys()})
 
-        if self.verbose:
-            pprint({k: tables[k]._meta["description"] for k in tables.keys()})
-
-        if save:
-            self.save_tables(clobber=clobber)
+            if save:
+                self.save_tables(clobber=clobber)
         return tables
 
     def save_tables(self, clobber=None):
