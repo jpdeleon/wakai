@@ -1,6 +1,8 @@
 import os
-from re import M
+import json
+# from re import M
 import itertools
+from urllib.request import urlopen
 import numpy as np
 import matplotlib.pyplot as pl
 import pandas as pd
@@ -64,6 +66,8 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Newton2022": "J/AJ/164/115",
     # Melange1: Three Small Planets Orbiting a 120 Myr Old Star in the Pisces-Eridanus Stream
     "Tofflemire2021": "J/AJ/161/171",
+    # Using cluster masses, radii, and dynamics to create a cleaned open cluster catalogue
+    "Hunt2024": "J/A+A/686/A42",
     # An all-sky cluster catalogue with Gaia DR3; 7167 total clusters, 2387 new
     "Hunt2023": "J/A+A/673/A114",
     # 3794 open clusters parameters
@@ -204,6 +208,9 @@ def get_tois(
     if not os.path.exists(fp) or clobber:
         d = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
         msg = f"Downloading {dl_link}\n"
+        d = SkyCoord(d[['RA','Dec']].values, unit=('hourangle','degree'))
+        d['ra_deg'] = d.ra.deg
+        d['dec_deg'] = d.dec.deg
         d.to_csv(fp, index=False)
         print("Saved: ", fp)
     else:
@@ -389,9 +396,9 @@ class CatalogDownloader:
         ):
         self.catalog_name = catalog_name
         self.catalog_type = catalog_type
-        if catalog_type.lower()=="prot":
+        if catalog_type.lower() in ["prot", "rotation"]:
             self.catalog_dict = VIZIER_KEYS_PROT_CATALOG
-        elif catalog_type.lower()=="liew":
+        elif catalog_type.lower() in ["liew", "lithium"]:
             self.catalog_dict = VIZIER_KEYS_LiEW_CATALOG
         elif catalog_type.lower()=="cluster":
             self.catalog_dict = VIZIER_KEYS_CLUSTER_CATALOG
@@ -1354,3 +1361,32 @@ def interpolate_mamajek_table(
 def flatten_list(lol):
     """flatten list of list (lol)"""
     return list(itertools.chain.from_iterable(lol))
+
+def get_tfop_info(target_name: str) -> dict:
+    base_url = "https://exofop.ipac.caltech.edu/tess"
+    url = f"{base_url}/target.php?id={target_name.replace(' ','')}&json"
+    response = urlopen(url)
+    assert response.code == 200, "Failed to get data from ExoFOP-TESS"
+    try:
+        data_json = json.loads(response.read())
+        return data_json
+    except Exception:
+        raise ValueError(f"No TIC data found for {target_name}")
+
+def get_params_from_tfop(tfop_info, name="planet_parameters", idx=None):
+    params_dict = tfop_info.get(name)
+    if idx is None:
+        key = "pdate" if name == "planet_parameters" else "sdate"
+        # get the latest parameter based on upload date
+        dates = []
+        for d in params_dict:
+            t = d.get(key)
+            dates.append(t)
+        df = pd.DataFrame({"date": dates})
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        idx = df["date"].idxmax()
+    return params_dict[idx]
+
+
+def get_tic_id(target_name: str) -> int:
+    return int(get_tfop_info(target_name)["basic_info"]["tic_id"])
