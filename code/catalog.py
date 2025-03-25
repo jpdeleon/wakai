@@ -1,22 +1,35 @@
-import os
-import json
-# from re import M
+import json, os
 import itertools
 from urllib.request import urlopen
 import numpy as np
 import matplotlib.pyplot as pl
 import pandas as pd
-
 from pathlib import Path
 from pprint import pprint
-
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Distance, Galactocentric
+from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
 from astropy.table import Table
 from astroquery.vizier import Vizier
 
-DATA_PATH = '../data/'
+home = Path.home()
+DATA_PATH = f'{home}/github/research/project/wakai/data/'
 
+
+VIZIER_KEYS_BINARY_CATALOG = {
+    "Liu2024b": "",
+    "Qian2019": "",
+    "Liu2024a": "",
+    "El-Badry2021": "",
+    "Jing2024": "",
+}
+# 
+
+VIZIER_KEYS_KEPLER_CATALOG =  {"Berger2020": "J/AJ/160/108",
+    }
+VIZIER_KEYS_RV_CATALOG = {
+    "Perdelwitz2024" : "J/A+A/683/A125", #HARPS radial velocity database
+    }
 # See more keywords here: http://vizier.cds.unistra.fr/vizier/vizHelp/cats/U.htx
 VIZIER_KEYS_LiEW_CATALOG = {
     "Randich2001_IC2602": "J/A+A/372/862", # 	Lithium abundances in IC 2602 and IC 2391
@@ -30,6 +43,7 @@ VIZIER_KEYS_LiEW_CATALOG = {
     "Gutierrez2020": "J/A+A/643/A71", #Members for 20 open clusters (Gutierrez Albarran+, 2020)
     "Magrini2021_ALi": "J/A%2bA/651/A84", #Li abundance and mixing in giant stars
     "Deliyannis2019": "J/AJ/158/163", #Li abundance values for stars in NGC 6819
+    #"Bouma2024a:" "https://content.cld.iop.org/journals/0004-637X/976/2/234/revision1/apjad855ft1_mrt.txt",
 }
 VIZIER_KEYS_PROT_CATALOG = {
     # See table1: https://arxiv.org/pdf/1905.10588.pdf
@@ -57,6 +71,9 @@ VIZIER_KEYS_PROT_CATALOG = {
     # https://filtergraph.com/tess_rotation_tois
     }
 VIZIER_KEYS_CLUSTER_CATALOG = {
+    # Using cluster masses, radii, and dynamics to create a cleaned open cluster catalogue
+    "Hunt2024": "J/A+A/686/A42",
+    #
     "Perren2023": "local",
     # Melange4: A 27 Myr Extended Population of Lower Centaurus Crux with a Transiting Two-planet System
     "Wood2023": "J/AJ/165/85",
@@ -66,8 +83,6 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Newton2022": "J/AJ/164/115",
     # Melange1: Three Small Planets Orbiting a 120 Myr Old Star in the Pisces-Eridanus Stream
     "Tofflemire2021": "J/AJ/161/171",
-    # Using cluster masses, radii, and dynamics to create a cleaned open cluster catalogue
-    "Hunt2024": "J/A+A/686/A42",
     # An all-sky cluster catalogue with Gaia DR3; 7167 total clusters, 2387 new
     "Hunt2023": "J/A+A/673/A114",
     # 3794 open clusters parameters
@@ -86,6 +101,8 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "CastroGinard2020": "J/A+A/635/A45",
     # 1481 clusters and their members
     "CantatGaudin2020": "J/A+A/633/A99",
+    # Untangling the Galaxy. II. Structure within 3kpc (Kounkel+, 2020)
+    "Kounkel2020": "J/AJ/160/279",
     # open clusters in the Galactic anticenter
     "CastroGinard2019": "J/A+A/627/A35",
     #
@@ -134,9 +151,11 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Portegies2010": "http://simbad.u-strasbg.fr/simbad/sim-ref?querymethod=bib&simbo=on&submit=submit+bibcode&bibcode=2010ARA%26A..48..431P",
     # OC
     "Sampedro2017": "J/MNRAS/470/3937",
-    # 	Gaia-ESO Survey in 7 open star cluster fields
+    # Gaia-ESO Survey (2011-2018) in 62 clusters with 1 Myr−8 Gyr
+    "Randich2022": "J/A+A/666/A121",
+    # Gaia-ESO Survey in 7 open star cluster fields
     "Randich2018": "J/A+A/612/A99",
-    "Karchenko2013": "J/A+A/558/A53",
+    "Kharchenko2013": "J/A+A/558/A53",
     # OC #"Dias2014"?
     "Dias2016": "B/ocl",
     # Psc Eri
@@ -201,26 +220,31 @@ def get_tois(
         TOI table as dataframe
     """
     dl_link = "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv"
-    fp = os.path.join(outdir, "TOIs.csv")
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
+    fp = Path(outdir, "TOIs.csv")
+    if not Path(outdir).exists():
+        Path(outdir).makedir()
 
-    if not os.path.exists(fp) or clobber:
-        d = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
+    if not fp.exists() or clobber:
+        df = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
         msg = f"Downloading {dl_link}\n"
-        d = SkyCoord(d[['RA','Dec']].values, unit=('hourangle','degree'))
-        d['ra_deg'] = d.ra.deg
-        d['dec_deg'] = d.dec.deg
-        d.to_csv(fp, index=False)
+
+        #add coordinates in deg
+        coords = SkyCoord(df[['RA','Dec']].values, unit=('hourangle','degree'))
+        df['ra_deg'] = coords.ra.deg
+        df['dec_deg'] = coords.dec.deg
+        #add previously querried Gaia DR3 ids
+        tois = pd.read_csv(f'{outdir}/TOIs_with_Gaiaid.csv')
+        df = pd.merge(df, tois, on='TOI', how='outer')
+        df.to_csv(fp, index=False)
         print("Saved: ", fp)
     else:
-        d = pd.read_csv(fp).drop_duplicates()
+        df = pd.read_csv(fp).drop_duplicates()
         msg = f"Loaded: {fp}\n"
-    assert len(d) > 1000, f"{fp} likely has been overwritten!"
+    assert len(df) > 1000, f"{fp} likely has been overwritten!"
 
     # remove False Positives
     if remove_FP:
-        d = d[d["TFOPWG Disposition"] != "FP"]
+        df = df[df["TFOPWG Disposition"] != "FP"]
         msg += "TOIs with TFPWG disposition==FP are removed.\n"
     if remove_known_planets:
         planet_keys = [
@@ -228,7 +252,8 @@ def get_tois(
             "GJ",
             "LHS",
             "XO",
-            "Pi Men" "WASP",
+            "Pi Men", 
+            "WASP",
             "SWASP",
             "HAT",
             "HATS",
@@ -242,16 +267,58 @@ def get_tois(
         keys = []
         for key in planet_keys:
             idx = ~np.array(
-                d["Comments"].str.contains(key).tolist(), dtype=bool
+                df["Comments"].str.contains(key).tolist(), dtype=bool
             )
-            d = d[idx]
+            df = df[idx]
             if idx.sum() > 0:
                 keys.append(key)
         msg += f"{keys} planets are removed.\n"
     msg += f"Saved: {fp}\n"
     if verbose:
         print(msg)
-    return d.sort_values("TOI")
+    return df.sort_values("TOI").reset_index(drop=True)
+
+def get_ctois(clobber=True, outdir=DATA_PATH, verbose=False, remove_FP=True):
+    """Download Community TOI list from exofop/TESS.
+
+    Parameters
+    ----------
+    clobber : bool
+        re-download table and save as csv file
+    outdir : str
+        download directory location
+    verbose : bool
+        print texts
+
+    Returns
+    -------
+    d : pandas.DataFrame
+        CTOI table as dataframe
+
+    See interface: https://exofop.ipac.caltech.edu/tess/view_ctoi.php
+    See also: https://exofop.ipac.caltech.edu/tess/ctoi_help.php
+    """
+    dl_link = "https://exofop.ipac.caltech.edu/tess/download_ctoi.php?sort=ctoi&output=csv"
+    fp = Path(outdir, "CTOIs.csv")
+    if not Path(outdir).exists():
+        Path(outdir).makedir()
+
+    if not fp.exists() or clobber:
+        d = pd.read_csv(dl_link)  # , dtype={'RA': float, 'Dec': float})
+        msg = "Downloading {}\n".format(dl_link)
+    else:
+        d = pd.read_csv(fp).drop_duplicates()
+        msg = "Loaded: {}\n".format(fp)
+    d.to_csv(fp, index=False)
+
+    # remove False Positives
+    if remove_FP:
+        d = d[d["User Disposition"] != "FP"]
+        msg += "CTOIs with user disposition==FP are removed.\n"
+    msg += "Saved: {}\n".format(fp)
+    if verbose:
+        print(msg)
+    return d.sort_values("CTOI")
 
 def get_nexsci_data(table_name="ps", method="Transit", outdir=DATA_PATH, clobber=False):
     """
@@ -400,6 +467,8 @@ class CatalogDownloader:
             self.catalog_dict = VIZIER_KEYS_PROT_CATALOG
         elif catalog_type.lower() in ["liew", "lithium"]:
             self.catalog_dict = VIZIER_KEYS_LiEW_CATALOG
+        elif catalog_type.lower() in ["rv"]:
+            self.catalog_dict = VIZIER_KEYS_RV_CATALOG
         elif catalog_type.lower()=="cluster":
             self.catalog_dict = VIZIER_KEYS_CLUSTER_CATALOG
         self.verbose = verbose
@@ -1254,8 +1323,8 @@ def plot_xyz_3d(
 def get_mamajek_table(clobber=False, verbose=True, data_loc=DATA_PATH):
     """
     """
-    fp = join(data_loc, "mamajek_table.csv")
-    if not exists(fp) or clobber:
+    fp = Path(data_loc, "mamajek_table.csv")
+    if not fp.exists() or clobber:
         url = "http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt"
         # cols="SpT Teff logT BCv Mv logL B-V Bt-Vt G-V U-B V-Rc V-Ic V-Ks J-H H-Ks Ks-W1 W1-W2 W1-W3 W1-W4 Msun logAge b-y M_J M_Ks Mbol i-z z-Y R_Rsun".split(' ')
         df = pd.read_csv(
@@ -1362,6 +1431,7 @@ def flatten_list(lol):
     """flatten list of list (lol)"""
     return list(itertools.chain.from_iterable(lol))
 
+
 def get_tfop_info(target_name: str) -> dict:
     base_url = "https://exofop.ipac.caltech.edu/tess"
     url = f"{base_url}/target.php?id={target_name.replace(' ','')}&json"
@@ -1370,8 +1440,10 @@ def get_tfop_info(target_name: str) -> dict:
     try:
         data_json = json.loads(response.read())
         return data_json
-    except Exception:
+    except Exception as e:
+        print(e)
         raise ValueError(f"No TIC data found for {target_name}")
+
 
 def get_params_from_tfop(tfop_info, name="planet_parameters", idx=None):
     params_dict = tfop_info.get(name)
@@ -1390,3 +1462,23 @@ def get_params_from_tfop(tfop_info, name="planet_parameters", idx=None):
 
 def get_tic_id(target_name: str) -> int:
     return int(get_tfop_info(target_name)["basic_info"]["tic_id"])
+
+
+def get_nexsci_data(table_name="ps", clobber=False):
+    """
+    ps: self-consistent set of parameters
+    pscomppars: a more complete, though not necessarily self-consistent set of parameters
+    """
+    url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
+    print("Column definitions: ", url)
+    fp = Path("../data/",f"nexsci_{table_name}.csv")
+    if not fp.exists() or clobber:
+        print(f"Downloading NExSci {table_name} table...")
+        nexsci_tab = NasaExoplanetArchive.query_criteria(table=table_name, where="discoverymethod like 'Transit'")
+        df_nexsci = nexsci_tab.to_pandas()
+        df_nexsci.to_csv(fp, index=False)
+        print("Saved: ", fp)
+    else:
+        df_nexsci = pd.read_csv(fp)
+        print("Loaded: ", fp)
+    return df_nexsci

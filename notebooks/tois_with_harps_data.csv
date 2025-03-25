@@ -1,0 +1,277 @@
+,toi,name,comment,harps_url
+0,TOI6978,GJ1247,low SNR,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ1247_RVs/GJ1247_HARPS_RVBank_ver02_rvsonly.dat&run
+1,TOI6965,HD50554,interior to HD 50554 b; period may be double (~11.94 d); ramp-like ingress for even events,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD50554_RVs/HD50554_HARPS_RVBank_ver02_rvsonly.dat&run
+2,TOI6835,K2-141,K2-141 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-141_RVs/K2-141_HARPS_RVBank_ver02_rvsonly.dat&run
+3,TOI6833,K2-138,K2-138 e; marginal QLP detection in combined TESS+K2,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-138_RVs/K2-138_HARPS_RVBank_ver02_rvsonly.dat&run
+4,TOI6806,TYC8459-487-1,period may be half; found in faint-star QLP search,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8459-487-1_RVs/TYC8459-487-1_HARPS_RVBank_ver02_rvsonly.dat&run
+5,TOI6726,HD216530,HIP 113103 c,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD216530_RVs/HD216530_HARPS_RVBank_ver02_rvsonly.dat&run
+6,TOI6713,HD104067,interior to the known RV planet HD 104067 b; low SNR,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD104067_RVs/HD104067_HARPS_RVBank_ver02_rvsonly.dat&run
+7,TOI6709,HIP54597,low SNR,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP54597_RVs/HIP54597_HARPS_RVBank_ver02_rvsonly.dat&run
+8,TOI6697,HD114082,single transit of HD 114082 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD114082_RVs/HD114082_HARPS_RVBank_ver02_rvsonly.dat&run
+9,TOI6695,TYC6570-1482-1,single transit; possible additional transit at 1525.64811 TBJD; CTOI from Rafael Brahm,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6570-1482-1_RVs/TYC6570-1482-1_HARPS_RVBank_ver02_rvsonly.dat&run
+10,TOI6686,TYC8378-64-1,KELT-10 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8378-64-1_RVs/TYC8378-64-1_HARPS_RVBank_ver02_rvsonly.dat&run
+11,TOI6568,TYC8660-1583-1,Possibly too large for the period; warm Jupiter candidate in Dong et. al 2021,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8660-1583-1_RVs/TYC8660-1583-1_HARPS_RVBank_ver02_rvsonly.dat&run
+12,TOI6546,HATS-31,HATS-31 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HATS-31_RVs/HATS-31_HARPS_RVBank_ver02_rvsonly.dat&run
+13,TOI6275,TYC6647-516-1,WASP-193 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6647-516-1_RVs/TYC6647-516-1_HARPS_RVBank_ver02_rvsonly.dat&run
+14,TOI6269,TYC6622-794-1,HATS-38 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6622-794-1_RVs/TYC6622-794-1_HARPS_RVBank_ver02_rvsonly.dat&run
+15,TOI6267,HD81968,3 transits; actual period likely shorter than max period of ~733.9904 days,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD81968_RVs/HD81968_HARPS_RVBank_ver02_rvsonly.dat&run
+16,TOI6266,HD89965,low SNR,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD89965_RVs/HD89965_HARPS_RVBank_ver02_rvsonly.dat&run
+17,TOI6263,HD297396,low SNR; slight depth-aperture correlation,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD297396_RVs/HD297396_HARPS_RVBank_ver02_rvsonly.dat&run
+18,TOI5972,HD209458,HD 209458 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD209458_RVs/HD209458_HARPS_RVBank_ver02_rvsonly.dat&run
+19,TOI5823,BD-055432,WASP-69 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-055432_RVs/BD-055432_HARPS_RVBank_ver02_rvsonly.dat&run
+20,TOI5812,TYC552-1060-1,WASP-134 b (https://arxiv.org/abs/1812.09264),https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC552-1060-1_RVs/TYC552-1060-1_HARPS_RVBank_ver02_rvsonly.dat&run
+21,TOI5801,WASP-80,WASP-80 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-80_RVs/WASP-80_HARPS_RVBank_ver02_rvsonly.dat&run
+22,TOI5797,WASP-2A,WASP-2 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-2A_RVs/WASP-2A_HARPS_RVBank_ver02_rvsonly.dat&run
+23,TOI5696,BD+072351,two transits; one in K2 and one in TESS,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+072351_RVs/BD+072351_HARPS_RVBank_ver02_rvsonly.dat&run
+24,TOI5685,TYC339-329-1,found in faint-star QLP search; WASP-24 b; NEB contaminating light curve,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC339-329-1_RVs/TYC339-329-1_HARPS_RVBank_ver02_rvsonly.dat&run
+25,TOI5678,TYC7022-871-1,CTOI from Nora Eisner; transit close to data gap,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7022-871-1_RVs/TYC7022-871-1_HARPS_RVBank_ver02_rvsonly.dat&run
+26,TOI5672,WASP-40,HAT-P-27 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-40_RVs/WASP-40_HARPS_RVBank_ver02_rvsonly.dat&run
+27,TOI5542,TYC9086-1210-1,TOI request from Nolan Grieves (paper in prep),https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9086-1210-1_RVs/TYC9086-1210-1_HARPS_RVBank_ver02_rvsonly.dat&run
+28,TOI5520,K2-266,K2-266 d	,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-266_RVs/K2-266_HARPS_RVBank_ver02_rvsonly.dat&run
+29,TOI5178,K2-165,K2-165 d,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-165_RVs/K2-165_HARPS_RVBank_ver02_rvsonly.dat&run
+30,TOI5177,HD89577,potential L1 planet; K2 target,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD89577_RVs/HD89577_HARPS_RVBank_ver02_rvsonly.dat&run
+31,TOI5170,EPIC211647930,K2-333 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/EPIC211647930_RVs/EPIC211647930_HARPS_RVBank_ver02_rvsonly.dat&run
+32,TOI5168,K2-27,K2-27 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-27_RVs/K2-27_HARPS_RVBank_ver02_rvsonly.dat&run
+33,TOI5153,TYC5940-155-1,CTOI from Sol¿¿ne Ulmer-Moll,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC5940-155-1_RVs/TYC5940-155-1_HARPS_RVBank_ver02_rvsonly.dat&run
+34,TOI5144,BD+072474,WASP-85 A b; SPOC assuming solar radius but Rs ~ 0.9,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+072474_RVs/BD+072474_HARPS_RVBank_ver02_rvsonly.dat&run
+35,TOI5141,HD89345,HD 89345 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD89345_RVs/HD89345_HARPS_RVBank_ver02_rvsonly.dat&run
+36,TOI5094,GJ3470,GJ 3470 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ3470_RVs/GJ3470_HARPS_RVBank_ver02_rvsonly.dat&run
+37,TOI5089,EPIC211730024,K2-334 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/EPIC211730024_RVs/EPIC211730024_HARPS_RVBank_ver02_rvsonly.dat&run
+38,TOI5068,EPIC211359660,K2-182 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/EPIC211359660_RVs/EPIC211359660_HARPS_RVBank_ver02_rvsonly.dat&run
+39,TOI4909,TYC8233-68-1,found in faint-star QLP search,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8233-68-1_RVs/TYC8233-68-1_HARPS_RVBank_ver02_rvsonly.dat&run
+40,TOI4739,HD295605,found in faint-star QLP search; likely inflated hot Jupiter,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD295605_RVs/HD295605_HARPS_RVBank_ver02_rvsonly.dat&run
+41,TOI4706,TYC6504-948-1,period may be several times shorter than max period of ~736 days; found in faint-star QLP search,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6504-948-1_RVs/TYC6504-948-1_HARPS_RVBank_ver02_rvsonly.dat&run
+42,TOI4648,BD+10125,K2-222 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+10125_RVs/BD+10125_HARPS_RVBank_ver02_rvsonly.dat&run
+43,TOI4630,CD-2412030,two transits separated by 2 years; period likely shorter than ~721 days,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-2412030_RVs/CD-2412030_HARPS_RVBank_ver02_rvsonly.dat&run
+44,TOI4621,WASP-181,WASP-181 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-181_RVs/WASP-181_HARPS_RVBank_ver02_rvsonly.dat&run
+45,TOI4611,HD284927,K2 multi (EPIC247164043),https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD284927_RVs/HD284927_HARPS_RVBank_ver02_rvsonly.dat&run
+46,TOI4606,HD286123,K2-232 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD286123_RVs/HD286123_HARPS_RVBank_ver02_rvsonly.dat&run
+47,TOI4604,HD285181,weak detection; K2-291 b; detected with combined QLP + K2 data,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD285181_RVs/HD285181_HARPS_RVBank_ver02_rvsonly.dat&run
+48,TOI4601,HD284113,V-shaped,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD284113_RVs/HD284113_HARPS_RVBank_ver02_rvsonly.dat&run
+49,TOI4534,K2-55,K2-55 b; detected with combined QLP + K2 data,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-55_RVs/K2-55_HARPS_RVBank_ver02_rvsonly.dat&run
+50,TOI4527,GJ3084,potential L1 planet; low MES; ultra short period,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ3084_RVs/GJ3084_HARPS_RVBank_ver02_rvsonly.dat&run
+51,TOI4523,TYC2-1155-1,WASP-32 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC2-1155-1_RVs/TYC2-1155-1_HARPS_RVBank_ver02_rvsonly.dat&run
+52,TOI4517,GJ9827,GJ 9827 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ9827_RVs/GJ9827_HARPS_RVBank_ver02_rvsonly.dat&run
+53,TOI4512,EPIC210558622,K2-174 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/EPIC210558622_RVs/EPIC210558622_HARPS_RVBank_ver02_rvsonly.dat&run
+54,TOI4507,HD269434,some odd-even in spoc-s01-s65; may be affected by variable host; possibly too large for insolation,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD269434_RVs/HD269434_HARPS_RVBank_ver02_rvsonly.dat&run
+55,TOI4470,GJ4130,HD 189733 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ4130_RVs/GJ4130_HARPS_RVBank_ver02_rvsonly.dat&run
+56,TOI4399,HD178085,highly variable star,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD178085_RVs/HD178085_HARPS_RVBank_ver02_rvsonly.dat&run
+57,TOI4326,HD220928,alerted as a single transit at ~1363 TBJD(which matches epoch of Planet Hunters CTOI) but now have a second transit; maximum period is ~ 1826.08 days; actual period likely shorter; L1 candidate,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD220928_RVs/HD220928_HARPS_RVBank_ver02_rvsonly.dat&run
+58,TOI4324,GJ3563,potential L1 planet; low SNR,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ3563_RVs/GJ3563_HARPS_RVBank_ver02_rvsonly.dat&run
+59,TOI4320,HD21520,two transits; actual period likely shorter than 703.6 days,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD21520_RVs/HD21520_HARPS_RVBank_ver02_rvsonly.dat&run
+60,TOI4304,BD+101799,HIP 41378 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+101799_RVs/BD+101799_HARPS_RVBank_ver02_rvsonly.dat&run
+61,TOI4187,HD20143,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD20143_RVs/HD20143_HARPS_RVBank_ver02_rvsonly.dat&run
+62,TOI3837,TYC1968-371-1,found in faint-star QLP search,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC1968-371-1_RVs/TYC1968-371-1_HARPS_RVBank_ver02_rvsonly.dat&run
+63,TOI3185,TYC8252-1071-1,found in faint-star QLP search,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8252-1071-1_RVs/TYC8252-1071-1_HARPS_RVBank_ver02_rvsonly.dat&run
+64,TOI2670,TYC7150-787-1,formerly a duo-transit but now have two consecutive transits; possible TTVs,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7150-787-1_RVs/TYC7150-787-1_HARPS_RVBank_ver02_rvsonly.dat&run
+65,TOI2643,K2-132,K2-132 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/K2-132_RVs/K2-132_HARPS_RVBank_ver02_rvsonly.dat&run
+66,TOI2634,TYC50-821-1,V-shaped. Single transit. CTOI from Nora Eisner.,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC50-821-1_RVs/TYC50-821-1_HARPS_RVBank_ver02_rvsonly.dat&run
+67,TOI2589,TYC7102-426-1,TOI-2589 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7102-426-1_RVs/TYC7102-426-1_HARPS_RVBank_ver02_rvsonly.dat&run
+68,TOI2556,TYC797-248-1,strong TTVs,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC797-248-1_RVs/TYC797-248-1_HARPS_RVBank_ver02_rvsonly.dat&run
+69,TOI2548,TYC211-706-1,WASP-84 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC211-706-1_RVs/TYC211-706-1_HARPS_RVBank_ver02_rvsonly.dat&run
+70,TOI2540,HD274255,CTOI from George Zhou; inner candidate in potential multi; likely multi,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD274255_RVs/HD274255_HARPS_RVBank_ver02_rvsonly.dat&run
+71,TOI2534,TYC8829-3-1,single transit; CTOI from Rafael Brahm,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8829-3-1_RVs/TYC8829-3-1_HARPS_RVBank_ver02_rvsonly.dat&run
+72,TOI2526,TYC9063-510-1,CTOI from Rafael Brahm,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9063-510-1_RVs/TYC9063-510-1_HARPS_RVBank_ver02_rvsonly.dat&run
+73,TOI2488,TYC8448-76-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8448-76-1_RVs/TYC8448-76-1_HARPS_RVBank_ver02_rvsonly.dat&run
+74,TOI2473,HD287319,missed the 6-day HJ. WINE CTOI. Multi.,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD287319_RVs/HD287319_HARPS_RVBank_ver02_rvsonly.dat&run
+75,TOI2449,CD-341735,single transit,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-341735_RVs/CD-341735_HARPS_RVBank_ver02_rvsonly.dat&run
+76,TOI2447,CD-321952,Single transit. Orbital period is likely > 30 days.,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-321952_RVs/CD-321952_HARPS_RVBank_ver02_rvsonly.dat&run
+77,TOI2427,TOI-2427,L1 candidate,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-2427_RVs/TOI-2427_HARPS_RVBank_ver02_rvsonly.dat&run
+78,TOI2426,BD-21521,artifact TIC 97486175 close by,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-21521_RVs/BD-21521_HARPS_RVBank_ver02_rvsonly.dat&run
+79,TOI2425,TYC4682-800-1,CTOI from Jana Steuer,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC4682-800-1_RVs/TYC4682-800-1_HARPS_RVBank_ver02_rvsonly.dat&run
+80,TOI2403,BD+01316,WASP-76 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+01316_RVs/BD+01316_HARPS_RVBank_ver02_rvsonly.dat&run
+81,TOI2386,TYC5839-876-1,WASP-26 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC5839-876-1_RVs/TYC5839-876-1_HARPS_RVBank_ver02_rvsonly.dat&run
+82,TOI2338,TYC7063-698-1,Slight depth aperture correlation; CTOI from Marco Montalto,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7063-698-1_RVs/TYC7063-698-1_HARPS_RVBank_ver02_rvsonly.dat&run
+83,TOI2328,TYC9361-870-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9361-870-1_RVs/TYC9361-870-1_HARPS_RVBank_ver02_rvsonly.dat&run
+84,TOI2221,GJ803,AU Mic b; first transit matches expected ephemeris,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ803_RVs/GJ803_HARPS_RVBank_ver02_rvsonly.dat&run
+85,TOI2202,TOI-2202,TOI-2202 b / TOI 2202.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-2202_RVs/TOI-2202_HARPS_RVBank_ver02_rvsonly.dat&run
+86,TOI2199,TYC7971-310-1,WASP-182 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7971-310-1_RVs/TYC7971-310-1_HARPS_RVBank_ver02_rvsonly.dat&run
+87,TOI2197,HD197286,WASP-7 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD197286_RVs/HD197286_HARPS_RVBank_ver02_rvsonly.dat&run
+88,TOI2196,TYC9325-163-1,low SNR,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9325-163-1_RVs/TYC9325-163-1_HARPS_RVBank_ver02_rvsonly.dat&run
+89,TOI2194,GJ1246,TOI-2194 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ1246_RVs/GJ1246_HARPS_RVBank_ver02_rvsonly.dat&run
+90,TOI2000,TYC8954-1014-1,TOI-2000 c; https://arxiv.org/abs/2209.14396,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8954-1014-1_RVs/TYC8954-1014-1_HARPS_RVBank_ver02_rvsonly.dat&run
+91,TOI1970,TYC8647-2057-1,possible secondary consistent with planet,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8647-2057-1_RVs/TYC8647-2057-1_HARPS_RVBank_ver02_rvsonly.dat&run
+92,TOI1963,TYC8684-1786-1,possible secondary not quite at half phase,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8684-1786-1_RVs/TYC8684-1786-1_HARPS_RVBank_ver02_rvsonly.dat&run
+93,TOI1934,TYC7282-1298-1,WASP-179 aka NGTS-2,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7282-1298-1_RVs/TYC7282-1298-1_HARPS_RVBank_ver02_rvsonly.dat&run
+94,TOI1905,WASP-107,WASP-107 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-107_RVs/WASP-107_HARPS_RVBank_ver02_rvsonly.dat&run
+95,TOI1904,TYC8229-2228-1,HATS-56 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8229-2228-1_RVs/TYC8229-2228-1_HARPS_RVBank_ver02_rvsonly.dat&run
+96,TOI1839,TYC304-865-1,potential L1 planet; v-shaped,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC304-865-1_RVs/TYC304-865-1_HARPS_RVBank_ver02_rvsonly.dat&run
+97,TOI1833,WASP-54,WASP-54 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-54_RVs/WASP-54_HARPS_RVBank_ver02_rvsonly.dat&run
+98,TOI1821,HD97658,HD 97658 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD97658_RVs/HD97658_HARPS_RVBank_ver02_rvsonly.dat&run
+99,TOI1793,HD95338,HD 95338 b	,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD95338_RVs/HD95338_HARPS_RVBank_ver02_rvsonly.dat&run
+100,TOI1773,HD75732,55 Cnc e,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD75732_RVs/HD75732_HARPS_RVBank_ver02_rvsonly.dat&run
+101,TOI1338,TOI-1338,period confirmed 95.2 days (Veselin B. Kostov et al 2020); TOI-1338 b; circumbinary planet,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-1338_RVs/TOI-1338_HARPS_RVBank_ver02_rvsonly.dat&run
+102,TOI1233,HD108236,HD 108236 d / TOI-1233.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD108236_RVs/HD108236_HARPS_RVBank_ver02_rvsonly.dat&run
+103,TOI1229,TYC9173-77-1,TFOP APC/SB1,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9173-77-1_RVs/TYC9173-77-1_HARPS_RVBank_ver02_rvsonly.dat&run
+104,TOI1203,HD97507,validated planet,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD97507_RVs/HD97507_HARPS_RVBank_ver02_rvsonly.dat&run
+105,TOI1130,TOI-1130,TOI 1130 c,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-1130_RVs/TOI-1130_HARPS_RVBank_ver02_rvsonly.dat&run
+106,TOI1099,GJ4230,HD 207496 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ4230_RVs/GJ4230_HARPS_RVBank_ver02_rvsonly.dat&run
+107,TOI1097,HD109833,bright potential L1 candidate; TCE at TBJD ~2358 delayed by a few hours,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD109833_RVs/HD109833_HARPS_RVBank_ver02_rvsonly.dat&run
+108,TOI1062,TOI-1062,TOI-1062 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-1062_RVs/TOI-1062_HARPS_RVBank_ver02_rvsonly.dat&run
+109,TOI1060,HD188394,Potential L1 candidate,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD188394_RVs/HD188394_HARPS_RVBank_ver02_rvsonly.dat&run
+110,TOI1055,HD183579,HD 183579 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD183579_RVs/HD183579_HARPS_RVBank_ver02_rvsonly.dat&run
+111,TOI1054,HD190622,HD 190622 b / TOI-1054 b (Cabrera+2023),https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD190622_RVs/HD190622_HARPS_RVBank_ver02_rvsonly.dat&run
+112,TOI1052,HD212729,Low priority; similar epoch and period from sector 1,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD212729_RVs/HD212729_HARPS_RVBank_ver02_rvsonly.dat&run
+113,TOI1050,WASP-17,WASP-17 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-17_RVs/WASP-17_HARPS_RVBank_ver02_rvsonly.dat&run
+114,TOI1036,CD-415929,multiple stars in pixel,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-415929_RVs/CD-415929_HARPS_RVBank_ver02_rvsonly.dat&run
+115,TOI1011,HD61051,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD61051_RVs/HD61051_HARPS_RVBank_ver02_rvsonly.dat&run
+116,TOI0969,TYC183-755-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC183-755-1_RVs/TYC183-755-1_HARPS_RVBank_ver02_rvsonly.dat&run
+117,TOI0966,TYC4851-299-1,WASP-180 A b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC4851-299-1_RVs/TYC4851-299-1_HARPS_RVBank_ver02_rvsonly.dat&run
+118,TOI0954,CD-251737,TOI-954 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-251737_RVs/CD-251737_HARPS_RVBank_ver02_rvsonly.dat&run
+119,TOI0941,TYC111-1915-1,Check star 17,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC111-1915-1_RVs/TYC111-1915-1_HARPS_RVBank_ver02_rvsonly.dat&run
+120,TOI0938,TYC5315-221-1,Co-moving M dwarf 7.7,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC5315-221-1_RVs/TYC5315-221-1_HARPS_RVBank_ver02_rvsonly.dat&run
+121,TOI0908,TOI-908,TOI-908 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-908_RVs/TOI-908_HARPS_RVBank_ver02_rvsonly.dat&run
+122,TOI0907,TYC9057-870-1,Large planet candidate; low priority,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9057-870-1_RVs/TYC9057-870-1_HARPS_RVBank_ver02_rvsonly.dat&run
+123,TOI0905,TOI-905,TOI-905 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-905_RVs/TOI-905_HARPS_RVBank_ver02_rvsonly.dat&run
+124,TOI0903,TYC9159-80-1,TOI 903.01. TFOP investigation in progress.,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9159-80-1_RVs/TYC9159-80-1_HARPS_RVBank_ver02_rvsonly.dat&run
+125,TOI0883,TYC4813-492-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC4813-492-1_RVs/TYC4813-492-1_HARPS_RVBank_ver02_rvsonly.dat&run
+126,TOI0880,HD43629,Need SG1 to Check 34077287 (R = 2.5 Rsun); Period might be twice,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD43629_RVs/HD43629_HARPS_RVBank_ver02_rvsonly.dat&run
+127,TOI0878,TYC8084-545-1,TFOP FP,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8084-545-1_RVs/TYC8084-545-1_HARPS_RVBank_ver02_rvsonly.dat&run
+128,TOI0855,BD-02146,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-02146_RVs/BD-02146_HARPS_RVBank_ver02_rvsonly.dat&run
+129,TOI0853,TYC7550-294-1,candidate for warm Jupiter,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7550-294-1_RVs/TYC7550-294-1_HARPS_RVBank_ver02_rvsonly.dat&run
+130,TOI0851,TOI-851,short period; nearby companion with dmag 5.6,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-851_RVs/TOI-851_HARPS_RVBank_ver02_rvsonly.dat&run
+131,TOI0849,TOI-849,flat-bottomed,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-849_RVs/TOI-849_HARPS_RVBank_ver02_rvsonly.dat&run
+132,TOI0836,HIP73427,TOI 836.01; multi,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP73427_RVs/HIP73427_HARPS_RVBank_ver02_rvsonly.dat&run
+133,TOI0829,TYC7310-1928-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7310-1928-1_RVs/TYC7310-1928-1_HARPS_RVBank_ver02_rvsonly.dat&run
+134,TOI0828,HD122173,WASP-131 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD122173_RVs/HD122173_HARPS_RVBank_ver02_rvsonly.dat&run
+135,TOI0826,WASP-130,WASP-130 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-130_RVs/WASP-130_HARPS_RVBank_ver02_rvsonly.dat&run
+136,TOI0823,TOI-823,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-823_RVs/TOI-823_HARPS_RVBank_ver02_rvsonly.dat&run
+137,TOI0822,WASP-132,WASP-132b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-132_RVs/WASP-132_HARPS_RVBank_ver02_rvsonly.dat&run
+138,TOI0820,CD-3110766,WASP-15b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-3110766_RVs/CD-3110766_HARPS_RVBank_ver02_rvsonly.dat&run
+139,TOI0819,HATS-17,HATS-17 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HATS-17_RVs/HATS-17_HARPS_RVBank_ver02_rvsonly.dat&run
+140,TOI0818,WASP-16,WASP-16b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-16_RVs/WASP-16_HARPS_RVBank_ver02_rvsonly.dat&run
+141,TOI0813,CD-61970,TOI-813 b; CTOI from Planet Hunters TESS,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-61970_RVs/CD-61970_HARPS_RVBank_ver02_rvsonly.dat&run
+142,TOI0780,WASP-41,WASP-41 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-41_RVs/WASP-41_HARPS_RVBank_ver02_rvsonly.dat&run
+143,TOI0776,TOI-776,TOI-776 c / TOI 776.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-776_RVs/TOI-776_HARPS_RVBank_ver02_rvsonly.dat&run
+144,TOI0774,WASP-55,WASP-55 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-55_RVs/WASP-55_HARPS_RVBank_ver02_rvsonly.dat&run
+145,TOI0772,TYC6110-1007-1,possible multi,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6110-1007-1_RVs/TYC6110-1007-1_HARPS_RVBank_ver02_rvsonly.dat&run
+146,TOI0769,WASP-42,WASP-42 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-42_RVs/WASP-42_HARPS_RVBank_ver02_rvsonly.dat&run
+147,TOI0767,WASP-25,WASP-25 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-25_RVs/WASP-25_HARPS_RVBank_ver02_rvsonly.dat&run
+148,TOI0763,CD-397945,TOI-763 b / TOI-763.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-397945_RVs/CD-397945_HARPS_RVBank_ver02_rvsonly.dat&run
+149,TOI0759,TYC7730-223-1,TFOP APC/SB1,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7730-223-1_RVs/TYC7730-223-1_HARPS_RVBank_ver02_rvsonly.dat&run
+150,TOI0757,CD-348236,L1 candidate; some variability in LC,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-348236_RVs/CD-348236_HARPS_RVBank_ver02_rvsonly.dat&run
+151,TOI0755,HD110113,HD 110113 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD110113_RVs/HD110113_HARPS_RVBank_ver02_rvsonly.dat&run
+152,TOI0752,WASP-129,WASP-129 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-129_RVs/WASP-129_HARPS_RVBank_ver02_rvsonly.dat&run
+153,TOI0748,CD-348618,WASP-167 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-348618_RVs/CD-348618_HARPS_RVBank_ver02_rvsonly.dat&run
+154,TOI0747,TYC8633-394-1,WASP-87 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8633-394-1_RVs/TYC8633-394-1_HARPS_RVBank_ver02_rvsonly.dat&run
+155,TOI0745,TYC8602-1360-1,check neighbors,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8602-1360-1_RVs/TYC8602-1360-1_HARPS_RVBank_ver02_rvsonly.dat&run
+156,TOI0744,WASP-34,WASP-34 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-34_RVs/WASP-34_HARPS_RVBank_ver02_rvsonly.dat&run
+157,TOI0700,TOI-700,TOI-700 c / TOI-700.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-700_RVs/TOI-700_HARPS_RVBank_ver02_rvsonly.dat&run
+158,TOI0697,CD-361818,potential L1 planet,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-361818_RVs/CD-361818_HARPS_RVBank_ver02_rvsonly.dat&run
+159,TOI0685,BD+012494,K2-261 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+012494_RVs/BD+012494_HARPS_RVBank_ver02_rvsonly.dat&run
+160,TOI0683,WASP-31,WASP-31 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-31_RVs/WASP-31_HARPS_RVBank_ver02_rvsonly.dat&run
+161,TOI0680,HIP58234,v-shaped; Retired as APC/BEB/V0,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP58234_RVs/HIP58234_HARPS_RVBank_ver02_rvsonly.dat&run
+162,TOI0675,WASP-127,WASP-127 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-127_RVs/WASP-127_HARPS_RVBank_ver02_rvsonly.dat&run
+163,TOI0674,TOI-674,TOI-674 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-674_RVs/TOI-674_HARPS_RVBank_ver02_rvsonly.dat&run
+164,TOI0668,TYC7716-1898-1,TFOP APC/SB1; retired as EB,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7716-1898-1_RVs/TYC7716-1898-1_HARPS_RVBank_ver02_rvsonly.dat&run
+165,TOI0664,HD93396,KELT 11 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD93396_RVs/HD93396_HARPS_RVBank_ver02_rvsonly.dat&run
+166,TOI0660,TYC4927-1063-1,WASP-106 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC4927-1063-1_RVs/TYC4927-1063-1_HARPS_RVBank_ver02_rvsonly.dat&run
+167,TOI0656,WASP-43,WASP-43 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-43_RVs/WASP-43_HARPS_RVBank_ver02_rvsonly.dat&run
+168,TOI0655,WASP-19,WASP-19 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-19_RVs/WASP-19_HARPS_RVBank_ver02_rvsonly.dat&run
+169,TOI0652,HD86226,HD 86226 c,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD86226_RVs/HD86226_HARPS_RVBank_ver02_rvsonly.dat&run
+170,TOI0641,CD-234300,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-234300_RVs/CD-234300_HARPS_RVBank_ver02_rvsonly.dat&run
+171,TOI0618,TYC7644-2302-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7644-2302-1_RVs/TYC7644-2302-1_HARPS_RVBank_ver02_rvsonly.dat&run
+172,TOI0603,BD+062168,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD+062168_RVs/BD+062168_HARPS_RVBank_ver02_rvsonly.dat&run
+173,TOI0602,TYC7118-2550-1,TFOP APC; retired as SB1,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7118-2550-1_RVs/TYC7118-2550-1_HARPS_RVBank_ver02_rvsonly.dat&run
+174,TOI0585,HD76859,~500 ppm secondary; TFOP SB1/APC,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD76859_RVs/HD76859_HARPS_RVBank_ver02_rvsonly.dat&run
+175,TOI0576,BD-202976,WASP-166 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-202976_RVs/BD-202976_HARPS_RVBank_ver02_rvsonly.dat&run
+176,TOI0570,TOI-570,V-shaped; crowded field,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-570_RVs/TOI-570_HARPS_RVBank_ver02_rvsonly.dat&run
+177,TOI0567,WASP-36,WASP-36 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-36_RVs/WASP-36_HARPS_RVBank_ver02_rvsonly.dat&run
+178,TOI0560,GJ313,HD 73583 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ313_RVs/GJ313_HARPS_RVBank_ver02_rvsonly.dat&run
+179,TOI0544,HD290498,L1 planet candidate,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD290498_RVs/HD290498_HARPS_RVBank_ver02_rvsonly.dat&run
+180,TOI0522,HD69789,V-shaped and short period; GAIA Rp=1.6 Rsun; sinusoidal light curve; likely SV,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD69789_RVs/HD69789_HARPS_RVBank_ver02_rvsonly.dat&run
+181,TOI0510,HD52758A,TFOP RV0/APC; variable host; offset not consistent with nearby stars,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD52758A_RVs/HD52758A_HARPS_RVBank_ver02_rvsonly.dat&run
+182,TOI0502,TYC6520-198-1,odd-even; V-shaped; possible EB,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6520-198-1_RVs/TYC6520-198-1_HARPS_RVBank_ver02_rvsonly.dat&run
+183,TOI0500,GJ9224,TOI-500 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ9224_RVs/GJ9224_HARPS_RVBank_ver02_rvsonly.dat&run
+184,TOI0499,TOI-499,v-shaped; possible secondary; possible centroid offset towards TIC 769340768,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-499_RVs/TOI-499_HARPS_RVBank_ver02_rvsonly.dat&run
+185,TOI0495,WASP-121,WASP-121 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-121_RVs/WASP-121_HARPS_RVBank_ver02_rvsonly.dat&run
+186,TOI0488,GJ3473,GJ 3473 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ3473_RVs/GJ3473_HARPS_RVBank_ver02_rvsonly.dat&run
+187,TOI0471,WASP-101,WASP-101 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-101_RVs/WASP-101_HARPS_RVBank_ver02_rvsonly.dat&run
+188,TOI0469,HD42813,validated planet,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD42813_RVs/HD42813_HARPS_RVBank_ver02_rvsonly.dat&run
+189,TOI0468,HATS-6,HATS-6 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HATS-6_RVs/HATS-6_HARPS_RVBank_ver02_rvsonly.dat&run
+190,TOI0465,WASP-156,WASP-156 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-156_RVs/WASP-156_HARPS_RVBank_ver02_rvsonly.dat&run
+191,TOI0461,HD15906,previously two single transits; now have a period for one of the singles. Other potential single transit at TBJD ~1430.8,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD15906_RVs/HD15906_HARPS_RVBank_ver02_rvsonly.dat&run
+192,TOI0455,GJ3193,LTT 1445 A b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ3193_RVs/GJ3193_HARPS_RVBank_ver02_rvsonly.dat&run
+193,TOI0451,CD-381467,TOI-451 d / TOI-451.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-381467_RVs/CD-381467_HARPS_RVBank_ver02_rvsonly.dat&run
+194,TOI0449,TYC5889-271-1,WASP-78 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC5889-271-1_RVs/TYC5889-271-1_HARPS_RVBank_ver02_rvsonly.dat&run
+195,TOI0447,HD33512,big;,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD33512_RVs/HD33512_HARPS_RVBank_ver02_rvsonly.dat&run
+196,TOI0439,WASP-61,WASP-61 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-61_RVs/WASP-61_HARPS_RVBank_ver02_rvsonly.dat&run
+197,TOI0431,HIP26013,TOI-431 d / TOI 431.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP26013_RVs/HIP26013_HARPS_RVBank_ver02_rvsonly.dat&run
+198,TOI0423,WASP-35,WASP-35 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-35_RVs/WASP-35_HARPS_RVBank_ver02_rvsonly.dat&run
+199,TOI0421,BD-141137,TOI-421 c / TOI-421.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-141137_RVs/BD-141137_HARPS_RVBank_ver02_rvsonly.dat&run
+200,TOI0418,BD-20761,WASP 140 b; this planet contaminates 178284729 in spoc-s01s06-b02,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-20761_RVs/BD-20761_HARPS_RVBank_ver02_rvsonly.dat&run
+201,TOI0415,CD-461323,WASP-120 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-461323_RVs/CD-461323_HARPS_RVBank_ver02_rvsonly.dat&run
+202,TOI0413,CD-301812,WASP-79 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-301812_RVs/CD-301812_HARPS_RVBank_ver02_rvsonly.dat&run
+203,TOI0404,WASP-98,WASP-98 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-98_RVs/WASP-98_HARPS_RVBank_ver02_rvsonly.dat&run
+204,TOI0403,WASP-22,WASP-22b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-22_RVs/WASP-22_HARPS_RVBank_ver02_rvsonly.dat&run
+205,TOI0402,HD15337,HD 15337 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD15337_RVs/HD15337_HARPS_RVBank_ver02_rvsonly.dat&run
+206,TOI0398,BD-07436B,WASP-77 A b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/BD-07436B_RVs/BD-07436B_HARPS_RVBank_ver02_rvsonly.dat&run
+207,TOI0396,HD17926,HR 858 c / TOI 396.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD17926_RVs/HD17926_HARPS_RVBank_ver02_rvsonly.dat&run
+208,TOI0392,HD19463,same pixel as 328350925 and 328350924,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD19463_RVs/HD19463_HARPS_RVBank_ver02_rvsonly.dat&run
+209,TOI0391,TYC5290-462-1,WASP-50b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC5290-462-1_RVs/TYC5290-462-1_HARPS_RVBank_ver02_rvsonly.dat&run
+210,TOI0388,TYC30-116-1,WASP-71 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC30-116-1_RVs/TYC30-116-1_HARPS_RVBank_ver02_rvsonly.dat&run
+211,TOI0355,TOI-355,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-355_RVs/TOI-355_HARPS_RVBank_ver02_rvsonly.dat&run
+212,TOI0347,TYC7521-99-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7521-99-1_RVs/TYC7521-99-1_HARPS_RVBank_ver02_rvsonly.dat&run
+213,TOI0338,TYC7528-890-1,WASP-190 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7528-890-1_RVs/TYC7528-890-1_HARPS_RVBank_ver02_rvsonly.dat&run
+214,TOI0294,HATS-72,HATS-72 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HATS-72_RVs/HATS-72_HARPS_RVBank_ver02_rvsonly.dat&run
+215,TOI0286,CD-601348,potential L1 planet; potential multi,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-601348_RVs/CD-601348_HARPS_RVBank_ver02_rvsonly.dat&run
+216,TOI0282,HD28109,HD 28109 c,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD28109_RVs/HD28109_HARPS_RVBank_ver02_rvsonly.dat&run
+217,TOI0271,HD30219,follow up in progress,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD30219_RVs/HD30219_HARPS_RVBank_ver02_rvsonly.dat&run
+218,TOI0269,TOI-269,TOI-269 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-269_RVs/TOI-269_HARPS_RVBank_ver02_rvsonly.dat&run
+219,TOI0267,WASP-99,WASP-99 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-99_RVs/WASP-99_HARPS_RVBank_ver02_rvsonly.dat&run
+220,TOI0261,HD5976,TOI 261.01; active TFOP PC,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD5976_RVs/HD5976_HARPS_RVBank_ver02_rvsonly.dat&run
+221,TOI0260,GJ1008,L1 candidate,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ1008_RVs/GJ1008_HARPS_RVBank_ver02_rvsonly.dat&run
+222,TOI0259,WASP-44,WASP-44 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-44_RVs/WASP-44_HARPS_RVBank_ver02_rvsonly.dat&run
+223,TOI0257,HD19916,HD 1991 b/ TOI-257 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD19916_RVs/HD19916_HARPS_RVBank_ver02_rvsonly.dat&run
+224,TOI0253,HIP4468,visual binary,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP4468_RVs/HIP4468_HARPS_RVBank_ver02_rvsonly.dat&run
+225,TOI0248,HD14499,potential L1 planet; somewhat crowded field,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD14499_RVs/HD14499_HARPS_RVBank_ver02_rvsonly.dat&run
+226,TOI0246,WASP-105,WASP-105 b; all parameters from spoc-s1-s36 except except for radii from qlp-s29-tois since SPOC is assuming solar radius,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-105_RVs/WASP-105_HARPS_RVBank_ver02_rvsonly.dat&run
+227,TOI0244,GJ1018,TFOP work in progress.,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ1018_RVs/GJ1018_HARPS_RVBank_ver02_rvsonly.dat&run
+228,TOI0241,CD-3515858,WASP 173 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-3515858_RVs/CD-3515858_HARPS_RVBank_ver02_rvsonly.dat&run
+229,TOI0239,WASP-30,WASP-30b - BD,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-30_RVs/WASP-30_HARPS_RVBank_ver02_rvsonly.dat&run
+230,TOI0238,TYC6398-132-1,TOI-238 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC6398-132-1_RVs/TYC6398-132-1_HARPS_RVBank_ver02_rvsonly.dat&run
+231,TOI0232,WASP-4,WASP-4 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-4_RVs/WASP-4_HARPS_RVBank_ver02_rvsonly.dat&run
+232,TOI0231,WASP-6,WASP-6 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-6_RVs/WASP-6_HARPS_RVBank_ver02_rvsonly.dat&run
+233,TOI0229,WASP-45,WASP-45 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-45_RVs/WASP-45_HARPS_RVBank_ver02_rvsonly.dat&run
+234,TOI0220,CD-611276,TOI 220 b (Hoyer et al 2021),https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-611276_RVs/CD-611276_HARPS_RVBank_ver02_rvsonly.dat&run
+235,TOI0216,TOI-216,TOI-216.01/TOI-216 c; clear TTVs in spoc-s1-s39 multisector,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-216_RVs/TOI-216_HARPS_RVBank_ver02_rvsonly.dat&run
+236,TOI0214,HD48611,L1 candidate; possible multi,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD48611_RVs/HD48611_HARPS_RVBank_ver02_rvsonly.dat&run
+237,TOI0209,TOI-209,faint neighbors,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-209_RVs/TOI-209_HARPS_RVBank_ver02_rvsonly.dat&run
+238,TOI0205,CD-57105,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-57105_RVs/CD-57105_HARPS_RVBank_ver02_rvsonly.dat&run
+239,TOI0201,HD39474,TOI 201 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD39474_RVs/HD39474_HARPS_RVBank_ver02_rvsonly.dat&run
+240,TOI0200,HD222259A,DS Tuc A b; epoch from qlp-s28-tois,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD222259A_RVs/HD222259A_HARPS_RVBank_ver02_rvsonly.dat&run
+241,TOI0199,CD-601144,TOI-199 b (https://arxiv.org/pdf/2309.14915.pdf),https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-601144_RVs/CD-601144_HARPS_RVBank_ver02_rvsonly.dat&run
+242,TOI0197,HD221416,HD 221416 b; evolved star,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD221416_RVs/HD221416_HARPS_RVBank_ver02_rvsonly.dat&run
+243,TOI0194,WASP-20,WASP-20 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-20_RVs/WASP-20_HARPS_RVBank_ver02_rvsonly.dat&run
+244,TOI0193,HIP117883,LTT 9779 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP117883_RVs/HIP117883_HARPS_RVBank_ver02_rvsonly.dat&run
+245,TOI0192,TYC8015-1020-1,WASP-29 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8015-1020-1_RVs/TYC8015-1020-1_HARPS_RVBank_ver02_rvsonly.dat&run
+246,TOI0191,WASP-8,WASP-8,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-8_RVs/WASP-8_HARPS_RVBank_ver02_rvsonly.dat&run
+247,TOI0190,CD-50714,WASP-117 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-50714_RVs/CD-50714_HARPS_RVBank_ver02_rvsonly.dat&run
+248,TOI0186,GJ143,GJ 143 b / TOI 186.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ143_RVs/GJ143_HARPS_RVBank_ver02_rvsonly.dat&run
+249,TOI0185,HD10069,WASP-18 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD10069_RVs/HD10069_HARPS_RVBank_ver02_rvsonly.dat&run
+250,TOI0181,TYC7517-248-1,TOI 181; under investigation by TFOP,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7517-248-1_RVs/TYC7517-248-1_HARPS_RVBank_ver02_rvsonly.dat&run
+251,TOI0179,HD18599,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD18599_RVs/HD18599_HARPS_RVBank_ver02_rvsonly.dat&run
+252,TOI0178,TOI178,TOI-178 d / TOI 178.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI178_RVs/TOI178_HARPS_RVBank_ver02_rvsonly.dat&run
+253,TOI0177,GJ3090,GJ 3090 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ3090_RVs/GJ3090_HARPS_RVBank_ver02_rvsonly.dat&run
+254,TOI0175,TOI175,L 98-59 c; TOI 175.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI175_RVs/TOI175_HARPS_RVBank_ver02_rvsonly.dat&run
+255,TOI0174,HD23472,HD 23472 b / TOI 174.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD23472_RVs/HD23472_HARPS_RVBank_ver02_rvsonly.dat&run
+256,TOI0166,TYC7992-310-1,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC7992-310-1_RVs/TYC7992-310-1_HARPS_RVBank_ver02_rvsonly.dat&run
+257,TOI0155,HD203621,,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD203621_RVs/HD203621_HARPS_RVBank_ver02_rvsonly.dat&run
+258,TOI0145,TOI145,Some confusion about whether source is this star or the close pair of equal brightness stars to the NE (260985864)- but difference image seems to indicate source is more likely to be this star.,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI145_RVs/TOI145_HARPS_RVBank_ver02_rvsonly.dat&run
+259,TOI0141,HD213885,HD 213885 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD213885_RVs/HD213885_HARPS_RVBank_ver02_rvsonly.dat&run
+260,TOI0139,HIP110692,potential L1 planet,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP110692_RVs/HIP110692_HARPS_RVBank_ver02_rvsonly.dat&run
+261,TOI0137,TYC8907-1291-1,TFOP FA,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC8907-1291-1_RVs/TYC8907-1291-1_HARPS_RVBank_ver02_rvsonly.dat&run
+262,TOI0134,GJ4332,L 168-9 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/GJ4332_RVs/GJ4332_HARPS_RVBank_ver02_rvsonly.dat&run
+263,TOI0132,CD-4414956,TOI-132 b / TOI-132.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-4414956_RVs/CD-4414956_HARPS_RVBank_ver02_rvsonly.dat&run
+264,TOI0131,TYC9129-1092-1,V shaped; TFOP APC; previously retired as BEB due to chromaticity,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TYC9129-1092-1_RVs/TYC9129-1092-1_HARPS_RVBank_ver02_rvsonly.dat&run
+265,TOI0130,HD5278,HD 5278 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD5278_RVs/HD5278_HARPS_RVBank_ver02_rvsonly.dat&run
+266,TOI0128,HD36481,variable host; two stars in pixel,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD36481_RVs/HD36481_HARPS_RVBank_ver02_rvsonly.dat&run
+267,TOI0125,TOI-125,TOI-125 b / TOI 125.01,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/TOI-125_RVs/TOI-125_HARPS_RVBank_ver02_rvsonly.dat&run
+268,TOI0123,HD202772,HD 202772 A b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD202772_RVs/HD202772_HARPS_RVBank_ver02_rvsonly.dat&run
+269,TOI0121,CD-4215773,low-mass EB; initially thought to be a warm Jupiter candidate with a possible secondary; EBLM J2207-41 with 0.121 Msun,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/CD-4215773_RVs/CD-4215773_HARPS_RVBank_ver02_rvsonly.dat&run
+270,TOI0120,HD1397,HD 1397 b	,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD1397_RVs/HD1397_HARPS_RVBank_ver02_rvsonly.dat&run
+271,TOI0119,HIP31609,Potential multi; slight depth aperture correlation with no offset,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HIP31609_RVs/HIP31609_HARPS_RVBank_ver02_rvsonly.dat&run
+272,TOI0118,HD219666,HD 219666 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/HD219666_RVs/HD219666_HARPS_RVBank_ver02_rvsonly.dat&run
+273,TOI0116,WASP-91,WASP-91 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-91_RVs/WASP-91_HARPS_RVBank_ver02_rvsonly.dat&run
+274,TOI0102,WASP-62,WASP 62 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-62_RVs/WASP-62_HARPS_RVBank_ver02_rvsonly.dat&run
+275,TOI0101,WASP-46,WASP-46 b,https://www2.mpia-hd.mpg.de/homes/trifonov/GLS/gls.html?fend=1&url=../Ver_02/WASP-46_RVs/WASP-46_HARPS_RVBank_ver02_rvsonly.dat&run
