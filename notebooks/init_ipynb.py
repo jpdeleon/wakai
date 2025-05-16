@@ -3,8 +3,12 @@ import sys
 import matplotlib.pyplot as pl
 
 sys.path.insert(0, '../code')
-assert os.environ["CONDA_DEFAULT_ENV"] == 'wakai'
-
+env_name='wakai'
+try:
+    assert os.environ["CONDA_DEFAULT_ENV"]==env_name
+except:
+    assert sys.executable.split('/')[5]==env_name
+    
 plotpar = {
            'font.size': 20,
            'xtick.labelsize': 16,
