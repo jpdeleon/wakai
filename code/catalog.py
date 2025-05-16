@@ -1,49 +1,106 @@
-import json, os
+"""
+TODO: 
+1. replace print with logger.info
+"""
+import json, os, re
 import itertools
+import warnings
+import requests
+from dataclasses import dataclass, field
+from typing import Dict, Tuple, List, Optional
 from urllib.request import urlopen
+from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as pl
 import pandas as pd
 from pathlib import Path
 from pprint import pprint
 import astropy.units as u
-from astropy.coordinates import SkyCoord, Distance, Galactocentric
-from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
 from astropy.table import Table
+from astropy.coordinates import SkyCoord
+from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
+from astroquery.mast import Observations, Catalogs
+from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+from scipy.interpolate import NearestNDInterpolator
+from loguru import logger
 
 home = Path.home()
 DATA_PATH = f'{home}/github/research/project/wakai/data/'
 
 
-VIZIER_KEYS_BINARY_CATALOG = {
-    "Liu2024b": "",
-    "Qian2019": "",
-    "Liu2024a": "",
-    "El-Badry2021": "",
-    "Jing2024": "",
+VIZIER_KEYS_AGE_CATALOG =  {
+    "Berger2020": "J/AJ/160/108",
+    "Lu2024": "J/AJ/167/159",
+    #"Bouma2024a:" "https://content.cld.iop.org/journals/0004-637X/976/2/234/revision1/apjad855ft1_mrt.txt",
+    }
+VIZIER_KEYS_VARIABLE_STAR_CATALOG = {
+    "Jayasinghe2020":"II/366", #ASAS-SN catalog of variable stars (Jayasinghe+, 2018-2020)
+    "Samus2017": "B/gcvs/gcvs_cat", #General Catalogue of Variable Stars
+    "Watson2006": "B/vsx/vsx", #AAVSO International Variable Star Index VSX 
+    "Chen2020": "J/ApJS/249/18", #  The ZTF catalog of periodic variable stars
+    "Clement2017": "V/150/variabls", #Updated catalog of variable stars in globular clusters
+    "Oelkers2018": "J/AJ/155/39/Variables", #Variability properties of TIC sources with KELT 
+    "Pojmanski2005": "II/264", #ASAS Variable Stars in Southern hemisphere (Pojmanski+, 2002-2005)
 }
-# 
-
-VIZIER_KEYS_KEPLER_CATALOG =  {"Berger2020": "J/AJ/160/108",
+# https://docs.google.com/document/d/1s6OgiJlBVwonAYvQ3VONB4ioWOn0SHtJesrnaXJETBA/edit
+VIZIER_KEYS_BINARY_STAR_CATALOG = {
+    "Ding2024": "J/AJ/167/192", #TESS catalog of 1322 contact binary candidates
+    "IJspeert2024":"J/A+A/691/A242", #TESS OBAF-type eclipsing binaries
+    "Prsa2022": "J/ApJS/258/16", #The Eclipsing Binary stars (TESS-EBs) catalog
+    "Pesta2023": "J/A+A/672/A176", #Contact binary candidates in the Kepler Eclipsing Binary Catalog (2172 rows)
+    "Shi2022": "J/ApJS/259/50", #EA-type eclipsing binaries observed by TESS 
+    "Hartman2022": "J/ApJ/934/72", #SUPERWIDE wide binary systems with TESS & K2 data (Hartman+, 2022)
+    "Zasche2022": "J/A+A/664/A96", # #Multiply eclipsing candidates from TESS satellite
+    "Justesen2021": "J/ApJ/912/123", #TESS EBs in the southern hemisphere 
+    "Birko2019": "J/AJ/158/155", #SB candidates from the RAVE & Gaia DR2 surveys
+    "Graczyk2019": "J/ApJ/872/85", #Detached eclipsing binaries with Gaia parallaxes 
+    "Pawlak2016": "J/AcA/66/421/ecl", #Eclipsing binaries in the Magellanic System
+    "Abdul-Masih2016": "J/AJ/151/101", #Kepler Mission. VIII. 285 false positives (Abdul-Masih+, 2016)
+    "Collins2018": "J/AJ/156/234/table4", #KELT transit false positive catalog for TESS 
+    "Schanche2019": "J/MNRAS/488/4905/table2", #SuperWASP transit false positive catalog 
+    "Oelkers2016": "J/AJ/152/75", # PMS binaries in YMG
+    "Southworth2015": "V/152", #The DEBCat detached eclipsing binary catalogue 
+    # "Qian2019": "",
+    # "Liu2024a": "",
+    # "El-Badry2021": "",
+    # "Jing2024": "",
+    # "": J/AJ/158/25"
+    #=====no CDS data but worth reading:=====#
+    # EB in LAMOST: https://ui.adsabs.harvard.edu/abs/2024ApJ...969..114L/abstract
+    # https://ui.adsabs.harvard.edu/abs/2025ApJS..277...15J/abstract
+    # https://ui.adsabs.harvard.edu/abs/2021MNRAS.506.2269E/abstract
+    # See also FPs in https://ui.adsabs.harvard.edu/abs/2025arXiv250209790V/abstract
+    # See FPs in TOIs: https://ui.adsabs.harvard.edu/abs/2023MNRAS.521.3749M/abstract
+    # table in: https://academic.oup.com/mnras/article/521/3/3749/7081367#supplementary-data
+    # See also 
+    # See also https://ui.adsabs.harvard.edu/abs/2024MNRAS.527.3995K/abstract
+    # See also https://ui.adsabs.harvard.edu/abs/2020ApJ...895....2P/abstract
+    # classification of variable stars: 
+    # https://ui.adsabs.harvard.edu/abs/2025ApJS..276...57G/abstract
+    #=====Related references=====#
+    # binary sequence https://ui.adsabs.harvard.edu/abs/1998MNRAS.300..977H/abstract
     }
 VIZIER_KEYS_RV_CATALOG = {
-    "Perdelwitz2024" : "J/A+A/683/A125", #HARPS radial velocity database
+    "Perdelwitz2024" : "J/A+A/683/A125", # HARPS radial velocity database
+    "Osborne2025": "J/A+A/693/A4", # Radial velocities of 51 exoplanets
     }
 # See more keywords here: http://vizier.cds.unistra.fr/vizier/vizHelp/cats/U.htx
 VIZIER_KEYS_LiEW_CATALOG = {
-    "Randich2001_IC2602": "J/A+A/372/862", # 	Lithium abundances in IC 2602 and IC 2391
-    "Barrado2016_Pleiades": "J/A+A/596/A113", #
-    "Cummings2017_HyadesPraesepe": "J/AJ/153/128",
-    "Manzi2008_IC4665": "J/A+A/479/141", #Iz photometry, RV and EW(Li) in IC 4665 (Manzi+, 2008) 
-    "Prisinzano2007_NGC3960": "J/A+A/475/539", # BV photometry and Li abundances in NGC3960
-    "Stanford-Moore2020": "J/ApJ/898/27",
-    "Bouvier2018_Pleiades": "J/A+A/613/A63",
+    "Buder2023": "J/MNRAS/506/150",
+    "Ding2024": "J/ApJS/271/58", #Lithium abundances from LAMOST MRS DR9 spectra
+    "Gutierrez-Albarran2024": "J/A+A/685/A83", # Members for 41 open clusters
     "Franciosini2022": "J/A%2bA/659/A85", #Membership and lithium of 10-100Myr clusters
     "Gutierrez2020": "J/A+A/643/A71", #Members for 20 open clusters (Gutierrez Albarran+, 2020)
     "Magrini2021_ALi": "J/A%2bA/651/A84", #Li abundance and mixing in giant stars
     "Deliyannis2019": "J/AJ/158/163", #Li abundance values for stars in NGC 6819
-    #"Bouma2024a:" "https://content.cld.iop.org/journals/0004-637X/976/2/234/revision1/apjad855ft1_mrt.txt",
+    "Randich2001_IC2602": "J/A+A/372/862", # Lithium abundances in IC 2602 and IC 2391
+    "Barrado2016_Pleiades": "J/A+A/596/A113", #
+    "Cummings2017_HyadesPraesepe": "J/AJ/153/128",
+    "Manzi2008_IC4665": "J/A+A/479/141", #Iz photometry, RV and EW(Li) in IC 4665 
+    "Prisinzano2007_NGC3960": "J/A+A/475/539", # BV photometry and Li abundances in NGC3960
+    "Stanford-Moore2020": "J/ApJ/898/27",
+    "Bouvier2018_Pleiades": "J/A+A/613/A63",
 }
 VIZIER_KEYS_PROT_CATALOG = {
     # See table1: https://arxiv.org/pdf/1905.10588.pdf
@@ -51,7 +108,7 @@ VIZIER_KEYS_PROT_CATALOG = {
     "Curtis2019_PisEri": "J/AJ/158/77",  # 250Gyr
     "Curtis2019_NGC6811": "J/ApJ/879/49",  # 1Gyr
     "Fritzewski2021_NGC3532": "J/A+A/652/A60",    #300 Myr
-    "Feinstein2020_NYMG": "See data/Feinstein2020_NYMG.txt",
+    # "Feinstein2020_NYMG": "See data/Feinstein2020_NYMG.txt",
     "McQuillan2014_Kepler": "J/ApJS/211/24",
     "Nielsen2013_KeplerMS": "J/A+A/557/L10",
     "Barnes2015_NGC2548": "J/A+A/583/A73",  # , M48/NGC2548
@@ -64,9 +121,9 @@ VIZIER_KEYS_PROT_CATALOG = {
     "Reinhold2020_K2C0C18": "J/A+A/635/A43",
     # "Feinstein+2020"
     # http://simbad.u-strasbg.fr/simbad/sim-ref?querymethod=bib&simbo=on&submit=submit+bibcode&bibcode=
-    "Douglas2019_Praesepe": "2019ApJ...879..100D",
-    "Fang2020_PleiadesPraesepeHyades": "2020MNRAS.495.2949F",
-    "Gillen2020_BlancoI": "2020MNRAS.492.1008G",
+    # "Douglas2019_Praesepe": "2019ApJ...879..100D",
+    # "Fang2020_PleiadesPraesepeHyades": "2020MNRAS.495.2949F",
+    # "Gillen2020_BlancoI": "2020MNRAS.492.1008G",
     "Canto2020_TOIs": "J/ApJS/250/20",
     # https://filtergraph.com/tess_rotation_tois
     }
@@ -185,6 +242,1104 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     + "ajabe4d6t1_mrt.txt?AWSAccessKeyId=AKIAYDKQL6LTV7YY2HIK&Expires=1622511816&Signature=CVdNivtn2MJv1%2FY%2F4ztoZKBPzaw%3D",
 }
 
+class Target:
+    def __init__(self, ra_deg, dec_deg, name=None, gaiaid=None, verbose=True):
+        """
+        Initialize a Target object representing an astronomical object.
+        
+        Parameters:
+            ra_deg (float): Right Ascension in degrees
+            dec_deg (float): Declination in degrees
+            name (str, optional): Name of the target
+            gaiaid (int, optional): Gaia DR source ID
+            verbose (bool): Whether to print detailed output
+        """
+        self.gaiaid = gaiaid
+        self.ra = ra_deg
+        self.dec = dec_deg
+        self.verbose = verbose
+
+        # Initialize properties to be populated later
+        self._vizier_tables = None
+        self._search_radius = 1 * u.arcmin
+        self._gaia_sources = None
+        self.gaia_params = None
+        self.variable_star = False
+
+    @property
+    def target_coord(self):
+        """Return SkyCoord object for the target position."""
+        return SkyCoord(ra=self.ra * u.deg, dec=self.dec * u.deg)
+    
+    @target_coord.setter
+    def target_coord(self, value):
+        self._target_coord = value
+
+    @property
+    def search_radius(self):
+        """Return the current search radius."""
+        return self._search_radius
+    
+    @search_radius.setter
+    def search_radius(self, value):
+        """Set search radius with proper units."""
+        if not isinstance(value, u.Quantity):
+            value = value * u.arcmin
+        self._search_radius = value
+    
+    @property
+    def gaia_sources(self):
+        """Return Gaia sources."""
+        return self._gaia_sources
+    
+    @gaia_sources.setter
+    def gaia_sources(self, value):
+        """Set Gaia sources."""
+        self._gaia_sources = value
+
+    def query_vizier(self, radius=None, verbose=None, use_cached=True):
+        """
+        Query Vizier catalogs near the target position.
+        
+        Parameters:
+            radius (float, optional): Search radius in arcseconds
+            verbose (bool, optional): Whether to print detailed output
+            use_cached (bool): Whether to use cached results if available
+            
+        Returns:
+            astroquery.vizier.VizierResults or None: Query results
+        """
+        verbose = self.verbose if verbose is None else verbose
+        radius = self._search_radius if radius is None else radius * u.arcsec
+
+        if use_cached and self._vizier_tables is not None:
+            return self._vizier_tables
+
+        if verbose:
+            print(f"Searching Vizier at {self.target_coord.to_string('hmsdms')} with radius={radius}")
+
+        vizier = Vizier(columns=["*", "+_r"])
+        try:
+            tables = vizier.query_region(self.target_coord, radius=radius)
+        except Exception as e:
+            print(f"Vizier query failed: {e}")
+            return None
+
+        if tables is None or len(tables) == 0:
+            if verbose:
+                print("No Vizier tables found.")
+            return None
+
+        if verbose:
+            print(f"{len(tables)} tables found.")
+            from pprint import pprint
+            pprint({k: tables[k]._meta.get("description", "") for k in tables.keys()})
+
+        self._vizier_tables = tables
+        return tables
+
+    def get_vizier_param(self, param=None, radius=3, use_regex=False):
+        """
+        Search for a specific parameter across all Vizier tables.
+        
+        Parameters:
+            param (str, optional): Parameter name to search for
+            radius (float): Search radius in arcseconds
+            use_regex (bool): Whether to use regex pattern matching
+            
+        Returns:
+            dict or None: Dictionary of matching parameters or None
+        """
+        tables = self.query_vizier(radius=radius, verbose=False)
+
+        if not tables:
+            print("No Vizier data to search.")
+            return None
+
+        if param is None:
+            # Print available columns
+            cols = [tab.colnames for tab in tables]
+            flat_cols = sorted(set(col for sublist in cols for col in sublist))
+            print(f"Available parameters:\n{flat_cols}")
+            return None
+
+        results = {}
+        for i, tab in enumerate(tables):
+            columns = tab.colnames
+
+            if use_regex:
+                # Allow wildcard pattern matching (e.g., '*mass*')
+                pattern = re.compile(param.replace("*", ".*"), re.IGNORECASE)
+                matched = [col for col in columns if pattern.search(col)]
+            else:
+                matched = [param] if param in columns else []
+
+            for col in matched:
+                value = tab[col][0]
+                value = np.nan if isinstance(value, np.ma.core.MaskedConstant) else value
+                results.setdefault(tables.keys()[i], {})[col] = value
+
+        if self.verbose:
+            match_type = "regex" if use_regex else "exact"
+            print(f"{match_type.capitalize()} match: Found {len(results)} matching tables for '{param}'.")
+
+        return results
+    
+    def query_binary_star_catalogs(self):
+        """Query catalogs that contain information about binary stars."""
+        self._query_star_catalog(VIZIER_KEYS_BINARY_STAR_CATALOG)                        
+        
+    def query_variable_star_catalogs(self):
+        """Query catalogs that contain information about variable stars."""
+        self._query_star_catalog(VIZIER_KEYS_VARIABLE_STAR_CATALOG)
+        base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
+        all_tabs = self.query_vizier(verbose=False)
+        
+        if all_tabs is None:
+            return
+            
+        # Check for `var` in catalog title
+        idx = [
+            n if "var" in t._meta.get("description", "").lower() else False
+            for n, t in enumerate(all_tabs)
+        ]
+        
+        for i in idx:
+            if i is not False:  # Only process valid indices
+                tab = all_tabs[i]
+                try:
+                    s = tab.to_pandas().squeeze().str.decode("ascii").dropna()
+                except Exception:
+                    s = tab.to_pandas().squeeze().dropna()
+                    
+                if len(s) > 0:
+                    print(f"\nSee also: {base_url}{tab._meta['name']}\n{s}")
+                    self.variable_star = True
+        
+    def _query_star_catalog(self, catalog_keys):
+        """
+        Check for stars in specialized catalogs.
+        
+        Parameters:
+            catalog_keys (dict): Dictionary mapping reference names to VizieR keys
+        """
+        base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
+        all_tabs = self.query_vizier(verbose=False)
+        
+        if all_tabs is None:
+            return
+            
+        for key, tab in zip(all_tabs.keys(), all_tabs.values()):
+            for ref, vkey in catalog_keys.items():
+                if key == vkey:
+                    d = tab.to_pandas().squeeze()
+                    print(f"{ref} ({base_url}{key}):\n{d}")
+    
+    def query_gaia_catalog(self, radius=None, version=2, return_nearest_xmatch=False, verbose=None):
+        """
+        Query the Gaia DR catalog for stellar sources.
+        
+        Parameters:
+            radius (float, optional): Search radius in arcseconds
+            version (int): Gaia catalog version to query (default is 2)
+            return_nearest_xmatch (bool): If True, return only the nearest match
+            verbose (bool, optional): Whether to print detailed output
+            
+        Returns:
+            pd.DataFrame or pd.Series: Query results
+            
+        Raises:
+            ValueError: If no Gaia sources are found or if other conditions aren't met
+        """
+        # Return cached Gaia sources if available
+        if self._gaia_sources is not None:
+            return self._gaia_sources.copy()
+
+        # Set default values if not provided
+        radius_quantity = self._search_radius if radius is None else radius * u.arcsec
+        verbose = self.verbose if verbose is None else verbose
+
+        if verbose:
+            logger.info(f"Querying Gaia DR{version} catalog at {self.target_coord.to_string()} within {radius_quantity:.2f}")
+
+        # Perform the Gaia query and process results
+        tab = Catalogs.query_region(
+            self.target_coord, radius=radius_quantity, catalog="Gaia", version=version
+        ).to_pandas()
+
+        tab = tab.rename(columns={"distance": "separation"})
+        tab["separation"] = tab["separation"].apply(lambda x: x * u.arcmin.to(u.arcsec))
+
+        if len(tab) == 0:
+            raise ValueError(f"No Gaia star within {radius_quantity}")
+
+        # Ensure proper data types and conditions are met
+        tab["source_id"] = tab.source_id.astype(int)
+        if not np.all(tab["ref_epoch"].isin([2015.5])):
+            raise ValueError("Epoch not 2015.5")
+            
+        self._gaia_sources = tab
+
+        # Return either nearest match or multiple matches based on input flag
+        if return_nearest_xmatch:
+            return self._process_nearest_match(tab, radius_quantity)
+        else:
+            return self._process_multiple_matches(tab, radius_quantity)
+
+    def _process_multiple_matches(self, tab, radius):
+        """
+        Process multiple Gaia sources matches.
+        
+        Parameters:
+            tab (pd.DataFrame): DataFrame of matched Gaia sources
+            radius (u.Quantity): Search radius
+            
+        Returns:
+            pd.DataFrame: Processed DataFrame
+            
+        Raises:
+            ValueError: If no valid parallax values are found
+        """
+        tab.loc[tab["parallax"] < 0, "parallax"] = np.nan
+
+        if tab["parallax"].isnull().all():
+            raise ValueError(f"No stars within {radius} have valid parallax!")
+
+        self._update_target_coord(tab)
+        return tab
+
+    def _process_nearest_match(self, tab, radius):
+        """
+        Process the nearest Gaia match.
+        
+        Parameters:
+            tab (pd.DataFrame): DataFrame of matched Gaia sources
+            radius (u.Quantity): Search radius
+            
+        Returns:
+            pd.Series: The nearest match
+        """
+        target = tab.iloc[0]
+        self._update_target_coord(tab)
+        self._assign_gaia_metadata(target)
+        return target
+
+    def _update_target_coord(self, tab):
+        """
+        Update target coordinates based on Gaia data.
+        
+        Parameters:
+            tab (pd.DataFrame): DataFrame of matched Gaia sources
+        """
+        # This was called in other methods but not defined in the original code
+        # Implementing a basic version that would make sense in context
+        if len(tab) > 0 and self.gaiaid is None:
+            nearest = tab.iloc[0]
+            if self.verbose:
+                print(f"Updating target coordinates based on nearest Gaia source (separation: {nearest.separation:.2f}\")")
+                
+    def _assign_gaia_metadata(self, target):
+        """
+        Assign Gaia metadata to the target object.
+        
+        Parameters:
+            target (pd.Series): The nearest Gaia match
+        """
+        if self.gaiaid is None:
+            self.gaiaid = int(target["source_id"])
+        self.gaia_params = target
+
+        # Check astrometric excess noise
+        ens = target.get("astrometric_excess_noise_sig", 0)
+        if ens >= 5:
+            logger.info(f"astrometric_excess_noise_sig={ens:.2f} suggests binarity.")
+
+        # Check goodness of fit
+        gof = target.get("astrometric_gof_al", 0)
+        if gof >= 20:
+            logger.info(f"astrometric_gof_al={gof:.2f} suggests binarity.")
+
+        # Check visibility period usage
+        vis_periods = target.get("visibility_periods_used", 0)
+        if vis_periods < 6:
+            logger.info("visibility_periods_used < 6: no astrometric solution")
+
+        # Check RUWE value for non-single sources
+        ruwe_results = self.get_vizier_param("ruwe")
+        if ruwe_results:
+            ruwe_vals = list(ruwe_results.values())
+            if ruwe_vals and isinstance(ruwe_vals[0], dict):
+                ruwe_val = next(iter(ruwe_vals[0].values()), None)
+                if ruwe_val and ruwe_val > 1.4:
+                    logger.info(f"RUWE={ruwe_val:.1f} > 1.4 suggests non-single source")
+
+    def __repr__(self):
+        """Return string representation of the Target object."""
+        coord_str = self.target_coord.to_string("decimal").replace(" ", ", ")
+        return (f"{self.__class__.__name__}("
+                f"name='{getattr(self, 'name', 'Unnamed')}', "
+                f"gaiaid={self.gaiaid}, "
+                f"ra={self.ra}, dec={self.dec}, "
+                f"coord=({coord_str}), "
+                f"search_radius={self.search_radius})"
+               )
+    
+
+@dataclass
+class Star(Target):
+    """
+    A class representing a star, extending the Target class with stellar-specific functionality.
+    Provides methods to query and analyze data from various astronomical catalogs.
+    """
+    star_name: str
+    source: str = "tic"  # Default source for stellar parameters
+    tfop_data: dict = None
+    data_json: dict = None
+    exofop_url: str = None
+    star_names: list = field(default_factory=list)
+    gaia_name: str = None
+    toiid: int = None
+    ticid: int = None
+    query_name: str = None
+    verbose: bool = True
+    
+    def __post_init__(self):
+        """Initialize the parent Target class with default values."""
+        super().__init__(ra_deg=None, dec_deg=None, gaiaid=None, verbose=self.verbose)
+        
+        # Initialize other attributes that will be populated later
+        self.magnitudes = None
+        self.rstar = None
+        self.mstar = None
+        self.rhostar = None
+        self.teff = None
+        self.logg = None
+        self.feh = None
+
+    def query_tfop_data(self) -> dict:
+        """
+        Query the ExoFOP-TESS database for information about the star.
+        
+        Returns:
+            dict: JSON data from ExoFOP-TESS
+            
+        Raises:
+            ValueError: If the query fails or no data is found
+        """
+        if self.tfop_data:
+            return self.tfop_data
+            
+        base_url = "https://exofop.ipac.caltech.edu/tess"
+        self.exofop_url = f"{base_url}/target.php?id={self.star_name.replace(' ','')}&json"
+        
+        try:
+            response = requests.get(self.exofop_url)
+            response.raise_for_status()
+            self.tfop_data = response.json()
+            self.data_json = self.tfop_data  # For compatibility with older methods
+            return self.tfop_data
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Error while fetching data for {self.star_name}.\nError: {e}")
+                
+    def get_tfop_data(self) -> None:
+        """
+        Parse the TFOP info to get star names, Gaia name, Gaia ID, and target coordinates.
+        """
+        if self.tfop_data is None:
+            self.tfop_data = self.query_tfop_data()
+            
+        # Extract star names
+        self.star_names = np.array(
+            self.tfop_data.get("basic_info", {}).get("star_names", "").split(", ")
+        )
+        
+        if self.star_name is None:
+            self.star_name = self.star_names[0] if len(self.star_names) > 0 else "Unknown"
+            
+        if self.verbose:
+            logger.info("Catalog names:")
+            for n in self.star_names:
+                print(f"\t{n}")
+                
+        # Extract Gaia information
+        gaia_mask = np.array([i[:4].lower() == "gaia" for i in self.star_names])
+        if any(gaia_mask):
+            self.gaia_name = self.star_names[gaia_mask][0]
+            self.gaiaid = int(self.gaia_name.split()[-1])
+        
+        # Extract coordinates
+        coordinates = self.tfop_data.get("coordinates", {})
+        ra = coordinates.get("ra")
+        dec = coordinates.get("dec")
+        
+        if ra is not None and dec is not None:
+            self.ra = float(ra)
+            self.dec = float(dec)
+            self.target_coord = SkyCoord(ra=ra, dec=dec, unit="degree")
+
+        # Extract TOI ID
+        if self.star_name.lower()[:3] == "toi":
+            parts = self.star_name.split("-")
+            if len(parts) > 1:
+                self.toiid = parts[-1]
+            else:
+                self.toiid = int(float(self.star_name.replace(" ", "")[3:]))
+        else:
+            idx = [i[:3].lower() == "toi" for i in self.star_names]
+            if sum(idx) > 0:
+                self.toiid = int(self.star_names[idx][0].split("-")[-1])
+            else:
+                self.toiid = None
+                
+        # Extract TIC ID
+        self.ticid = int(self.tfop_data.get("basic_info", {}).get("tic_id", 0))
+        if self.ticid:
+            self.query_name = f"TIC{self.ticid}"
+        else:
+            self.query_name = self.star_name.replace("-", " ")
+
+    def get_params_from_tfop(self, name="planet_parameters", idx=None) -> dict:
+        """
+        Get parameters from TFOP data.
+        
+        Parameters:
+            name (str): Parameter set name ('planet_parameters' or 'stellar_parameters')
+            idx (int, optional): Index of the parameter set to return
+            
+        Returns:
+            dict: Selected parameter set
+        """
+        if self.tfop_data is None:
+            self.tfop_data = self.query_tfop_data()
+            
+        params_dict = self.tfop_data.get(name, [])
+        
+        if not params_dict:
+            return {}
+            
+        if idx is None:
+            key = "pdate" if name == "planet_parameters" else "sdate"
+            # Get the latest parameter based on upload date
+            dates = [d.get(key, "") for d in params_dict]
+            df = pd.DataFrame({"date": dates})
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            if df["date"].notna().any():
+                idx = df["date"].idxmax()
+            else:
+                idx = 0
+                
+        return params_dict[idx] if idx < len(params_dict) else {}
+    
+    def get_magnitudes(self):
+        """Extract magnitude information from TFOP data."""
+        if not hasattr(self, "data_json") or not self.data_json:
+            self.data_json = self.query_tfop_data()
+            
+        if 'magnitudes' in self.data_json:
+            self.magnitudes = pd.json_normalize(self.data_json['magnitudes'])
+            self.magnitudes['value'] = pd.to_numeric(self.magnitudes['value'], errors='coerce')
+            self.magnitudes['value_e'] = pd.to_numeric(self.magnitudes['value_e'], errors='coerce')
+        else:
+            self.magnitudes = pd.DataFrame()
+
+    def get_star_params(self):
+        """
+        Extract stellar parameters from TFOP data.
+        
+        Raises:
+            ValueError: If parameters cannot be extracted
+        """
+        if not hasattr(self, "data_json") or not self.data_json:
+            self.data_json = self.query_tfop_data()
+
+        # Get coordinates and TIC ID
+        self.ra = float(self.data_json.get("coordinates", {}).get("ra", 0))
+        self.dec = float(self.data_json.get("coordinates", {}).get("dec", 0))
+        self.ticid = self.data_json.get("basic_info", {}).get("tic_id", 0)
+
+        # Find parameters from the desired source
+        stellar_params = self.data_json.get("stellar_parameters", [])
+        self.tic_params = {}
+        
+        for i, p in enumerate(stellar_params):
+            if p.get("prov") == self.source:
+                self.tic_params = p
+                break
+                
+        if not self.tic_params and stellar_params:
+            self.tic_params = stellar_params[0]  # Use first set if source not found
+
+        try:
+            # Extract stellar radius
+            self.rstar = (
+                float(self.tic_params.get("srad", np.nan)),
+                float(self.tic_params.get("srad_e", np.nan))
+            )
+            
+            # Extract stellar mass
+            self.mstar = (
+                float(self.tic_params.get("mass", np.nan)),
+                float(self.tic_params.get("mass_e", np.nan))
+            )
+            
+            # Calculate stellar density in solar density units
+            if not np.isnan(self.mstar[0]) and not np.isnan(self.rstar[0]) and self.rstar[0] > 0:
+                density = self.mstar[0] / (self.rstar[0] ** 3)
+                # Error propagation for density
+                density_err = np.sqrt(
+                    (1 / self.rstar[0] ** 3) ** 2 * self.mstar[1] ** 2
+                    + (3 * self.mstar[0] / self.rstar[0] ** 4) ** 2 * self.rstar[1] ** 2
+                )
+                self.rhostar = (density, density_err)
+            else:
+                self.rhostar = (np.nan, np.nan)
+                
+            # Extract temperature
+            self.teff = (
+                float(self.tic_params.get("teff", np.nan)),
+                float(self.tic_params.get("teff_e", 500))
+            )
+            
+            # Extract surface gravity
+            self.logg = (
+                float(self.tic_params.get("logg", np.nan)),
+                float(self.tic_params.get("logg_e", 0.1))
+            )
+            
+            # Extract metallicity
+            feh_val = self.tic_params.get("feh", 0)
+            feh_val = 0 if (feh_val is None or feh_val == "") else float(feh_val)
+            
+            feh_err = self.tic_params.get("feh_e", 0.1)
+            feh_err = 0.1 if (feh_err is None or feh_err == "") else float(feh_err)
+            
+            self.feh = (feh_val, feh_err)
+            
+            # Print parameter summary
+            if self.verbose:
+                if not np.isnan(self.mstar[0]):
+                    print(f"Mstar=({self.mstar[0]:.2f},{self.mstar[1]:.2f}) Msun")
+                if not np.isnan(self.rstar[0]):
+                    print(f"Rstar=({self.rstar[0]:.2f},{self.rstar[1]:.2f}) Rsun")
+                if not np.isnan(self.rhostar[0]):
+                    print(f"Rhostar=({self.rhostar[0]:.2f},{self.rhostar[1]:.2f}) rhosun")
+                if not np.isnan(self.teff[0]):
+                    print(f"teff=({self.teff[0]:.0f},{self.teff[1]:.0f}) K")
+                if not np.isnan(self.logg[0]):
+                    print(f"logg=({self.logg[0]:.2f},{self.logg[1]:.2f}) cgs")
+                print(f"feh=({self.feh[0]:.2f},{self.feh[1]:.2f}) dex")
+                
+        except Exception as e:
+            print(f"Error extracting stellar parameters: {e}")
+            raise ValueError(f"Check exofop: {self.exofop_url}")
+            
+    def query_simbad(self):
+        """
+        Query Simbad to get the object type of the target star.
+
+        Returns:
+            SimbadResult or None: Result of the query if target is resolved, otherwise None
+        """
+        # Add object type field to Simbad query
+        Simbad.add_votable_fields("otype")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Make sure star_names is populated
+            if not hasattr(self, "star_names") or not self.star_names:
+                if self.star_name is None:
+                    self.star_name = input("What is the target's name? ")
+                self.tfop_data = self.query_tfop_data()
+                self.get_tfop_data()
+            
+            # Try to resolve using each known name
+            for name in self.star_names:
+                result = Simbad.query_object(name)
+                if result is not None:
+                    return result
+                    
+            if self.verbose:
+                msg = f"Simbad cannot resolve {self.star_name}"
+                msg += f" using any of its names: {self.star_names}"
+                logger.warning(msg)
+                
+            return None
+                
+    def get_simbad_obj_type(self):
+        """
+        Retrieve the object type of the target star from Simbad.
+
+        Returns:
+            str or None: Description of the object type if found, otherwise None
+        """
+        # Query Simbad for the target star
+        result = self.query_simbad()
+
+        if not result:
+            return None
+            
+        # Extract the object type category
+        category = result.to_pandas().squeeze().get("OTYPE", "")
+
+        if not category or len(category) < 1:
+            return None
+            
+        try:
+            # Load Simbad object type descriptions
+            df = pd.read_csv(simbad_obj_list_file)
+            matches = df[df["Id"] == category]
+
+            if len(matches) > 0:
+                # Retrieve the description and id
+                desc = matches["Description"].iloc[0]
+                oid = matches["Id"].iloc[0]
+
+                # Check if the description contains 'binary' and print appropriate message
+                if "binary" in desc.lower():
+                    logger.info("***" * 15)
+                    logger.info(f"Simbad classifies {self.star_name} as {oid}={desc}!")
+                    logger.info("***" * 15)
+                else:
+                    logger.info(f"Simbad classifies {self.star_name} as {oid}={desc}!")
+
+                return desc
+            else:
+                return category  # Return raw category if not found in description file
+        except Exception as e:
+            logger.warning(f"Error loading Simbad object types: {e}")
+            return category
+
+    def get_spectral_type(
+        self,
+        columns="Teff Bp-Rp J-H H-Ks W1-W2 W1-W3".split(),
+        nsamples=int(1e4),
+        return_samples=False,
+        plot=False,
+        ):
+        """
+        Interpolate spectral type from Mamajek table from
+        http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
+        based on observables Teff and color indices.
+        c.f. self.query_vizier_param("SpT")
+    
+        Parameters
+        ----------
+        nsamples : int
+            number of Monte Carlo samples (default=1e4)
+    
+        Returns
+        -------
+        interpolated spectral type
+    
+        Notes:
+        It may be good to check which color index yields most accurate result
+    
+        Check sptype from self.query_simbad()
+        """
+        df = get_Mamajek_table()
+        gaia_sources = self.get_gaia_sources()
+        self.gaia_params = gaia_sources.iloc[0].squeeze()
+    
+        # effective temperature
+        col = "teff"
+        teff = self.gaia_params[f"{col}_val"]
+        siglo = (self.gaia_params[f"{col}_val"] - self.gaia_params[f"{col}_percentile_lower"])
+        sighi = (self.gaia_params[f"{col}_percentile_upper"] - self.gaia_params[f"{col}_val"])
+        uteff = np.sqrt(sighi**2 + siglo**2)
+        s_teff = (teff + np.random.randn(nsamples) * uteff)  # Monte Carlo samples
+        print(f"Gaia Teff={teff},{uteff} K")
+        bands=['Gaia','V','J','H','K',
+               'WISE 3.4 micron','WISE 4.6 micron','WISE 12 micron']
+        mags = {}
+        for band in bands:
+            val=self.magnitudes.query("band==@band").value.squeeze()
+            err=self.magnitudes.query("band==@band").value_e.squeeze()
+            mags[band]=(val,err)
+            print(f"{band}=({val},{err})")
+        colors = []
+        if 'G-V' in columns:
+            gv_color =  mags['Gaia'][0] - mags['V'][0]
+            ugv_color = mags['Gaia'][1] + mags['V'][1]
+            print(f"G-V={gv_color:.2f}+/-{ugv_color:.2f}")
+            s_gv_color = (
+                 gv_color + np.random.randn(nsamples) * ugv_color
+            )  # Monte Carlo samples
+            colors.append(s_gv_color)
+        if 'Bp-Rp' in columns:
+            # Bp-Rp color index
+            sources = self.get_gaia_sources(rad_arcsec=30)
+            bprp_color =  sources.iloc[0]['bp_rp']
+            ubprp_color = 0.01
+            print(f"Gaia Bp-Rp={bprp_color:.2f}+/-{ubprp_color:.2f}")
+            s_bprp_color = (
+                bprp_color + np.random.randn(nsamples) * ubprp_color
+            ) 
+            colors.append(s_bprp_color)
+        if 'J-H' in columns:
+            # J-H color index
+            jh_color =  mags['J'][0] - mags['H'][0]
+            ujh_color = mags['J'][1] + mags['H'][1]
+            print(f"J-H={jh_color:.2f}+/-{ujh_color:.2f}")
+            s_jh_color = (
+                jh_color + np.random.randn(nsamples) * ujh_color
+            )  # Monte Carlo samples
+            colors.append(s_jh_color)
+        if 'H-Ks' in columns:        
+            # H-Ks color index
+            hk_color =  mags['H'][0] - mags['K'][0]
+            uhk_color = mags['H'][1] + mags['K'][1]
+            print(f"H-Ks={hk_color:.2f}+/-{uhk_color:.2f}")
+            s_hk_color = (
+                hk_color + np.random.randn(nsamples) * uhk_color
+            )
+            colors.append(s_hk_color)
+        if 'W1-W2' in columns:
+            # W1-W2 color index
+            w1w2_color =  mags['WISE 3.4 micron'][0] - mags['WISE 4.6 micron'][0]
+            uw1w2_color = mags['WISE 3.4 micron'][1] + mags['WISE 4.6 micron'][1]
+            print(f"W1-W2={w1w2_color:.2f}+/-{uw1w2_color:.2f}")
+            s_w1w2_color = (
+                w1w2_color + np.random.randn(nsamples) * uw1w2_color
+            ) 
+            colors.append(s_w1w2_color)
+        if 'W1-W3' in columns:
+            # W1-W3 color index
+            w1w3_color =  mags['WISE 3.4 micron'][0] - mags['WISE 12 micron'][0]
+            uw1w3_color = mags['WISE 3.4 micron'][1] + mags['WISE 12 micron'][1]
+            print(f"W1-W3={w1w3_color:.2f}+/-{uw1w3_color:.2f}")
+            s_w1w3_color = (
+                w1w3_color + np.random.randn(nsamples) * uw1w3_color
+            ) 
+            colors.append(s_w1w3_color)
+        
+        # drop incomplete columns
+        cols = columns.copy()
+        cols.append("#SpT")
+        df = df[cols].dropna()
+        # interpolate spec type using given colors 
+        interp = NearestNDInterpolator(
+            df[columns].values, 
+            df['#SpT'].cat.codes.values,
+            rescale=False
+        )
+        samples_code = interp(s_teff, *colors)
+        code_spec_mapping = dict(enumerate(df["#SpT"].cat.categories))
+        samples_spec_types = pd.Series(samples_code).map(code_spec_mapping)
+        # get mode of distribution
+        spt = samples_spec_types.mode().values[0]
+        # specify dtype
+        spec_types = pd.Categorical(samples_spec_types, 
+                                    categories=df["#SpT"].cat.categories, 
+                                    ordered=True)
+        
+        if plot:
+            d = spec_types.value_counts()
+            idx = d>100
+            ax = d[idx].plot(kind="barh")
+            ax.set_xlabel("Counts")
+            print(d[idx].sort_values(ascending=False))
+        if return_samples:
+            return spt, spec_types
+        else:
+            return spt
+        
+    def params_to_dict(self):
+        """Convert star parameters to a dictionary."""
+        return {
+            "rstar": self.rstar,
+            "mstar": self.mstar,  # Fixed from self.rstar in original
+            "rhostar": self.rhostar,
+            "teff": self.teff,
+            "logg": self.logg,
+            "feh": self.feh,
+        }
+    
+    def __repr__(self):
+        """Return string representation of the Target object."""
+        coord_str = self.target_coord.to_string("decimal").replace(" ", ", ")
+        return (f"{self.__class__.__name__}("
+                f"star_name='{getattr(self, 'star_name', 'Unnamed')}', "
+                f"gaiaid={self.gaiaid}, "
+                f"ra={self.ra}, dec={self.dec}, "
+                f"coord=({coord_str}))"
+               )
+    
+
+@dataclass
+class Planet(Star):
+    """
+    A class representing an exoplanet, extending the Star class with planet-specific functionality.
+    """
+    # star_name: str
+    # alias: str  # Planet designation number (e.g., "01" for first planet)
+    star_params: Dict[str, Tuple[float, float]] = None
+    # Default arguments must follow non-default arguments
+    source: str = "toi"  # Default source for planetary parameters (overrides Star's default source)
+    planet_params: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    verbose: bool = True
+    
+    def __post_init__(self):
+        """Initialize and fetch planet parameters."""
+        # super().__init__(star_name=self.star_name, verbose=self.verbose)
+        
+        if self.star_params is None:
+            self.star_params = self.get_star_params()
+        self.get_planet_params()
+    
+    def get_planet_params(self):
+        """
+        Extract planet parameters from ExoFOP data.
+        
+        Fetches and processes relevant planetary parameters from the ExoFOP database,
+        including transit timing, period, duration, and other orbital characteristics.
+        
+        Raises:
+            ValueError: If parameters cannot be found or processed
+        """
+        # Ensure data_json is defined by querying ExoFOP if necessary
+        if not hasattr(self, "data_json") or self.data_json is None:
+            self.data_json = self.query_tfop_data()
+        
+        # Check if planet_parameters exists in data_json
+        if "planet_parameters" not in self.data_json or not self.data_json["planet_parameters"]:
+            raise ValueError(f"No planet parameters found for {self.name}")
+        
+        # Get available sources for planet parameters
+        sources = set([p.get("prov") for p in self.data_json["planet_parameters"] if p.get("prov")])
+        if not sources:
+            raise ValueError(f"No valid sources found in planet parameters for {self.star_name}")
+            
+        errmsg = f"{self.source} must be in {sources}"
+        assert self.source in sources, errmsg
+        
+        # Parse alias to get index
+        try:
+            idx = int(self.alias.replace('.', '')) - 1  # Convert to 0-indexed
+        except ValueError:
+            idx = 0
+        
+        # Fallback index finding logic
+        found = False
+        for i, p in enumerate(self.data_json["planet_parameters"]):
+            if p.get("prov") == self.source:
+                idx = i
+                found = True
+                break
+        
+        # Make sure idx is in bounds
+        if idx < 0 or idx >= len(self.data_json["planet_parameters"]):
+            idx = 0
+            
+        planet_params = self.data_json["planet_parameters"][idx]
+        
+        try:
+            self.t0 = tuple(
+                map(
+                    float,
+                    (
+                        planet_params.get("epoch", np.nan),
+                        planet_params.get("epoch_e", 0.1),
+                    ),
+                )
+            )
+            self.period = tuple(
+                map(
+                    float,
+                    (
+                        planet_params.get("per", np.nan),
+                        planet_params.get("per_e", 0.1),
+                    ),
+                )
+            )
+            self.tdur = (
+                np.array(
+                    tuple(
+                        map(
+                            float,
+                            (
+                                planet_params.get("tdur", 0),
+                                planet_params.get("dur_e", 0),
+                            ),
+                        )
+                    )
+                )
+                / 24
+            )
+            self.rprs = np.sqrt(
+                np.array(
+                    tuple(
+                        map(
+                            float,
+                            (
+                                planet_params.get("dep_p", 0),
+                                planet_params.get("dep_p_e", 0),
+                            ),
+                        )
+                    )
+                )
+                / 1e6
+            )
+            self.imp = tuple(
+                map(
+                    float,
+                    (
+                        float(0 if planet_params.get("imp", 0) == "" else planet_params.get("imp", 0)),
+                        float(0.1 if planet_params.get("imp_e", 0.1) == "" else planet_params.get("imp_e", 0.1)),
+                    ),
+                )
+            )
+            print(f"t0={self.t0} BJD\nP={self.period} d\nRp/Rs={self.rprs}")
+            
+            rhostar = self.star_params["rhostar"]
+            self.a_Rs = (
+                (rhostar[0] / 0.01342 * self.period[0] ** 2) ** (1 / 3),
+                1
+                / 3
+                * (1 / 0.01342 * self.period[0] ** 2) ** (1 / 3)
+                * rhostar[0] ** (-2 / 3)
+                * rhostar[1],
+            )
+            
+            # Update planet_params dictionary with calculated values
+            self.planet_params = self.params_to_dict()
+            
+        except Exception as e:
+            print(f"Error processing planet parameters: {e}")
+            raise ValueError(f"Check exofop: {self.exofop_url}")
+    
+    def params_to_dict(self):
+        """
+        Convert planet parameters to a dictionary.
+        
+        Returns:
+            Dict[str, Tuple[float, float]]: Dictionary of planet parameters with uncertainties
+        """
+        return {
+            "t0": self.t0,
+            "period": self.period,
+            "tdur": self.tdur,
+            "imp": self.imp,
+            "rprs": self.rprs,
+            "a_Rs": self.a_Rs,
+        }
+    
+    def __repr__(self):
+        """Return string representation of the Target object."""
+        coord_str = self.target_coord.to_string("decimal").replace(" ", ", ")
+        return (f"{self.__class__.__name__}("
+                f"star_name='{getattr(self, 'star_name', 'Unnamed')}' "
+                f"{self.alias}, "
+                f"gaiaid={self.gaiaid}, "
+                f"ra={self.ra}, dec={self.dec}, "
+                f"coord=({coord_str}))"
+               )
+    
+class CatalogDownloader:
+    """download tables from vizier
+    Attributes
+    ----------
+    tables : astroquery.utils.TableList
+        collection of astropy.table.Table downloaded from vizier
+    """
+
+    def __init__(
+        self, catalog_name, catalog_type="cluster", data_loc=DATA_PATH, verbose=True, clobber=False
+        ):
+        self.catalog_name = catalog_name
+        self.catalog_type = catalog_type
+        if catalog_type.lower() in ["prot", "rotation"]:
+            self.catalog_dict = VIZIER_KEYS_PROT_CATALOG
+        elif catalog_type.lower() in ["liew", "lithium"]:
+            self.catalog_dict = VIZIER_KEYS_LiEW_CATALOG
+        elif catalog_type.lower() in ["rv"]:
+            self.catalog_dict = VIZIER_KEYS_RV_CATALOG
+        elif catalog_type.lower()=="cluster":
+            self.catalog_dict = VIZIER_KEYS_CLUSTER_CATALOG
+        self.verbose = verbose
+        self.clobber = clobber
+        if not Path(data_loc).exists():
+            Path(data_loc).mkdir()
+        self.data_loc = Path(data_loc, self.catalog_name)
+        self.tables = None
+        self.vizier_url = self.get_vizier_url()
+
+    def get_tables_from_vizier(self, row_limit=50, save=False, clobber=None):
+        """
+        row_limit-1 to download all rows
+        TODO: Load data when save=True
+        """
+        clobber = self.clobber if clobber is None else clobber
+        if row_limit == -1:
+            msg = "Downloading all tables in "
+        else:
+            msg = f"Downloading the first {row_limit} rows of each table "
+        try:
+            msg += f"{self.catalog_dict[self.catalog_name]} from vizier."
+            if self.verbose:
+                logger.info(msg)
+        except:
+            errmsg = f"'{self.catalog_name}' not in {list(self.catalog_dict.keys())}.\n"
+            errmsg+=f"\nUsing catalog_type={self.catalog_type}."
+            raise ValueError(errmsg)
+
+        # set row limit
+        Vizier.ROW_LIMIT = row_limit
+
+        if self.catalog_dict[self.catalog_name]=="local":
+            raise ValueError("Read the csv data locally.")
+        else:
+            tables = Vizier.get_catalogs(self.catalog_dict[self.catalog_name])
+            errmsg = "No data returned from Vizier."
+            assert tables is not None, errmsg
+            self.tables = tables
+    
+            if self.verbose:
+                pprint({k: tables[k]._meta["description"] for k in tables.keys()})
+
+            if save:
+                self.save_tables(clobber=clobber)
+        return tables
+
+    def save_tables(self, clobber=None):
+        errmsg = "No tables to save"
+        assert self.tables is not None, errmsg
+        clobber = self.clobber if clobber is None else clobber
+
+        if not self.data_loc.exists():
+            self.data_loc.mkdir()
+
+        for n, table in enumerate(self.tables):
+            fp = Path(self.data_loc, f"{self.catalog_name}_tab{n}.txt")
+            if not fp.exists() or clobber:
+                table.write(fp, format="ascii")
+                if self.verbose:
+                    logger.info(f"Saved: {fp}")
+            else:
+                logger.info("Set clobber=True to overwrite.")
+
+    def get_vizier_url(self, catalog_name=None):
+        if catalog_name is None:
+            catalog_name = self.catalog_name
+        base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
+        vizier_key = self.catalog_dict[catalog_name]
+        url = base_url + vizier_key
+        if self.verbose:
+            logger.info(f"Data url: {url}")
+        return url
+
+    def __repr__(self):
+        """Override to print a readable string representation of class"""
+        included_args = ["catalog_name", "cluster_name"]
+        args = []
+        for key in self.__dict__.keys():
+            val = self.__dict__.get(key)
+            if key in included_args:
+                if val is not None:
+                    args.append(f"{key}={val}")
+        args = ", ".join(args)
+        return f"{type(self).__name__}({args})"
+    
 def load_plot_params():
     """ Load in plt.rcParams and set (based on paper defaults).
     """
@@ -236,7 +1391,7 @@ def get_tois(
         tois = pd.read_csv(f'{outdir}/TOIs_with_Gaiaid.csv')
         df = pd.merge(df, tois, on='TOI', how='outer')
         df.to_csv(fp, index=False)
-        print("Saved: ", fp)
+        logger.info("Saved: ", fp)
     else:
         df = pd.read_csv(fp).drop_duplicates()
         msg = f"Loaded: {fp}\n"
@@ -275,7 +1430,7 @@ def get_tois(
         msg += f"{keys} planets are removed.\n"
     msg += f"Saved: {fp}\n"
     if verbose:
-        print(msg)
+        logger.info(msg)
     return df.sort_values("TOI").reset_index(drop=True)
 
 def get_ctois(clobber=True, outdir=DATA_PATH, verbose=False, remove_FP=True):
@@ -317,7 +1472,7 @@ def get_ctois(clobber=True, outdir=DATA_PATH, verbose=False, remove_FP=True):
         msg += "CTOIs with user disposition==FP are removed.\n"
     msg += "Saved: {}\n".format(fp)
     if verbose:
-        print(msg)
+        logger.info(msg)
     return d.sort_values("CTOI")
 
 def get_nexsci_data(table_name="ps", method="Transit", outdir=DATA_PATH, clobber=False):
@@ -330,231 +1485,23 @@ def get_nexsci_data(table_name="ps", method="Transit", outdir=DATA_PATH, clobber
     try:
         from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
     except Exception as e:
-        print(e)
+        logger.info(e)
     assert table_name in ["ps", "pscomppars"]
     url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
-    print("Column definitions: ", url)
+    logger.info("Column definitions: ", url)
     fp = Path(outdir, f'nexsci_{table_name}.csv')        
     if not fp.exists() or clobber:
         #pstable combines data from the Confirmed Planets and Extended Planet Parameters tables
-        print(f"Downloading NExSci {table_name} table...")
+        logger.info(f"Downloading NExSci {table_name} table...")
         tab = NasaExoplanetArchive.query_criteria(table=table_name, 
                                                   where=f"discoverymethod like '{method}'")
         df = tab.to_pandas()
         df.to_csv(fp, index=False)
-        print("Saved: ", fp)
+        logger.info("Saved: ", fp)
     else:
         df = pd.read_csv(fp)
-        print("Loaded: ", fp)
+        logger.info("Loaded: ", fp)
     return df
-    
-
-class Target:
-    def __init__(self, ra_deg, dec_deg, gaiaDR2id=None, verbose=True):
-        self.gaiaid = gaiaDR2id  # e.g. Gaia DR2 5251470948229949568
-        self.ra = ra_deg
-        self.dec = dec_deg
-        self.target_coord = SkyCoord(ra=ra_deg * u.deg, dec=dec_deg * u.deg)
-        self.verbose = verbose
-        self.vizier_tables = None
-        self.search_radius = 1 * u.arcmin
-
-    def query_vizier(self, radius=3, verbose=None):
-        """
-        Useful to get relevant catalogs from literature
-        See:
-        https://astroquery.readthedocs.io/en/latest/vizier/vizier.html
-        """
-        verbose = self.verbose if verbose is None else verbose
-        radius = self.search_radius if radius is None else radius * u.arcsec
-        if verbose:
-            print(
-                f"Searching Vizier: ({self.target_coord.to_string()}) with radius={radius}."
-            )
-        # standard column sorted in increasing distance
-        v = Vizier(
-            columns=["*", "+_r"],
-            # column_filters={"Vmag":">10"},
-            # keywords=['stars:white_dwarf']
-        )
-        if self.vizier_tables is None:
-            tables = v.query_region(self.target_coord, radius=radius)
-            if tables is None:
-                print("No result from Vizier.")
-            else:
-                if verbose:
-                    print(f"{len(tables)} tables found.")
-                    pprint(
-                        {
-                            k: tables[k]._meta["description"]
-                            for k in tables.keys()
-                        }
-                    )
-                self.vizier_tables = tables
-        else:
-            tables = self.vizier_tables.filled(fill_value)
-        return tables
-
-    def query_vizier_param(self, param=None, radius=3):
-        """looks for value of param in each vizier table"""
-        if self.vizier_tables is None:
-            tabs = self.query_vizier(radius=radius, verbose=False)
-        else:
-            tabs = self.vizier_tables
-
-        if param is not None:
-            idx = [param in tab.columns for tab in tabs]
-            vals = {}
-            for i in np.argwhere(idx).flatten():
-                k = tabs.keys()[int(i)]
-                v = tabs[int(i)][param][0] #nearest match
-                if isinstance(v, np.ma.core.MaskedConstant):
-                    v = np.nan
-                vals[k] = v
-            if self.verbose:
-                print(f"Found {sum(idx)} references in Vizier with `{param}`.")
-            return vals
-        else:
-            #print all available keys
-            cols = [tab.to_pandas().columns.tolist() for tab in tabs]
-            print(f"Choose parameter:\n{list(np.unique(flatten_list(cols)))}")
-    
-    def __repr__(self):
-        """Override to print a readable string representation of class"""
-        # params = signature(self.__init__).parameters
-        # val = repr(getattr(self, key))
-
-        included_args = [
-            # ===target attributes===
-            # "name",
-            # "toiid",
-            # "ctoiid",
-            # "ticid",
-            # "epicid",
-            "gaiaDR2id",
-            "ra_deg",
-            "dec_deg",
-            "target_coord",
-            "search_radius",
-        ]
-        args = []
-        for key in self.__dict__.keys():
-            val = self.__dict__.get(key)
-            if key in included_args:
-                if key == "target_coord":
-                    # format coord
-                    coord = self.target_coord.to_string("decimal")
-                    args.append(f"{key}=({coord.replace(' ',',')})")
-                elif val is not None:
-                    args.append(f"{key}={val}")
-        args = ", ".join(args)
-        return f"{type(self).__name__}({args})"
-
-class CatalogDownloader:
-    """download tables from vizier
-    Attributes
-    ----------
-    tables : astroquery.utils.TableList
-        collection of astropy.table.Table downloaded from vizier
-    """
-
-    def __init__(
-        self, catalog_name, catalog_type="cluster", data_loc=DATA_PATH, verbose=True, clobber=False
-        ):
-        self.catalog_name = catalog_name
-        self.catalog_type = catalog_type
-        if catalog_type.lower() in ["prot", "rotation"]:
-            self.catalog_dict = VIZIER_KEYS_PROT_CATALOG
-        elif catalog_type.lower() in ["liew", "lithium"]:
-            self.catalog_dict = VIZIER_KEYS_LiEW_CATALOG
-        elif catalog_type.lower() in ["rv"]:
-            self.catalog_dict = VIZIER_KEYS_RV_CATALOG
-        elif catalog_type.lower()=="cluster":
-            self.catalog_dict = VIZIER_KEYS_CLUSTER_CATALOG
-        self.verbose = verbose
-        self.clobber = clobber
-        if not Path(data_loc).exists():
-            Path(data_loc).mkdir()
-        self.data_loc = Path(data_loc, self.catalog_name)
-        self.tables = None
-        self.vizier_url = self.get_vizier_url()
-
-    def get_tables_from_vizier(self, row_limit=50, save=False, clobber=None):
-        """
-        row_limit-1 to download all rows
-        TODO: Load data when save=True
-        """
-        clobber = self.clobber if clobber is None else clobber
-        if row_limit == -1:
-            msg = "Downloading all tables in "
-        else:
-            msg = f"Downloading the first {row_limit} rows of each table "
-        try:
-            msg += f"{self.catalog_dict[self.catalog_name]} from vizier."
-            if self.verbose:
-                print(msg)
-        except:
-            errmsg = f"'{self.catalog_name}' not in {list(self.catalog_dict.keys())}.\n"
-            errmsg+=f"\nUsing catalog_type={self.catalog_type}."
-            raise ValueError(errmsg)
-
-        # set row limit
-        Vizier.ROW_LIMIT = row_limit
-
-        if self.catalog_dict[self.catalog_name]=="local":
-            raise ValueError("Read the csv data locally.")
-        else:
-            tables = Vizier.get_catalogs(self.catalog_dict[self.catalog_name])
-            errmsg = "No data returned from Vizier."
-            assert tables is not None, errmsg
-            self.tables = tables
-    
-            if self.verbose:
-                pprint({k: tables[k]._meta["description"] for k in tables.keys()})
-
-            if save:
-                self.save_tables(clobber=clobber)
-        return tables
-
-    def save_tables(self, clobber=None):
-        errmsg = "No tables to save"
-        assert self.tables is not None, errmsg
-        clobber = self.clobber if clobber is None else clobber
-
-        if not self.data_loc.exists():
-            self.data_loc.mkdir()
-
-        for n, table in enumerate(self.tables):
-            fp = Path(self.data_loc, f"{self.catalog_name}_tab{n}.txt")
-            if not fp.exists() or clobber:
-                table.write(fp, format="ascii")
-                if self.verbose:
-                    print(f"Saved: {fp}")
-            else:
-                print("Set clobber=True to overwrite.")
-
-    def get_vizier_url(self, catalog_name=None):
-        if catalog_name is None:
-            catalog_name = self.catalog_name
-        base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
-        vizier_key = self.catalog_dict[catalog_name]
-        url = base_url + vizier_key
-        if self.verbose:
-            print("Data url:", url)
-        return url
-
-    def __repr__(self):
-        """Override to print a readable string representation of class"""
-        included_args = ["catalog_name", "cluster_name"]
-        args = []
-        for key in self.__dict__.keys():
-            val = self.__dict__.get(key)
-            if key in included_args:
-                if val is not None:
-                    args.append(f"{key}={val}")
-        args = ", ".join(args)
-        return f"{type(self).__name__}({args})"
-
 
 def get_absolute_gmag(gmag, distance, a_g):
     """
@@ -575,7 +1522,6 @@ def get_absolute_gmag(gmag, distance, a_g):
     assert (a_g is not None) & (str(a_g) != "nan"), "a_g is nan"
     Gmag = gmag - 5.0 * np.log10(distance) + 5.0 - a_g
     return Gmag
-
 
 def plot_cmd(
     df,
@@ -638,7 +1584,7 @@ def plot_cmd(
             idx = ~np.isnan(df["parallax"]) & (df["parallax"] > 0)
             df = df[idx]
             if sum(~idx) > 0:
-                print(f"{sum(~idx)} removed NaN or negative parallaxes")
+                logger.info(f"{sum(~idx)} removed NaN or negative parallaxes")
     
             df["distance"] = Distance(parallax=df["parallax"].values * u.mas).pc
             
@@ -1024,11 +1970,11 @@ def plot_rdp_pmrv(
         )
     except Exception as e:
         ax[n].clear()
-        print("Error: ", e)
+        logger.error("Error: ", e)
         npar = len(df[par].dropna())
         if npar < 10:
             errmsg = f"Cluster members have only {npar} {par} measurements."
-            print("Error: ", errmsg)
+            logger.error("Error: ", errmsg)
             # raise ValueError(errmsg)
     return fig
 
@@ -1059,7 +2005,7 @@ def get_transformed_coord(df, frame="galactocentric", verbose=True):
         # retain non-negative parallaxes including nan
         df = df[(df["parallax"] >= 0) | (df["parallax"].isnull())]
         if verbose:
-            print("Some parallaxes are negative!")
+            logger.warning("Some parallaxes are negative!")
             print("These are removed for the meantime.")
             print("For proper treatment, see:")
             print("https://arxiv.org/pdf/1804.09366.pdf\n")
@@ -1325,44 +2271,25 @@ def get_mamajek_table(clobber=False, verbose=True, data_loc=DATA_PATH):
     """
     fp = Path(data_loc, "mamajek_table.csv")
     if not fp.exists() or clobber:
-        url = "http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt"
-        # cols="SpT Teff logT BCv Mv logL B-V Bt-Vt G-V U-B V-Rc V-Ic V-Ks J-H H-Ks Ks-W1 W1-W2 W1-W3 W1-W4 Msun logAge b-y M_J M_Ks Mbol i-z z-Y R_Rsun".split(' ')
-        df = pd.read_csv(
-            url,
-            skiprows=21,
-            skipfooter=524,
-            delim_whitespace=True,
-            engine="python",
-        )
-        # tab = ascii.read(url, guess=None, data_start=0, data_end=124)
-        # df = tab.to_pandas()
-        # replace ... with NaN
-        df = df.replace(["...", "....", "....."], np.nan)
-        # replace header
-        # df.columns = cols
-        # drop last duplicate column
-        df = df.drop(df.columns[-1], axis=1)
-        # df['#SpT_num'] = range(df.shape[0])
-        # df['#SpT'] = df['#SpT'].astype('category')
-
-        # remove the : type in M_J column
-        df["M_J"] = df["M_J"].apply(lambda x: str(x).split(":")[0])
-        # convert columns to float
-        for col in df.columns:
-            if col == "#SpT":
-                df[col] = df[col].astype("category")
-            else:
-                df[col] = df[col].astype(float)
-            # if col=='SpT':
-            #     df[col] = df[col].astype('categorical')
-            # else:
-            #     df[col] = df[col].astype(float)
+        url = "https://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt"
+        table = Table.read(url,
+                           format='ascii',
+                           comment='',
+                           header_start=22,
+                           data_start=23,
+                           data_end=141,
+                           delimiter=' ',
+                           fill_values=('...', np.nan),
+                           fast_reader=False,
+                           guess=False
+                          )
+        tab = table.to_pandas()
         df.to_csv(fp, index=False)
-        print(f"Saved: {fp}")
+        logger.info(f"Saved: {fp}")
     else:
         df = pd.read_csv(fp)
         if verbose:
-            print(f"Loaded: {fp}")
+            logger.info(f"Loaded: {fp}")
     return df
 
 
@@ -1432,7 +2359,7 @@ def flatten_list(lol):
     return list(itertools.chain.from_iterable(lol))
 
 
-def get_tfop_info(target_name: str) -> dict:
+def query_tfop_data(target_name: str) -> dict:
     base_url = "https://exofop.ipac.caltech.edu/tess"
     url = f"{base_url}/target.php?id={target_name.replace(' ','')}&json"
     response = urlopen(url)
@@ -1441,12 +2368,12 @@ def get_tfop_info(target_name: str) -> dict:
         data_json = json.loads(response.read())
         return data_json
     except Exception as e:
-        print(e)
+        logger.error(e)
         raise ValueError(f"No TIC data found for {target_name}")
 
 
-def get_params_from_tfop(tfop_info, name="planet_parameters", idx=None):
-    params_dict = tfop_info.get(name)
+def get_params_from_tfop(tfop_data, name="planet_parameters", idx=None):
+    params_dict = tfop_data.get(name)
     if idx is None:
         key = "pdate" if name == "planet_parameters" else "sdate"
         # get the latest parameter based on upload date
@@ -1461,7 +2388,7 @@ def get_params_from_tfop(tfop_info, name="planet_parameters", idx=None):
 
 
 def get_tic_id(target_name: str) -> int:
-    return int(get_tfop_info(target_name)["basic_info"]["tic_id"])
+    return int(query_tfop_data(target_name)["basic_info"]["tic_id"])
 
 
 def get_nexsci_data(table_name="ps", clobber=False):
@@ -1470,15 +2397,15 @@ def get_nexsci_data(table_name="ps", clobber=False):
     pscomppars: a more complete, though not necessarily self-consistent set of parameters
     """
     url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
-    print("Column definitions: ", url)
+    logger.info("Column definitions: ", url)
     fp = Path("../data/",f"nexsci_{table_name}.csv")
     if not fp.exists() or clobber:
-        print(f"Downloading NExSci {table_name} table...")
+        logger.info(f"Downloading NExSci {table_name} table...")
         nexsci_tab = NasaExoplanetArchive.query_criteria(table=table_name, where="discoverymethod like 'Transit'")
         df_nexsci = nexsci_tab.to_pandas()
         df_nexsci.to_csv(fp, index=False)
-        print("Saved: ", fp)
+        logger.info("Saved: ", fp)
     else:
         df_nexsci = pd.read_csv(fp)
-        print("Loaded: ", fp)
+        logger.info("Loaded: ", fp)
     return df_nexsci
