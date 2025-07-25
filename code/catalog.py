@@ -17,7 +17,7 @@ from pathlib import Path
 from pprint import pprint
 import astropy.units as u
 from astropy.table import Table
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Distance
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
 from astroquery.mast import Observations, Catalogs
@@ -128,6 +128,8 @@ VIZIER_KEYS_PROT_CATALOG = {
     # https://filtergraph.com/tess_rotation_tois
     }
 VIZIER_KEYS_CLUSTER_CATALOG = {
+    "Ratzenboeck2023a": "J/A%2bA/677/A59", # members
+    "Ratzenboeck2023b": "J/A+A/678/A71", # ages
     # Using cluster masses, radii, and dynamics to create a cleaned open cluster catalogue
     "Hunt2024": "J/A+A/686/A42",
     #
@@ -242,85 +244,67 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     + "ajabe4d6t1_mrt.txt?AWSAccessKeyId=AKIAYDKQL6LTV7YY2HIK&Expires=1622511816&Signature=CVdNivtn2MJv1%2FY%2F4ztoZKBPzaw%3D",
 }
 
-class Target:
-    def __init__(self, ra_deg, dec_deg, name=None, gaiaid=None, verbose=True):
-        """
-        Initialize a Target object representing an astronomical object.
+@dataclass
+class Star:
+    """
+    A class representing a star, extending the Target class with stellar-specific functionality.
+    Provides methods to query and analyze data from various astronomical catalogs.
+    """
+    star_name: str
+    source: str = "tic"  # Default source for stellar parameters
+    tfop_data: dict = None
+    data_json: dict = None
+    exofop_url: str = None
+    star_names: list = field(default_factory=list)
+    gaia_name: str = None
+    toiid: int = None
+    ticid: int = None
+    query_name: str = None
+    verbose: bool = True
+    
+    def __post_init__(self):
+        """Initialize the parent Target class with default values."""
+        super().__init__(ra_deg=None, dec_deg=None, gaiaid=None, verbose=self.verbose)
         
-        Parameters:
-            ra_deg (float): Right Ascension in degrees
-            dec_deg (float): Declination in degrees
-            name (str, optional): Name of the target
-            gaiaid (int, optional): Gaia DR source ID
-            verbose (bool): Whether to print detailed output
-        """
-        self.gaiaid = gaiaid
-        self.ra = ra_deg
-        self.dec = dec_deg
-        self.verbose = verbose
+        # Initialize other attributes that will be populated later
+        self.magnitudes = None
+        self.rstar = None
+        self.mstar = None
+        self.rhostar = None
+        self.teff = None
+        self.logg = None
+        self.feh = None
 
-        # Initialize properties to be populated later
-        self._vizier_tables = None
-        self._search_radius = 1 * u.arcmin
-        self._gaia_sources = None
-        self.gaia_params = None
-        self.variable_star = False
+    def __repr__(self):
+        """Return string representation of the Target object."""
+        coord_str = self.target_coord.to_string("decimal").replace(" ", ", ")
+        return (f"{self.__class__.__name__}("
+                f"star_name='{getattr(self, 'star_name', 'Unnamed')}', "
+                f"gaiaid={self.gaiaid}, "
+                f"ra={self.ra}, dec={self.dec}, "
+                f"coord=({coord_str}))"
+               )
 
-    @property
-    def target_coord(self):
+    def target_coord(self) -> SkyCoord:
         """Return SkyCoord object for the target position."""
-        return SkyCoord(ra=self.ra * u.deg, dec=self.dec * u.deg)
-    
-    @target_coord.setter
-    def target_coord(self, value):
-        self._target_coord = value
-
-    @property
-    def search_radius(self):
-        """Return the current search radius."""
-        return self._search_radius
-    
-    @search_radius.setter
-    def search_radius(self, value):
-        """Set search radius with proper units."""
-        if not isinstance(value, u.Quantity):
-            value = value * u.arcmin
-        self._search_radius = value
-    
-    @property
-    def gaia_sources(self):
-        """Return Gaia sources."""
-        return self._gaia_sources
-    
-    @gaia_sources.setter
-    def gaia_sources(self, value):
-        """Set Gaia sources."""
-        self._gaia_sources = value
+        return SkyCoord(ra=self.ra_deg * u.deg, dec=self.dec_deg * u.deg)
 
     def query_vizier(self, radius=None, verbose=None, use_cached=True):
         """
         Query Vizier catalogs near the target position.
-        
-        Parameters:
-            radius (float, optional): Search radius in arcseconds
-            verbose (bool, optional): Whether to print detailed output
-            use_cached (bool): Whether to use cached results if available
-            
-        Returns:
-            astroquery.vizier.VizierResults or None: Query results
         """
         verbose = self.verbose if verbose is None else verbose
-        radius = self._search_radius if radius is None else radius * u.arcsec
+        radius = self.search_radius if radius is None else radius * u.arcsec
 
         if use_cached and self._vizier_tables is not None:
             return self._vizier_tables
 
         if verbose:
-            print(f"Searching Vizier at {self.target_coord.to_string('hmsdms')} with radius={radius}")
+            print(f"Searching Vizier at {self.target_coord().to_string('hmsdms')} with radius={radius}")
 
         vizier = Vizier(columns=["*", "+_r"])
         try:
-            tables = vizier.query_region(self.target_coord, radius=radius)
+            tables = vizier.query_region(self.target_coord(), radius=radius)
         except Exception as e:
             print(f"Vizier query failed: {e}")
             return None
@@ -341,14 +325,6 @@ class Target:
     def get_vizier_param(self, param=None, radius=3, use_regex=False):
         """
         Search for a specific parameter across all Vizier tables.
-        
-        Parameters:
-            param (str, optional): Parameter name to search for
-            radius (float): Search radius in arcseconds
-            use_regex (bool): Whether to use regex pattern matching
-            
-        Returns:
-            dict or None: Dictionary of matching parameters or None
         """
         tables = self.query_vizier(radius=radius, verbose=False)
 
@@ -368,7 +344,6 @@ class Target:
             columns = tab.colnames
 
             if use_regex:
-                # Allow wildcard pattern matching (e.g., '*mass*')
                 pattern = re.compile(param.replace("*", ".*"), re.IGNORECASE)
                 matched = [col for col in columns if pattern.search(col)]
             else:
@@ -393,7 +368,7 @@ class Target:
         """Query catalogs that contain information about variable stars."""
         self._query_star_catalog(VIZIER_KEYS_VARIABLE_STAR_CATALOG)
         base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
-        all_tabs = self.query_vizier(verbose=False)
+        all_tabs = self.get_vizier_table(verbose=False)
         
         if all_tabs is None:
             return
@@ -424,7 +399,7 @@ class Target:
             catalog_keys (dict): Dictionary mapping reference names to VizieR keys
         """
         base_url = "https://vizier.u-strasbg.fr/viz-bin/VizieR?-source="
-        all_tabs = self.query_vizier(verbose=False)
+        all_tabs = self.get_vizier_table(verbose=False)
         
         if all_tabs is None:
             return
@@ -447,174 +422,87 @@ class Target:
             
         Returns:
             pd.DataFrame or pd.Series: Query results
-            
-        Raises:
-            ValueError: If no Gaia sources are found or if other conditions aren't met
         """
-        # Return cached Gaia sources if available
         if self._gaia_sources is not None:
             return self._gaia_sources.copy()
-
-        # Set default values if not provided
-        radius_quantity = self._search_radius if radius is None else radius * u.arcsec
+    
+        radius_quantity = self.search_radius if radius is None else radius * u.arcsec
         verbose = self.verbose if verbose is None else verbose
-
+    
         if verbose:
-            logger.info(f"Querying Gaia DR{version} catalog at {self.target_coord.to_string()} within {radius_quantity:.2f}")
-
-        # Perform the Gaia query and process results
-        tab = Catalogs.query_region(
-            self.target_coord, radius=radius_quantity, catalog="Gaia", version=version
-        ).to_pandas()
-
-        tab = tab.rename(columns={"distance": "separation"})
-        tab["separation"] = tab["separation"].apply(lambda x: x * u.arcmin.to(u.arcsec))
-
-        if len(tab) == 0:
-            raise ValueError(f"No Gaia star within {radius_quantity}")
-
-        # Ensure proper data types and conditions are met
-        tab["source_id"] = tab.source_id.astype(int)
-        if not np.all(tab["ref_epoch"].isin([2015.5])):
-            raise ValueError("Epoch not 2015.5")
-            
+            logger.info(f"Querying Gaia DR{version} catalog at {self.target_coord().to_string()} within {radius_quantity:.2f}")
+    
+        try:
+            tab = Catalogs.query_region(self.target_coord(), radius=radius_quantity, catalog="Gaia", version=version).to_pandas()
+        except Exception as e:
+            raise RuntimeError(f"Gaia query failed: {e}")
+    
+        if tab.empty:
+            raise ValueError(f"No Gaia star found within {radius_quantity}")
+    
+        tab.rename(columns={"distance": "separation"}, inplace=True)
+        tab["separation"] *= u.arcmin.to(u.arcsec)
+        tab["source_id"] = tab["source_id"].astype(int)
+    
+        if not np.allclose(tab["ref_epoch"], 2015.5):
+            raise ValueError("Non-standard epoch found (expected 2015.5)")
+    
         self._gaia_sources = tab
-
-        # Return either nearest match or multiple matches based on input flag
-        if return_nearest_xmatch:
-            return self._process_nearest_match(tab, radius_quantity)
-        else:
-            return self._process_multiple_matches(tab, radius_quantity)
-
+    
+        return self._process_nearest_match(tab, radius_quantity) if return_nearest_xmatch else self._process_multiple_matches(tab, radius_quantity)
+    
+    
     def _process_multiple_matches(self, tab, radius):
-        """
-        Process multiple Gaia sources matches.
-        
-        Parameters:
-            tab (pd.DataFrame): DataFrame of matched Gaia sources
-            radius (u.Quantity): Search radius
-            
-        Returns:
-            pd.DataFrame: Processed DataFrame
-            
-        Raises:
-            ValueError: If no valid parallax values are found
-        """
-        tab.loc[tab["parallax"] < 0, "parallax"] = np.nan
-
+        """Clean and return multiple Gaia matches as a DataFrame."""
+        tab["parallax"] = tab["parallax"].where(tab["parallax"] >= 0, np.nan)
+    
         if tab["parallax"].isnull().all():
-            raise ValueError(f"No stars within {radius} have valid parallax!")
-
+            raise ValueError(f"No valid parallax values found within {radius}")
+    
         self._update_target_coord(tab)
         return tab
-
+    
+    
     def _process_nearest_match(self, tab, radius):
-        """
-        Process the nearest Gaia match.
-        
-        Parameters:
-            tab (pd.DataFrame): DataFrame of matched Gaia sources
-            radius (u.Quantity): Search radius
-            
-        Returns:
-            pd.Series: The nearest match
-        """
-        target = tab.iloc[0]
+        """Return the nearest Gaia source as a Series."""
+        nearest = tab.iloc[0]
         self._update_target_coord(tab)
-        self._assign_gaia_metadata(target)
-        return target
-
+        self._assign_gaia_metadata(nearest)
+        return nearest
+    
+    
     def _update_target_coord(self, tab):
-        """
-        Update target coordinates based on Gaia data.
-        
-        Parameters:
-            tab (pd.DataFrame): DataFrame of matched Gaia sources
-        """
-        # This was called in other methods but not defined in the original code
-        # Implementing a basic version that would make sense in context
-        if len(tab) > 0 and self.gaiaid is None:
+        """Update coordinates using nearest Gaia source if gaiaid is not set."""
+        if self.gaiaid is None and not tab.empty:
             nearest = tab.iloc[0]
             if self.verbose:
-                print(f"Updating target coordinates based on nearest Gaia source (separation: {nearest.separation:.2f}\")")
-                
+                print(f"Updating target coordinates based on Gaia source (separation: {nearest.separation:.2f}\")")
+            # Optional: update self.ra and self.dec if desired    
+    
     def _assign_gaia_metadata(self, target):
-        """
-        Assign Gaia metadata to the target object.
-        
-        Parameters:
-            target (pd.Series): The nearest Gaia match
-        """
+        """Store Gaia metadata and flag potential binarity or data quality issues."""
         if self.gaiaid is None:
             self.gaiaid = int(target["source_id"])
         self.gaia_params = target
-
-        # Check astrometric excess noise
-        ens = target.get("astrometric_excess_noise_sig", 0)
-        if ens >= 5:
-            logger.info(f"astrometric_excess_noise_sig={ens:.2f} suggests binarity.")
-
-        # Check goodness of fit
-        gof = target.get("astrometric_gof_al", 0)
-        if gof >= 20:
-            logger.info(f"astrometric_gof_al={gof:.2f} suggests binarity.")
-
-        # Check visibility period usage
-        vis_periods = target.get("visibility_periods_used", 0)
-        if vis_periods < 6:
-            logger.info("visibility_periods_used < 6: no astrometric solution")
-
-        # Check RUWE value for non-single sources
+    
+        def log_if(condition, message):
+            if condition:
+                logger.info(message)
+    
+        log_if(target.get("astrometric_excess_noise_sig", 0) >= 5, 
+               f"astrometric_excess_noise_sig={target['astrometric_excess_noise_sig']:.2f} suggests binarity.")
+    
+        log_if(target.get("astrometric_gof_al", 0) >= 20, 
+               f"astrometric_gof_al={target['astrometric_gof_al']:.2f} suggests binarity.")
+    
+        log_if(target.get("visibility_periods_used", 0) < 6, 
+               "visibility_periods_used < 6: no astrometric solution")
+    
         ruwe_results = self.get_vizier_param("ruwe")
         if ruwe_results:
-            ruwe_vals = list(ruwe_results.values())
-            if ruwe_vals and isinstance(ruwe_vals[0], dict):
-                ruwe_val = next(iter(ruwe_vals[0].values()), None)
-                if ruwe_val and ruwe_val > 1.4:
-                    logger.info(f"RUWE={ruwe_val:.1f} > 1.4 suggests non-single source")
-
-    def __repr__(self):
-        """Return string representation of the Target object."""
-        coord_str = self.target_coord.to_string("decimal").replace(" ", ", ")
-        return (f"{self.__class__.__name__}("
-                f"name='{getattr(self, 'name', 'Unnamed')}', "
-                f"gaiaid={self.gaiaid}, "
-                f"ra={self.ra}, dec={self.dec}, "
-                f"coord=({coord_str}), "
-                f"search_radius={self.search_radius})"
-               )
-    
-
-@dataclass
-class Star(Target):
-    """
-    A class representing a star, extending the Target class with stellar-specific functionality.
-    Provides methods to query and analyze data from various astronomical catalogs.
-    """
-    star_name: str
-    source: str = "tic"  # Default source for stellar parameters
-    tfop_data: dict = None
-    data_json: dict = None
-    exofop_url: str = None
-    star_names: list = field(default_factory=list)
-    gaia_name: str = None
-    toiid: int = None
-    ticid: int = None
-    query_name: str = None
-    verbose: bool = True
-    
-    def __post_init__(self):
-        """Initialize the parent Target class with default values."""
-        super().__init__(ra_deg=None, dec_deg=None, gaiaid=None, verbose=self.verbose)
-        
-        # Initialize other attributes that will be populated later
-        self.magnitudes = None
-        self.rstar = None
-        self.mstar = None
-        self.rhostar = None
-        self.teff = None
-        self.logg = None
-        self.feh = None
+            ruwe_val = next(iter(ruwe_results.values()[0].values()), None)
+            if ruwe_val and ruwe_val > 1.4:
+                logger.info(f"RUWE={ruwe_val:.1f} > 1.4 suggests non-single source")
 
     def query_tfop_data(self) -> dict:
         """
@@ -673,8 +561,8 @@ class Star(Target):
         dec = coordinates.get("dec")
         
         if ra is not None and dec is not None:
-            self.ra = float(ra)
-            self.dec = float(dec)
+            self.ra_deg = float(ra)
+            self.dec_deg = float(dec)
             self.target_coord = SkyCoord(ra=ra, dec=dec, unit="degree")
 
         # Extract TOI ID
@@ -921,7 +809,7 @@ class Star(Target):
         Interpolate spectral type from Mamajek table from
         http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
         based on observables Teff and color indices.
-        c.f. self.query_vizier_param("SpT")
+        c.f. self.get_vizier_table_param("SpT")
     
         Parameters
         ----------
@@ -1054,16 +942,6 @@ class Star(Target):
             "logg": self.logg,
             "feh": self.feh,
         }
-    
-    def __repr__(self):
-        """Return string representation of the Target object."""
-        coord_str = self.target_coord.to_string("decimal").replace(" ", ", ")
-        return (f"{self.__class__.__name__}("
-                f"star_name='{getattr(self, 'star_name', 'Unnamed')}', "
-                f"gaiaid={self.gaiaid}, "
-                f"ra={self.ra}, dec={self.dec}, "
-                f"coord=({coord_str}))"
-               )
     
 
 @dataclass
@@ -1594,11 +1472,11 @@ def plot_cmd(
         )
         # compute intrinsic color index
         if estimate_color:
-            df["bp_rp0"] = get_absolute_color_index(
+            df[xaxis] = get_absolute_color_index(
                 df["a_g_val"], df["phot_bp_mean_mag"], df["phot_rp_mean_mag"]
             )
         else:
-            df["bp_rp0"] = df["bp_rp"] - df["e_bp_min_rp_val"]
+            df[xaxis] = df["bp_rp"] - df["e_bp_min_rp_val"]
         ax.set_xlabel(r"$G_{BP} - G_{RP}$ [mag]", fontsize=16)
         ax.set_ylabel(r"$G$ [mag]", fontsize=16)
 
@@ -1607,7 +1485,7 @@ def plot_cmd(
         if match_id:
             errmsg = f"Given cluster catalog does not contain the target gaia id [{target_gaiaid}]"
             assert sum(idx) > 0, errmsg
-            x, y = df.loc[idx, "bp_rp0"], df.loc[idx, "abs_gmag"]
+            x, y = df.loc[idx, xaxis], df.loc[idx, yaxis]
         else:
             assert df_target is not None, "provide df_target"
             df_target["distance"] = Distance(
@@ -1621,16 +1499,16 @@ def plot_cmd(
             )
             # compute intrinsic color index
             if estimate_color:
-                df_target["bp_rp0"] = get_absolute_color_index(
+                df_target[xaxis] = get_absolute_color_index(
                     df_target["a_g_val"],
                     df_target["phot_bp_mean_mag"],
                     df_target["phot_rp_mean_mag"],
                 )
             else:
-                df_target["bp_rp0"] = (
+                df_target[xaxis] = (
                     df_target["bp_rp"] - df_target["e_bp_min_rp_val"]
                 )
-            x, y = df_target["bp_rp0"], df_target["abs_gmag"]
+            x, y = df_target[xaxis], df_target[yaxis]
         if target_label is not None:
             ax.legend(loc="best")
         ax.plot(
@@ -1640,32 +1518,35 @@ def plot_cmd(
             c=target_color,
             ms="25",
             label=target_label,
+            # cmap=cmap,
             zorder=10,
         )
     if log_age is not None:
         # plot isochrones
         try:
             from isochrones import get_ichrone
-
+    
             iso_grid = get_ichrone("mist")
-        except Exception:
-            errmsg = "pip install isochrones"
-        assert len(eep_limits) == 2, "eep_limits=(min,max)"
-        iso_df = iso_grid.isochrone(log_age, feh)
-        idx = (iso_df.eep > eep_limits[0]) & (iso_df.eep < eep_limits[1])
-        G = iso_df.G_mag[idx]
-        BP_RP = iso_df.BP_mag[idx] - iso_df.RP_mag[idx]
-        label = f"log(t)={log_age:.2f}\nfeh={feh:.2f}"
-        ax.plot(BP_RP, G, c="k", label=label)
-        ax.legend(title="MIST isochrones")
-
+            assert len(eep_limits) == 2, "eep_limits=(min,max)"
+            iso_df = iso_grid.isochrone(log_age, feh)
+            idx = (iso_df.eep > eep_limits[0]) & (iso_df.eep < eep_limits[1])
+            G = iso_df.G_mag[idx]
+            #FIXME: check if xaxis is bp-rp
+            BP_RP = iso_df.BP_mag[idx] - iso_df.RP_mag[idx]
+            label = f"log(t)={log_age:.2f}\nfeh={feh:.2f}"
+            ax.plot(BP_RP, G, c="k", label=label)
+            ax.legend(title="MIST isochrones")
+        except Exception as e:
+            print("Could not plot isochrones. You may need to install the 'isochrones' package:")
+            print("    pip install isochrones")
+            print(f"Exception: {e}")
     # df.plot.scatter(ax=ax, x="bp_rp", y="abs_gmag", marker=".")
     if color == "radius_val":
         rstar = np.log10(df[color].astype(float))
         c = ax.scatter(df[xaxis], df[yaxis], marker=".", c=rstar, cmap=cmap)
         ax.figure.colorbar(c, ax=ax, label=r"$\log$(R/R$_{\odot}$)")
     else:
-        c = ax.scatter(df[xaxis], df[yaxis], c=df[color], marker=".")
+        c = ax.scatter(df[xaxis], df[yaxis], c=df[color], marker=".", cmap=cmap)
         ax.figure.colorbar(c, ax=ax, label=color)
 
     ax.set_xlim(df[xaxis].min(), df[xaxis].max())
@@ -1674,7 +1555,6 @@ def plot_cmd(
         text = len(df[[xaxis, yaxis]].dropna())
         ax.text(0.8, 0.8, f"n={text}", fontsize=14, transform=ax.transAxes)
     return ax
-
 
 def plot_hrd(
     df,
@@ -1805,7 +1685,6 @@ def plot_hrd(
             0.8, 0.8, f"nstars={text}", fontsize=14, transform=ax.transAxes
         )
     return ax
-
 
 def plot_rdp_pmrv(
     df,
@@ -1977,7 +1856,6 @@ def plot_rdp_pmrv(
             logger.error("Error: ", errmsg)
             # raise ValueError(errmsg)
     return fig
-
 
 def get_transformed_coord(df, frame="galactocentric", verbose=True):
     """
@@ -2307,7 +2185,7 @@ def interpolate_mamajek_table(
         Interpolate spectral type from Mamajek table from
         http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
         based on observables Teff and color indices.
-        c.f. self.query_vizier_param("SpT")
+        c.f. self.get_vizier_table_param("SpT")
 
         Parameters
         ----------
