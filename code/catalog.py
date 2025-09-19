@@ -9,7 +9,6 @@ import requests
 from dataclasses import dataclass, field
 from typing import Dict, Tuple, List, Optional
 from urllib.request import urlopen
-from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as pl
 import pandas as pd
@@ -132,7 +131,7 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Ratzenboeck2023b": "J/A+A/678/A71", # ages
     # Using cluster masses, radii, and dynamics to create a cleaned open cluster catalogue
     "Hunt2024": "J/A+A/686/A42",
-    #
+    # 
     "Perren2023": "local",
     # Melange4: A 27 Myr Extended Population of Lower Centaurus Crux with a Transiting Two-planet System
     "Wood2023": "J/AJ/165/85",
@@ -160,11 +159,14 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "CastroGinard2020": "J/A+A/635/A45",
     # 1481 clusters and their members
     "CantatGaudin2020": "J/A+A/633/A99",
-    # Untangling the Galaxy. II. Structure within 3kpc (Kounkel+, 2020)
+    # Untangling the Galaxy. II. Structure within 3kpc
     "Kounkel2020": "J/AJ/160/279",
     # open clusters in the Galactic anticenter
     "CastroGinard2019": "J/A+A/627/A35",
-    #
+    # Untangling the Galaxy. I. Local Structure and Star Formation History of the Milky Way
+    # http://mkounkel.com/mw3d/hr.html
+    "Kounkel2019": "J/AJ/158/122",  
+    # Gaia DR2 open clusters in the Milky Way
     "CantatGaudin2018": "J/A+A/618/A93",
     # HRD of Gaia DR2
     "Babusiaux2018": "J/A+A/616/A10",
@@ -176,11 +178,9 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Gagne2018a": "J/ApJ/860/43",  # TGAS
     "Gagne2018b": "J/ApJ/862/138",  # DR2
     # ages of 269 OC
-    "Bossini2019": "J/A+A/623/A108/tablea",
+    "Bossini2019": "J/A+A/623/A108",
     # APOGEE14+GALAH2 of open clusters
     "Carrera2019": "J/A+A/623/A80",
-    # Argus assoc via simbad link
-    "Zuckerman2019": "None",
     # eta Cha assoc
     "Murphy2013": "J/MNRAS/435/1325",
     # nu Cha assoc
@@ -214,6 +214,7 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     "Randich2022": "J/A+A/666/A121",
     # Gaia-ESO Survey in 7 open star cluster fields
     "Randich2018": "J/A+A/612/A99",
+    # 
     "Kharchenko2013": "J/A+A/558/A53",
     # OC #"Dias2014"?
     "Dias2016": "B/ocl",
@@ -232,9 +233,6 @@ VIZIER_KEYS_CLUSTER_CATALOG = {
     # 'BailerJones2018': 'I/347', #distances
     # 'Luo2019': 'V/149', #Lamost
     # "Cody2018": "",
-    # Local structure & star formation history of the MW
-    # http://mkounkel.com/mw3d/hr.html
-    "Kounkel2019": "J/AJ/158/122",  # Local structure & star formation history of the MW
     # "Feinstein2020": "", #NYMG
     "Bianchi2017_GALEX": "II/335",  # see also https://ui.adsabs.harvard.edu/abs/2020ApJS..250...36B/abstract
     # YSO from SED using CNN
@@ -1381,6 +1379,25 @@ def get_nexsci_data(table_name="ps", method="Transit", outdir=DATA_PATH, clobber
         logger.info("Loaded: ", fp)
     return df
 
+# def get_nexsci_data(table_name="ps", clobber=False):
+#     """
+#     ps: self-consistent set of parameters
+#     pscomppars: a more complete, though not necessarily self-consistent set of parameters
+#     """
+#     url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
+#     logger.info("Column definitions: ", url)
+#     fp = Path("../data/",f"nexsci_{table_name}.csv")
+#     if not fp.exists() or clobber:
+#         logger.info(f"Downloading NExSci {table_name} table...")
+#         nexsci_tab = NasaExoplanetArchive.query_criteria(table=table_name, where="discoverymethod like 'Transit'")
+#         df_nexsci = nexsci_tab.to_pandas()
+#         df_nexsci.to_csv(fp, index=False)
+#         logger.info("Saved: ", fp)
+#     else:
+#         df_nexsci = pd.read_csv(fp)
+#         logger.info("Loaded: ", fp)
+#     return df_nexsci
+    
 def get_absolute_gmag(gmag, distance, a_g):
     """
     gmag : float
@@ -2268,22 +2285,10 @@ def get_params_from_tfop(tfop_data, name="planet_parameters", idx=None):
 def get_tic_id(target_name: str) -> int:
     return int(query_tfop_data(target_name)["basic_info"]["tic_id"])
 
-
-def get_nexsci_data(table_name="ps", clobber=False):
+def get_mist_eep_table():
     """
-    ps: self-consistent set of parameters
-    pscomppars: a more complete, though not necessarily self-consistent set of parameters
+    For eep phases, see
+    http://waps.cfa.harvard.edu/MIST/README_tables.pdf
     """
-    url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
-    logger.info("Column definitions: ", url)
-    fp = Path("../data/",f"nexsci_{table_name}.csv")
-    if not fp.exists() or clobber:
-        logger.info(f"Downloading NExSci {table_name} table...")
-        nexsci_tab = NasaExoplanetArchive.query_criteria(table=table_name, where="discoverymethod like 'Transit'")
-        df_nexsci = nexsci_tab.to_pandas()
-        df_nexsci.to_csv(fp, index=False)
-        logger.info("Saved: ", fp)
-    else:
-        df_nexsci = pd.read_csv(fp)
-        logger.info("Loaded: ", fp)
-    return df_nexsci
+    fp = Path(DATA_PATH, "mist_eep_table.csv")
+    return pd.read_csv(fp, comment="#")

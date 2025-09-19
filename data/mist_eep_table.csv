@@ -1,0 +1,12 @@
+#http://waps.cfa.harvard.edu/MIST/README_tables.pdf
+Primary EEP,EEP Number,Phase
+1,1,pre-main sequence(PMS)
+2,202,zero age main sequence (ZAMS)
+3,353,intermediate age main sequence (IAMS )
+4,454,terminal age main sequence (TAMS)
+5,605,tip of the red giant branch (RGBTip)
+6,631,zero age core helium burning (ZACHeB)
+7,707,terminal age core helium burning (TACHeB)
+8,808,thermally pulsating asymptotic giant branch (TPAGB)
+9,1409,post asymptotic giant branch (post-AGB)
+10,1710,white dwarf cooling sequence (WDCS)
