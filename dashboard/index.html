@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wakai - Stellar Age-Dating GUI</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Plotting and deterministic posterior math -->
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
+  <script src="posterior.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Glassmorphic Navigation Bar -->
+    <header>
+      <nav class="navbar">
+        <div class="logo"><span class="logo-mark">w</span><span class="logo-word">wakai</span><span class="logo-caption">stellar age workspace</span></div>
+        <ul class="nav-links">
+          <li><a class="nav-item active" data-page="target">Target Hub</a></li>
+          <li><a class="nav-item" data-page="gyro">gyro-interp</a></li>
+          <li><a class="nav-item" data-page="baffles">BAFFLES</a></li>
+          <li><a class="nav-item" data-page="summary">Summary</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <div class="workflow-strip" aria-label="Analysis progress">
+      <div class="workflow-target">
+        <span class="workflow-label">Active target</span>
+        <strong id="workspace-target-name">No target selected</strong>
+      </div>
+      <div class="workflow-methods">
+        <span class="workflow-stage" id="workspace-gyro-stage"><i></i>Rotation</span>
+        <span class="workflow-connector"></span>
+        <span class="workflow-stage" id="workspace-baffles-stage"><i></i>Lithium + activity</span>
+        <span class="workflow-connector"></span>
+        <span class="workflow-stage" id="workspace-joint-stage"><i></i>Joint age</span>
+      </div>
+    </div>
+
+    <main>
+      <!-- ================= PAGE 1: TARGET HUB ================= -->
+      <section id="page-target" class="page active">
+        <div class="grid-main-side">
+          <!-- Main Catalog and Reference Table -->
+          <div>
+            <div class="card" id="ref-table-card" hidden>
+              <div class="card-eyebrow">Measurements</div>
+              <div class="card-title">Reference table</div>
+              <p style="margin-bottom: 1.5rem;">
+                Manage measurements for the active target. These parameters serve as the primary source of inputs for the active age-dating models. Modifying these values updates input fields across pages.
+              </p>
+
+              <div class="table-container">
+                <table id="ref-table">
+                  <thead>
+                    <tr>
+                      <th>Parameter</th>
+                      <th>Value</th>
+                      <th>Uncertainty (1σ)</th>
+                      <th>Reference</th>
+                      <th>Catalog Source</th>
+                      <th>Source URL</th>
+                      <th style="width: 80px; text-align: center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ref-table-body">
+                    <!-- Dynamic Rows Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="ref-table-actions">
+                <button class="btn btn-secondary btn-sm" id="btn-query-vizier">Query VizieR Parameters</button>
+                <button class="btn btn-secondary btn-sm" id="btn-query-simbad">Query SIMBAD</button>
+                <button class="btn btn-secondary btn-sm" id="btn-add-row">+ Add Parameter Row</button>
+                <button class="btn btn-primary btn-sm" id="btn-save-table">Apply Changes</button>
+              </div>
+
+              <div class="catalog-query-panel" id="catalog-query-panel" hidden>
+                <div class="catalog-query-heading">
+                  <div>
+                    <strong>Catalog measurements</strong>
+                    <div class="catalog-query-status" id="catalog-query-status"></div>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="btn-close-catalog-panel">Close</button>
+                </div>
+
+                <div class="catalog-parameter-search">
+                  <input class="input-control" id="vizier-parameter-input" list="vizier-parameter-list" placeholder="Choose any VizieR column, e.g. Teff or Prot">
+                  <datalist id="vizier-parameter-list"></datalist>
+                  <button class="btn btn-secondary btn-sm" id="btn-find-vizier-param">Find Parameter</button>
+                  <button class="btn btn-primary btn-sm" id="btn-add-catalog-selection">Add Selected to ref_table</button>
+                </div>
+
+                <div class="simbad-result" id="simbad-result" hidden></div>
+                <div class="table-container catalog-candidate-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Select</th>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                        <th>Uncertainty</th>
+                        <th>VizieR column</th>
+                        <th>Source</th>
+                      </tr>
+                    </thead>
+                    <tbody id="catalog-candidate-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Target Selector and Metadata -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow">Target</div>
+              <div class="card-title">Select a star</div>
+              <div class="form-group target-search-container">
+                <label for="target-search-input">Search Preloaded or Input Gaia ID</label>
+                <input type="text" class="input-control" id="target-search-input" placeholder="Type target name (e.g. TOI-837)..." autocomplete="off">
+                <div class="target-suggestions" id="target-suggestions">
+                  <!-- Suggestions populated dynamically -->
+                </div>
+              </div>
+              <button class="btn btn-secondary style-button" id="btn-query-target" style="width: 100%;">Query Catalog Services</button>
+
+              <div class="meta-grid" style="margin-top: 1.5rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Gaia DR3 ID</div>
+                  <div class="meta-value" id="meta-gaiaid">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">RA (deg)</div>
+                  <div class="meta-value" id="meta-ra">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Dec (deg)</div>
+                  <div class="meta-value" id="meta-dec">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Parallax (mas)</div>
+                  <div class="meta-value" id="meta-parallax">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">RV (km/s)</div>
+                  <div class="meta-value" id="meta-rv">-</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-eyebrow">Readiness</div>
+              <div class="card-title">Analysis status</div>
+              <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+                <div class="status-indicator">
+                  <div class="dot dot-active" id="status-target-dot"></div>
+                  <span>Target Loaded: <strong id="status-target-name">None</strong></span>
+                </div>
+                <div class="status-indicator">
+                  <div class="dot dot-inactive" id="status-gyro-dot"></div>
+                  <span>gyro-interp: <strong id="status-gyro-text">Idle</strong></span>
+                </div>
+                <div class="status-indicator">
+                  <div class="dot dot-inactive" id="status-baffles-dot"></div>
+                  <span>BAFFLES: <strong id="status-baffles-text">Idle</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 2: GYRO-INTERP ================= -->
+      <section id="page-gyro" class="page">
+        <div class="grid-side-main">
+          <!-- Inputs / Controls Panel -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow gyro">Rotation</div>
+              <div class="card-title">gyro-interp inputs</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                Estimate age from rotation using the Bouma et al. sequence grids. Valid for 3800–6200 K.
+              </p>
+
+              <div class="form-group">
+                <label for="gyro-teff-input">Effective Temp T<sub>eff</sub> (K)</label>
+                <div class="slider-container">
+                  <input type="range" class="range-slider" id="gyro-teff-slider" min="3800" max="6200" step="50" value="5000">
+                  <input type="number" class="input-control slider-val" id="gyro-teff-input" min="3800" max="6200" step="any" value="5000">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="gyro-prot-input">Rotation Period P<sub>rot</sub> (days)</label>
+                <div class="slider-container">
+                  <input type="range" class="range-slider" id="gyro-prot-slider" min="0.5" max="50" step="0.1" value="10.0">
+                  <input type="number" class="input-control slider-val" id="gyro-prot-input" min="0.5" max="50" step="any" value="10.0">
+                </div>
+              </div>
+
+              <button class="btn btn-gyro" id="btn-run-gyro" style="width: 100%; margin-top: 1rem;">Run gyro-interp</button>
+            </div>
+
+            <div class="card" id="gyro-summary-card" style="display: none;">
+              <div class="card-eyebrow gyro">Result</div>
+              <div class="card-title">Rotation age</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr;">
+                <div class="meta-item">
+                  <div class="meta-label">Median Gyro Age</div>
+                  <div class="meta-value" id="gyro-res-age" style="color: var(--color-gyro); font-size: 1.5rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">68% Confidence Interval</div>
+                  <div class="meta-value" id="gyro-res-ci" style="font-size: 0.95rem;">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visualization / Outputs -->
+          <div>
+            <!-- Progress Animation Container -->
+            <div class="card loader-container" id="gyro-loader">
+              <div class="orbital-spinner"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running gyrochronology interpolation...</h3>
+              <p>Simulating MCMC sampling on Bouma+2023 rotation sequences</p>
+            </div>
+
+            <!-- Plot Panel -->
+            <div id="gyro-results-panel" style="display: none;">
+              <div class="card">
+                <div class="card-eyebrow">Input check</div>
+                <div class="card-title">Rotation measurement</div>
+                <div id="plot-gyro-grid" class="plotly-chart"></div>
+              </div>
+              <div class="card">
+                <div class="card-eyebrow">Posterior</div>
+                <div class="card-title">Rotation age distribution</div>
+                <div id="plot-gyro-posterior" class="plotly-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 3: BAFFLES ================= -->
+      <section id="page-baffles" class="page">
+        <div class="grid-side-main">
+          <!-- Inputs / Controls Panel -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow baffles">Lithium + activity</div>
+              <div class="card-title">BAFFLES inputs</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                Estimate age from lithium depletion and chromospheric activity. Intrinsic B−V is derived from effective temperature.
+              </p>
+
+              <div class="form-group">
+                <label for="baffles-teff-input">Effective Temp T<sub>eff</sub> (K)</label>
+                <div class="slider-container">
+                  <input type="range" class="range-slider" id="baffles-teff-slider" min="4000" max="6500" step="50" value="5000">
+                  <input type="number" class="input-control slider-val" id="baffles-teff-input" min="4000" max="6500" step="any" value="5000">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="baffles-liew-input">Lithium Equivalent Width (Li EW) (mÅ)</label>
+                <div class="slider-container">
+                  <input type="range" class="range-slider" id="baffles-liew-slider" min="0" max="400" step="5" value="150">
+                  <input type="number" class="input-control slider-val" id="baffles-liew-input" min="0" max="400" step="any" value="150">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="baffles-rhk-input">Activity Index log R'<sub>HK</sub></label>
+                <div class="slider-container">
+                  <input type="range" class="range-slider" id="baffles-rhk-slider" min="-5.2" max="-3.8" step="0.05" value="-4.50">
+                  <input type="number" class="input-control slider-val" id="baffles-rhk-input" min="-5.2" max="-3.8" step="any" value="-4.50">
+                </div>
+              </div>
+
+              <button class="btn btn-baffles" id="btn-run-baffles" style="width: 100%; margin-top: 1rem;">Run BAFFLES</button>
+            </div>
+
+            <div class="card" id="baffles-summary-card" style="display: none;">
+              <div class="card-eyebrow baffles">Result</div>
+              <div class="card-title">BAFFLES age</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="meta-item">
+                  <div class="meta-label">(B-V)<sub>o</sub> used</div>
+                  <div class="meta-value" id="baffles-res-bv" style="font-size: 0.85rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Lithium Age Peak</div>
+                  <div class="meta-value" id="baffles-res-li-age" style="color: var(--color-baffles); font-size: 1.15rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Activity Age Peak</div>
+                  <div class="meta-value" id="baffles-res-act-age" style="color: var(--color-baffles); font-size: 1.15rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Combined BAFFLES Age</div>
+                  <div class="meta-value" id="baffles-res-comb-age" style="color: var(--color-baffles); font-size: 1.3rem;">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visualization / Outputs -->
+          <div>
+            <!-- Progress Animation Container -->
+            <div class="card loader-container" id="baffles-loader">
+              <div class="orbital-spinner" style="border-top-color: var(--color-baffles);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running BAFFLES empirical model...</h3>
+              <p>Simulating joint lithium depletion and Ca II R_HK posterior profiles</p>
+            </div>
+
+            <!-- Plot Panels -->
+            <div id="baffles-results-panel" style="display: none;">
+              <div class="card">
+                <div class="card-eyebrow">Components</div>
+                <div class="card-title">Lithium and activity</div>
+                <div id="plot-baffles-indiv" class="plotly-chart"></div>
+              </div>
+              <div class="card">
+                <div class="card-eyebrow">Posterior</div>
+                <div class="card-title">Combined BAFFLES distribution</div>
+                <div id="plot-baffles-posterior" class="plotly-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 4: SUMMARY ================= -->
+      <section id="page-summary" class="page">
+        <!-- Top Consolidated Metrics Dashboard -->
+        <div class="age-dashboard-box">
+          <div>
+            <div class="meta-label" style="margin-bottom: 0.25rem;">Joint Age Constraint</div>
+            <div class="age-display">
+              <div class="age-number" id="summary-joint-age">-</div>
+              <div class="age-unit">Myr</div>
+            </div>
+          </div>
+          <div>
+            <div class="meta-label" style="text-align: right; margin-bottom: 0.4rem;">68% Confidence Bounds</div>
+            <div class="age-range" id="summary-joint-ci">-</div>
+          </div>
+        </div>
+
+        <div class="grid-main-side">
+          <!-- Left: Joined Posterior Charts -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow joint">Synthesis</div>
+              <div class="card-title">Age posterior comparison</div>
+              <p style="margin-bottom: 1.25rem;">
+                The joint posterior is the normalized product of the two model PDFs on a shared age grid, assuming statistical independence.
+              </p>
+              <div id="plot-summary-comparison" class="plotly-chart" style="height: 440px;"></div>
+            </div>
+
+            <!-- Evolutionary Stage Timeline -->
+            <div class="card">
+              <div class="card-eyebrow">Context</div>
+              <div class="card-title">Evolutionary stage</div>
+              <div class="timeline" id="age-timeline">
+                <div class="timeline-node" id="tl-pms">
+                  <div class="node-dot"></div>
+                  <div class="node-label">Pre-Main Sequence (&lt;50 Myr)</div>
+                </div>
+                <div class="timeline-node" id="tl-zams">
+                  <div class="node-dot"></div>
+                  <div class="node-label">Zero-Age Main Sequence (50-200 Myr)</div>
+                </div>
+                <div class="timeline-node" id="tl-youngms">
+                  <div class="node-dot"></div>
+                  <div class="node-label">Young MS (200-800 Myr)</div>
+                </div>
+                <div class="timeline-node" id="tl-oldms">
+                  <div class="node-dot"></div>
+                  <div class="node-label">Middle Age / Old MS (&gt;800 Myr)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Summary Table & Exporter -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow">Methods</div>
+              <div class="card-title">Comparison</div>
+              <div class="table-container" style="margin-bottom: 1.25rem;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Method / Tool</th>
+                      <th>Peak Age (Myr)</th>
+                      <th>68% range</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>gyro-interp</strong></td>
+                      <td id="td-gyro-age">-</td>
+                      <td id="td-gyro-ci">-</td>
+                      <td id="td-gyro-status"><span class="status-indicator"><div class="dot dot-inactive"></div>MCMC Idle</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>BAFFLES</strong></td>
+                      <td id="td-baffles-age">-</td>
+                      <td id="td-baffles-ci">-</td>
+                      <td id="td-baffles-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Emp. Idle</span></td>
+                    </tr>
+                    <tr style="border-top: 1px solid var(--glass-border);">
+                      <td><strong>Joint Product</strong></td>
+                      <td id="td-joint-age" style="color: var(--color-joint); font-weight: 700;">-</td>
+                      <td id="td-joint-ci" style="font-weight: 600;">-</td>
+                      <td id="td-joint-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <button class="btn btn-primary" id="btn-export-report" style="width: 100%;">
+                  Export Stellar Age Report (JSON)
+                </button>
+                <button class="btn btn-secondary" id="btn-print-report" style="width: 100%;">
+                  Print Report
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-eyebrow">Inputs</div>
+              <div class="card-title">Target properties</div>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;" id="summary-target-properties">
+                <!-- Dynamically populated target param list -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notification Popup -->
+  <div class="toast-msg" id="toast">Changes applied successfully.</div>
+
+  <!-- App logic script -->
+  <script src="app.js"></script>
+</body>
+</html>
