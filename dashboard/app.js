@@ -7,6 +7,7 @@
 const state = {
   activeTarget: null,
   activePage: 'target',
+  clusterResult: null,
   refTable: [],
   catalogCandidates: [],
   availableVizierParameters: [],
@@ -241,8 +242,8 @@ function initApp() {
   setupTargetSelector();
   setupTableActions();
   setupCatalogActions();
-  setupGyroPageControls();
-  setupBafflesPageControls();
+  setupModelRunControls();
+  setupClusterPageControls();
   setupSummaryActions();
   loadSavedTargetIndex();
   updateWorkflowStrip();
@@ -281,18 +282,46 @@ function setupNavigation() {
   });
 }
 
+function syncGyroInputParams() {
+  const teffRow = state.refTable.find(r => r.parameter === 'Teff');
+  const protRow = state.refTable.find(r => r.parameter === 'Prot');
+  document.getElementById('gyro-in-teff').innerText = teffRow && teffRow.value != null
+    ? `${formatSignificant(teffRow.value, 8)} ± ${formatSignificant(teffRow.uncertainty, 6)} K`
+    : '—';
+  document.getElementById('gyro-in-prot').innerText = protRow && protRow.value != null
+    ? `${formatSignificant(protRow.value, 8)} ± ${formatSignificant(protRow.uncertainty, 6)} d`
+    : '—';
+}
+
+function syncBafflesInputParams() {
+  const teffRow = state.refTable.find(r => r.parameter === 'Teff');
+  const rhkRow = state.refTable.find(r => r.parameter === "log R'HK");
+  const liewRow = state.refTable.find(r => r.parameter === 'Li EW');
+  const fehRow = state.refTable.find(r => r.parameter === 'Fe/H');
+  document.getElementById('baffles-in-teff').innerText = teffRow && teffRow.value != null
+    ? `${formatSignificant(teffRow.value, 8)} ± ${formatSignificant(teffRow.uncertainty, 6)} K`
+    : '—';
+  document.getElementById('baffles-in-rhk').innerText = rhkRow && rhkRow.value != null
+    ? `${formatSignificant(rhkRow.value, 8)} ± ${formatSignificant(rhkRow.uncertainty, 6)}`
+    : '—';
+  document.getElementById('baffles-in-liew').innerText = liewRow && liewRow.value != null
+    ? `${formatSignificant(liewRow.value, 8)} ± ${formatSignificant(liewRow.uncertainty, 6)} mÅ`
+    : '—';
+  document.getElementById('baffles-in-feh').innerText = fehRow && fehRow.value != null
+    ? `${formatSignificant(fehRow.value, 8)} ± ${formatSignificant(fehRow.uncertainty, 6)}`
+    : '—';
+}
+
 function onPageEnter(pageId) {
   if (pageId === 'gyro') {
-    // Sync inputs from ref_table parameters
-    syncInputFromTable('Teff', 'gyro-teff-slider', 'gyro-teff-input');
-    syncInputFromTable('Prot', 'gyro-prot-slider', 'gyro-prot-input');
+    syncGyroInputParams();
     drawGyroPlots();
   } else if (pageId === 'baffles') {
-    // Sync inputs from ref_table
-    syncInputFromTable('Teff', 'baffles-teff-slider', 'baffles-teff-input');
-    syncInputFromTable('Li EW', 'baffles-liew-slider', 'baffles-liew-input');
-    syncInputFromTable('log R\'HK', 'baffles-rhk-slider', 'baffles-rhk-input');
+    syncBafflesInputParams();
     drawBafflesPlots();
+  } else if (pageId === 'cluster') {
+    syncClusterInputs();
+    if (state.clusterResult) renderClusterResult(state.clusterResult);
   } else if (pageId === 'summary') {
     updateSummaryPage();
   }
@@ -425,6 +454,7 @@ async function loadTarget(target) {
   state.activeTarget = target;
   state.refTable = JSON.parse(JSON.stringify(target.parameters || emptyDefaultParameters()));
   state.catalogCandidates = [];
+  state.clusterResult = null;
   document.getElementById('ref-table-card').hidden = false;
 
   // Reset Results
@@ -811,56 +841,24 @@ function setupTableActions() {
   });
 }
 
-function syncInputFromTable(paramName, sliderId, inputId) {
-  const row = state.refTable.find(r => r.parameter === paramName);
-  if (row) {
-    const slider = document.getElementById(sliderId);
-    const input = document.getElementById(inputId);
-    slider.value = row.value;
-    input.value = formatSignificant(row.value, 10);
-  }
+function setupModelRunControls() {
+  document.getElementById('btn-run-gyro').addEventListener('click', runGyro);
+  document.getElementById('btn-run-baffles').addEventListener('click', runBaffles);
 }
 
 // ================= 6. Gyro-interp Page Logic =================
 
-function setupGyroPageControls() {
-  const sliderTeff = document.getElementById('gyro-teff-slider');
-  const inputTeff = document.getElementById('gyro-teff-input');
-  const sliderProt = document.getElementById('gyro-prot-slider');
-  const inputProt = document.getElementById('gyro-prot-input');
-  const runBtn = document.getElementById('btn-run-gyro');
-
-  // Bidirectional binding for Teff
-  sliderTeff.addEventListener('input', () => {
-    inputTeff.value = sliderTeff.value;
-    updateRefTableVal('Teff', parseFloat(sliderTeff.value));
-  });
-  inputTeff.addEventListener('change', () => {
-    sliderTeff.value = inputTeff.value;
-    updateRefTableVal('Teff', parseFloat(inputTeff.value));
-  });
-
-  // Bidirectional binding for Prot
-  sliderProt.addEventListener('input', () => {
-    inputProt.value = sliderProt.value;
-    updateRefTableVal('Prot', parseFloat(sliderProt.value));
-  });
-  inputProt.addEventListener('change', () => {
-    sliderProt.value = inputProt.value;
-    updateRefTableVal('Prot', parseFloat(inputProt.value));
-  });
-
-  runBtn.addEventListener('click', async () => {
-    const teffVal = parseFloat(inputTeff.value);
-    const protVal = parseFloat(inputProt.value);
+async function runGyro() {
+    const runBtn = document.getElementById('btn-run-gyro');
+    const teffRow = state.refTable.find(r => r.parameter === 'Teff');
+    const protRow = state.refTable.find(r => r.parameter === 'Prot');
+    const teffVal = parseFloat(teffRow?.value);
+    const protVal = parseFloat(protRow?.value);
     if (!Number.isFinite(teffVal) || !Number.isFinite(protVal) || protVal <= 0) {
-      showToast('Enter a valid effective temperature and a positive rotation period');
+      showToast('Add valid Teff and positive Prot measurements to the reference table');
       return;
     }
 
-    // Fetch uncertainty from ref_table
-    const teffRow = state.refTable.find(r => r.parameter === 'Teff');
-    const protRow = state.refTable.find(r => r.parameter === 'Prot');
     const teffErr = positiveUncertainty(teffRow, 100);
     const protErr = positiveUncertainty(protRow, Math.max(0.01 * protVal, 0.01));
 
@@ -927,18 +925,6 @@ function setupGyroPageControls() {
     } finally {
       runBtn.disabled = false;
     }
-  });
-}
-
-function updateRefTableVal(paramName, newVal) {
-  const row = state.refTable.find(r => r.parameter === paramName);
-  if (row) {
-    if (Number(row.value) === Number(newVal)) return;
-    row.value = newVal;
-    if (['Teff', 'Prot'].includes(paramName)) invalidateMethod('gyro');
-    if (['Teff', 'Li EW', "log R'HK", 'Fe/H'].includes(paramName)) invalidateMethod('baffles');
-    renderRefTable();
-  }
 }
 
 function drawGyroPlots() {
@@ -948,8 +934,8 @@ function drawGyroPlots() {
   }
 
   const pdf = state.results.gyro.agePDF;
-  const targetTeff = parseFloat(document.getElementById('gyro-teff-input').value);
-  const targetProt = parseFloat(document.getElementById('gyro-prot-input').value);
+  const targetTeff = Number(state.refTable.find(r => r.parameter === 'Teff')?.value);
+  const targetProt = Number(state.refTable.find(r => r.parameter === 'Prot')?.value);
   const teffRow = state.refTable.find(r => r.parameter === 'Teff');
   const protRow = state.refTable.find(r => r.parameter === 'Prot');
   const teffErr = teffRow ? teffRow.uncertainty : 100;
@@ -1011,58 +997,18 @@ function drawGyroPlots() {
 
 // ================= 7. BAFFLES Page Logic =================
 
-function setupBafflesPageControls() {
-  const sliderTeff = document.getElementById('baffles-teff-slider');
-  const inputTeff = document.getElementById('baffles-teff-input');
-  const sliderLiew = document.getElementById('baffles-liew-slider');
-  const inputLiew = document.getElementById('baffles-liew-input');
-  const sliderRhk = document.getElementById('baffles-rhk-slider');
-  const inputRhk = document.getElementById('baffles-rhk-input');
-  const runBtn = document.getElementById('btn-run-baffles');
-
-  // Bidirectional binding for Teff
-  sliderTeff.addEventListener('input', () => {
-    inputTeff.value = sliderTeff.value;
-    updateRefTableVal('Teff', parseFloat(sliderTeff.value));
-  });
-  inputTeff.addEventListener('change', () => {
-    sliderTeff.value = inputTeff.value;
-    updateRefTableVal('Teff', parseFloat(inputTeff.value));
-  });
-
-  // Bidirectional binding for Lithium
-  sliderLiew.addEventListener('input', () => {
-    inputLiew.value = sliderLiew.value;
-    updateRefTableVal('Li EW', parseFloat(sliderLiew.value));
-  });
-  inputLiew.addEventListener('change', () => {
-    sliderLiew.value = inputLiew.value;
-    updateRefTableVal('Li EW', parseFloat(inputLiew.value));
-  });
-
-  // Bidirectional binding for log R'HK
-  sliderRhk.addEventListener('input', () => {
-    inputRhk.value = sliderRhk.value;
-    updateRefTableVal('log R\'HK', parseFloat(sliderRhk.value));
-  });
-  inputRhk.addEventListener('change', () => {
-    sliderRhk.value = inputRhk.value;
-    updateRefTableVal('log R\'HK', parseFloat(inputRhk.value));
-  });
-
-  runBtn.addEventListener('click', async () => {
-    const teffVal = parseFloat(inputTeff.value);
-    const liewVal = inputLiew.value.trim() === '' ? null : parseFloat(inputLiew.value);
-    const rhkVal = parseFloat(inputRhk.value);
-    if (!Number.isFinite(teffVal) || !Number.isFinite(rhkVal) || (liewVal !== null && !Number.isFinite(liewVal))) {
-      showToast('Enter valid effective temperature, activity, and lithium values');
-      return;
-    }
-
-    // Fetch uncertainties from ref_table
+async function runBaffles() {
+    const runBtn = document.getElementById('btn-run-baffles');
     const teffRow = state.refTable.find(r => r.parameter === 'Teff');
     const liewRow = state.refTable.find(r => r.parameter === 'Li EW');
     const rhkRow = state.refTable.find(r => r.parameter === 'log R\'HK');
+    const teffVal = parseFloat(teffRow?.value);
+    const liewVal = liewRow?.value == null || liewRow.value === '' ? null : Number(liewRow.value);
+    const rhkVal = parseFloat(rhkRow?.value);
+    if (!Number.isFinite(teffVal) || !Number.isFinite(rhkVal) || (liewVal !== null && !Number.isFinite(liewVal))) {
+      showToast('Add valid Teff, log R\'HK, and optional Li EW measurements to the reference table');
+      return;
+    }
 
     const teffErr = positiveUncertainty(teffRow, 100);
     const liewErr = positiveUncertainty(liewRow, 15);
@@ -1168,7 +1114,6 @@ function setupBafflesPageControls() {
     } finally {
       runBtn.disabled = false;
     }
-  });
 }
 
 function drawBafflesPlots() {
@@ -1236,6 +1181,168 @@ function drawBafflesPlots() {
   Plotly.newPlot('plot-baffles-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
 }
 
+// ================= 7B. Cluster Membership Logic =================
+
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function syncClusterInputs() {
+  const target = state.activeTarget;
+  const runBtn = document.getElementById('btn-run-cluster');
+  const hint = document.getElementById('cluster-input-hint');
+
+  const setField = (id, value, digits = 8) =>
+    (document.getElementById(id).innerText = value == null ? '-' : formatMetadata(value, digits));
+
+  document.getElementById('cluster-in-gaiaid').innerText = target?.gaiaid || '-';
+  setField('cluster-in-parallax', target?.parallax);
+  setField('cluster-in-pmra', target?.pmra);
+  setField('cluster-in-pmdec', target?.pmdec);
+  setField('cluster-in-rv', target?.rv ?? target?.radial_velocity);
+
+  const hasId = Boolean(String(target?.gaiaid || '').trim());
+  const hasCoords = [target?.ra, target?.dec, target?.parallax].every(v => Number.isFinite(Number(v)));
+  const ready = Boolean(target) && (hasId || hasCoords);
+  runBtn.disabled = !ready;
+
+  // Clear any stale result rendered for a previous target.
+  if (!state.clusterResult) {
+    document.getElementById('cluster-results-panel').style.display = 'none';
+    document.getElementById('cluster-loader').style.display = 'none';
+    document.getElementById('cluster-summary-card').style.display = 'none';
+  }
+
+  if (!target) {
+    hint.innerText = 'Load a target on the Target Hub first.';
+  } else if (!ready) {
+    hint.innerText = 'Target needs a Gaia ID, or RA/Dec/parallax for a crossmatch.';
+  } else if (!Number.isFinite(Number(target?.pmra)) || !Number.isFinite(Number(target?.pmdec))) {
+    hint.innerText = 'No proper motion on this target — membership will be scored on parallax only.';
+  } else {
+    hint.innerText = 'Ready. Gaia DR3 membership is checked first, then a kinematic crossmatch.';
+  }
+}
+
+function setupClusterPageControls() {
+  const runBtn = document.getElementById('btn-run-cluster');
+  runBtn.addEventListener('click', runCluster);
+}
+
+async function runCluster() {
+  const target = state.activeTarget;
+  if (!target) {
+    showToast('Load a target on the Target Hub first');
+    return;
+  }
+  const gaiaid = String(target.gaiaid || '').trim();
+  const hasCoords = [target.ra, target.dec, target.parallax].every(v => Number.isFinite(Number(v)));
+  if (!gaiaid && !hasCoords) {
+    showToast('Target needs a Gaia ID or RA/Dec/parallax');
+    return;
+  }
+
+  const catalog = document.getElementById('cluster-catalog-select').value;
+  const payload = {
+    catalog,
+    target: {
+      gaiaid: gaiaid || undefined,
+      ra: numberOrNull(target.ra),
+      dec: numberOrNull(target.dec),
+      parallax: numberOrNull(target.parallax),
+      pmra: numberOrNull(target.pmra),
+      pmdec: numberOrNull(target.pmdec),
+      radial_velocity: numberOrNull(target.rv ?? target.radial_velocity),
+    },
+  };
+
+  const runBtn = document.getElementById('btn-run-cluster');
+  document.getElementById('cluster-results-panel').style.display = 'none';
+  document.getElementById('cluster-loader').style.display = 'flex';
+  runBtn.disabled = true;
+
+  try {
+    const result = await apiCall('run/cluster', payload);
+    state.clusterResult = result;
+    renderClusterResult(result);
+    showToast(
+      result.matched
+        ? `Target is consistent with ${result.cluster_name}`
+        : `No cluster membership found (nearest: ${result.cluster_name || 'n/a'})`
+    );
+  } catch (err) {
+    document.getElementById('cluster-loader').style.display = 'none';
+    showToast(`Cluster check failed: ${err.message}`);
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+
+function renderClusterPlot(containerId, dataUri, errorMessage) {
+  const container = document.getElementById(containerId);
+  if (dataUri) {
+    const img = document.createElement('img');
+    img.src = dataUri;
+    img.alt = 'Cluster diagnostic plot';
+    container.replaceChildren(img);
+  } else {
+    container.innerHTML = `<p style="padding: 1rem; font-size: 0.85rem; color: var(--ink-faint);">Plot unavailable${
+      errorMessage ? `: ${escapeHtml(errorMessage)}` : ''
+    }</p>`;
+  }
+}
+
+function renderClusterResult(result) {
+  document.getElementById('cluster-loader').style.display = 'none';
+  document.getElementById('cluster-results-panel').style.display = 'block';
+
+  const prob = result.membership_probability;
+  const probText = prob == null ? '—' : `${(prob * 100).toFixed(1)}%`;
+
+  // Result summary card
+  document.getElementById('cluster-res-name').innerText = result.cluster_name || '-';
+  document.getElementById('cluster-res-prob').innerText = probText;
+  document.getElementById('cluster-res-prob-bar').style.width = `${prob == null ? 0 : Math.max(0, Math.min(1, prob)) * 100}%`;
+  const methodLabel = result.method === 'gaia_id' ? 'Gaia DR3 ID in catalog' : 'Kinematic crossmatch';
+  document.getElementById('cluster-res-method').innerText = methodLabel;
+  document.getElementById('cluster-summary-card').style.display = 'block';
+
+  // Verdict banner
+  const verdict = document.getElementById('cluster-verdict');
+  verdict.classList.toggle('is-member', Boolean(result.matched));
+  verdict.classList.toggle('no-member', !result.matched);
+  document.getElementById('cluster-verdict-icon').innerText = result.matched ? '✓' : '✕';
+  document.getElementById('cluster-verdict-title').innerText = result.matched
+    ? `Consistent with ${result.cluster_name}`
+    : 'No cluster membership';
+  const subParts = [];
+  if (result.method === 'gaia_id') subParts.push('Listed member in ' + result.catalog);
+  else subParts.push('Nearest core: ' + (result.cluster_name || 'n/a'));
+  if (result.sep3d_pc != null && result.extent_pc != null) {
+    subParts.push(`3D sep ${result.sep3d_pc.toFixed(1)} pc vs extent ${result.extent_pc.toFixed(1)} pc`);
+  }
+  if (result.mahalanobis != null) subParts.push(`Mahalanobis d=${result.mahalanobis.toFixed(2)} (dof ${result.dof})`);
+  document.getElementById('cluster-verdict-sub').innerText = subParts.join(' · ');
+
+  // Summary table
+  const body = document.getElementById('cluster-summary-body');
+  body.innerHTML = '';
+  (result.summary || []).forEach(item => {
+    const tr = document.createElement('tr');
+    const value = item.value == null || item.value === ''
+      ? '-'
+      : `${typeof item.value === 'number' ? formatSignificant(item.value, 8) : escapeHtml(item.value)}${item.unit ? ' ' + escapeHtml(item.unit) : ''}`;
+    tr.innerHTML = `<td>${escapeHtml(item.label)}</td><td>${value}</td>`;
+    body.appendChild(tr);
+  });
+
+  // Diagnostic plots
+  const plots = result.plots || {};
+  renderClusterPlot('plot-cluster-xyz', plots.xyz_uvw, plots.xyz_uvw_error);
+  renderClusterPlot('plot-cluster-rdp', plots.rdp_pmrv, plots.rdp_pmrv_error);
+}
+
 // ================= 8. Summary Page Logic =================
 
 function updateSummaryPage() {
@@ -1292,9 +1399,20 @@ function updateSummaryPage() {
     return;
   }
 
+  // Gyrochronology validity guard: Bouma+2023 rotation-sequence grids are
+  // only calibrated down to ~80 Myr (youngest reference cluster). If a
+  // significant fraction of the gyro posterior mass falls below this floor,
+  // the gyro age is an extrapolation and the joint result is unreliable.
+  const GYRO_CALIBRATION_FLOOR_MYR = 80;
+  const gyroMassBelowFloor = WakaiPosterior.probabilityBelow(ageGrid, gyroPdf, GYRO_CALIBRATION_FLOOR_MYR);
+  const caveatCard = document.getElementById('gyro-caveat-card');
+  if (gyroMassBelowFloor > 0.5) {
+    caveatCard.style.display = 'block';
+  } else {
+    caveatCard.style.display = 'none';
+  }
+
   // Multiply the normalized method PDFs on their shared grid. Scaling inside
-  // the utility avoids floating-point underflow without changing the result.
-  const joint = WakaiPosterior.combineIndependent(ageGrid, gyroPdf, bafflesPdf);
   if (joint.status !== 'ok') {
     state.results.joint = { ...defaultResults().joint, status: 'No overlap' };
     document.getElementById('summary-joint-age').innerText = '—';

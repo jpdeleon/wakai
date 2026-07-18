@@ -23,6 +23,7 @@
           <li><a class="nav-item active" data-page="target">Target Hub</a></li>
           <li><a class="nav-item" data-page="gyro">gyro-interp</a></li>
           <li><a class="nav-item" data-page="baffles">BAFFLES</a></li>
+          <li><a class="nav-item" data-page="cluster">Cluster</a></li>
           <li><a class="nav-item" data-page="summary">Summary</a></li>
         </ul>
       </nav>
@@ -180,34 +181,22 @@
       <!-- ================= PAGE 2: GYRO-INTERP ================= -->
       <section id="page-gyro" class="page">
         <div class="grid-side-main">
-          <!-- Inputs / Controls Panel -->
           <div>
             <div class="card">
-              <div class="card-eyebrow gyro">Rotation</div>
-              <div class="card-title">gyro-interp inputs</div>
-              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
-                Estimate age from rotation using the Bouma et al. sequence grids. Valid for 3800–6200 K.
-              </p>
-
-              <div class="form-group">
-                <label for="gyro-teff-input">Effective Temp T<sub>eff</sub> (K)</label>
-                <div class="slider-container">
-                  <input type="range" class="range-slider" id="gyro-teff-slider" min="3800" max="6200" step="50" value="5000">
-                  <input type="number" class="input-control slider-val" id="gyro-teff-input" min="3800" max="6200" step="any" value="5000">
+              <div class="card-eyebrow gyro">Inputs</div>
+              <div class="card-title">Rotation parameters</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.5rem;" id="gyro-input-params">
+                <div class="meta-item">
+                  <div class="meta-label">Teff (K)</div>
+                  <div class="meta-value" id="gyro-in-teff">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Prot (days)</div>
+                  <div class="meta-value" id="gyro-in-prot">-</div>
                 </div>
               </div>
-
-              <div class="form-group">
-                <label for="gyro-prot-input">Rotation Period P<sub>rot</sub> (days)</label>
-                <div class="slider-container">
-                  <input type="range" class="range-slider" id="gyro-prot-slider" min="0.5" max="50" step="0.1" value="10.0">
-                  <input type="number" class="input-control slider-val" id="gyro-prot-input" min="0.5" max="50" step="any" value="10.0">
-                </div>
-              </div>
-
-              <button class="btn btn-gyro" id="btn-run-gyro" style="width: 100%; margin-top: 1rem;">Run gyro-interp</button>
+              <button class="btn btn-gyro" id="btn-run-gyro" style="width: 100%; margin-top: 0.75rem;">Run gyro-interp</button>
             </div>
-
             <div class="card" id="gyro-summary-card" style="display: none;">
               <div class="card-eyebrow gyro">Result</div>
               <div class="card-title">Rotation age</div>
@@ -253,42 +242,30 @@
       <!-- ================= PAGE 3: BAFFLES ================= -->
       <section id="page-baffles" class="page">
         <div class="grid-side-main">
-          <!-- Inputs / Controls Panel -->
           <div>
             <div class="card">
-              <div class="card-eyebrow baffles">Lithium + activity</div>
-              <div class="card-title">BAFFLES inputs</div>
-              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
-                Estimate age from lithium depletion and chromospheric activity. Intrinsic B−V is derived from effective temperature.
-              </p>
-
-              <div class="form-group">
-                <label for="baffles-teff-input">Effective Temp T<sub>eff</sub> (K)</label>
-                <div class="slider-container">
-                  <input type="range" class="range-slider" id="baffles-teff-slider" min="4000" max="6500" step="50" value="5000">
-                  <input type="number" class="input-control slider-val" id="baffles-teff-input" min="4000" max="6500" step="any" value="5000">
+              <div class="card-eyebrow baffles">Inputs</div>
+              <div class="card-title">Activity & lithium</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.5rem;" id="baffles-input-params">
+                <div class="meta-item">
+                  <div class="meta-label">Teff (K)</div>
+                  <div class="meta-value" id="baffles-in-teff">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">log R'HK</div>
+                  <div class="meta-value" id="baffles-in-rhk">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Li EW (mÅ)</div>
+                  <div class="meta-value" id="baffles-in-liew">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Fe/H</div>
+                  <div class="meta-value" id="baffles-in-feh">-</div>
                 </div>
               </div>
-
-              <div class="form-group">
-                <label for="baffles-liew-input">Lithium Equivalent Width (Li EW) (mÅ)</label>
-                <div class="slider-container">
-                  <input type="range" class="range-slider" id="baffles-liew-slider" min="0" max="400" step="5" value="150">
-                  <input type="number" class="input-control slider-val" id="baffles-liew-input" min="0" max="400" step="any" value="150">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="baffles-rhk-input">Activity Index log R'<sub>HK</sub></label>
-                <div class="slider-container">
-                  <input type="range" class="range-slider" id="baffles-rhk-slider" min="-5.2" max="-3.8" step="0.05" value="-4.50">
-                  <input type="number" class="input-control slider-val" id="baffles-rhk-input" min="-5.2" max="-3.8" step="any" value="-4.50">
-                </div>
-              </div>
-
-              <button class="btn btn-baffles" id="btn-run-baffles" style="width: 100%; margin-top: 1rem;">Run BAFFLES</button>
+              <button class="btn btn-baffles" id="btn-run-baffles" style="width: 100%; margin-top: 0.75rem;">Run BAFFLES</button>
             </div>
-
             <div class="card" id="baffles-summary-card" style="display: none;">
               <div class="card-eyebrow baffles">Result</div>
               <div class="card-title">BAFFLES age</div>
@@ -339,6 +316,121 @@
         </div>
       </section>
 
+      <!-- ================= PAGE 3B: CLUSTER MEMBERSHIP ================= -->
+      <section id="page-cluster" class="page">
+        <div class="grid-side-main">
+          <!-- Inputs / Controls Panel -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow cluster">Kinematics</div>
+              <div class="card-title">Cluster membership</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                Checks whether the target's Gaia DR3 ID is a listed member of a cluster catalog. If not, it crossmatches against every cluster core and scores membership from the astrometric distribution.
+              </p>
+
+              <div class="form-group">
+                <label for="cluster-catalog-select">Cluster catalog</label>
+                <select class="input-control" id="cluster-catalog-select">
+                  <option value="Perren2023" selected>Perren et al. 2023 (UCC)</option>
+                </select>
+              </div>
+
+              <div class="meta-grid" style="margin-top: 0.5rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Gaia DR3 ID</div>
+                  <div class="meta-value" id="cluster-in-gaiaid">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Parallax (mas)</div>
+                  <div class="meta-value" id="cluster-in-parallax">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">pmRA (mas/yr)</div>
+                  <div class="meta-value" id="cluster-in-pmra">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">pmDE (mas/yr)</div>
+                  <div class="meta-value" id="cluster-in-pmdec">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">RV (km/s)</div>
+                  <div class="meta-value" id="cluster-in-rv">-</div>
+                </div>
+              </div>
+
+              <button class="btn btn-cluster" id="btn-run-cluster" style="width: 100%; margin-top: 1rem;">Check cluster membership</button>
+              <p id="cluster-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
+                Load a target on the Target Hub first.
+              </p>
+            </div>
+
+            <div class="card" id="cluster-summary-card" style="display: none;">
+              <div class="card-eyebrow cluster">Result</div>
+              <div class="card-title">Membership</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Cluster</div>
+                  <div class="meta-value" id="cluster-res-name" style="color: var(--cluster); font-size: 1.3rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Membership probability</div>
+                  <div class="meta-value" id="cluster-res-prob" style="font-size: 1.1rem;">-</div>
+                  <div class="prob-meter"><span id="cluster-res-prob-bar" style="width: 0%;"></span></div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Match method</div>
+                  <div class="meta-value" id="cluster-res-method" style="font-size: 0.9rem;">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visualization / Outputs -->
+          <div>
+            <div class="card loader-container" id="cluster-loader">
+              <div class="orbital-spinner" style="border-top-color: var(--cluster);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Searching cluster catalog...</h3>
+              <p>Matching Gaia DR3 ID and scoring the member astrometric distribution</p>
+            </div>
+
+            <div id="cluster-results-panel" style="display: none;">
+              <div class="card">
+                <div class="verdict" id="cluster-verdict">
+                  <div class="verdict-icon" id="cluster-verdict-icon">?</div>
+                  <div>
+                    <div class="verdict-title" id="cluster-verdict-title">-</div>
+                    <div class="verdict-sub" id="cluster-verdict-sub">-</div>
+                  </div>
+                </div>
+
+                <div class="card-eyebrow">Properties</div>
+                <div class="card-title">Cluster summary</div>
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr><th>Property</th><th>Value</th></tr>
+                    </thead>
+                    <tbody id="cluster-summary-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-eyebrow">Positions & velocities</div>
+                <div class="card-title">XYZ – UVW</div>
+                <div class="cluster-plot" id="plot-cluster-xyz"></div>
+              </div>
+
+              <div class="card">
+                <div class="card-eyebrow">Astrometry</div>
+                <div class="card-title">RA/Dec, proper motion, parallax & RV</div>
+                <div class="cluster-plot" id="plot-cluster-rdp"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= PAGE 4: SUMMARY ================= -->
       <section id="page-summary" class="page">
         <!-- Top Consolidated Metrics Dashboard -->
@@ -353,6 +445,19 @@
           <div>
             <div class="meta-label" style="text-align: right; margin-bottom: 0.4rem;">68% Confidence Bounds</div>
             <div class="age-range" id="summary-joint-ci">-</div>
+          </div>
+        </div>
+
+        <!-- Validity caveat for young stars where gyrochronology is not calibrated -->
+        <div class="card" id="gyro-caveat-card" style="display: none; border-left: 3px solid var(--danger);">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: var(--danger); font-size: 18px; line-height: 1.4;">&#9888;</span>
+            <div>
+              <strong style="color: var(--danger);">Gyrochronology validity warning</strong>
+              <p style="margin-top: 4px;" id="gyro-caveat-text">
+                A significant fraction of the gyro-interp posterior lies below the youngest calibration cluster (~80 Myr, Bouma+2023). Gyrochronology ages in this regime are extrapolations and should not be treated as reliable. The joint age shown below is biased by this invalid gyro constraint.
+              </p>
+            </div>
           </div>
         </div>
 

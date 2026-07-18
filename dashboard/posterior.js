@@ -86,6 +86,30 @@
     };
   }
 
+  function probabilityBelow(grid, values, threshold) {
+    // Fraction of the normalized posterior mass at ages below `threshold`.
+    if (!Array.isArray(grid) || grid.length < 2) return 0;
+    const pdf = normalize(grid, values);
+    const area = integrate(grid, pdf);
+    if (!(area > 0)) return 0;
+    let mass = 0;
+    for (let i = 1; i < grid.length; i += 1) {
+      const x0 = finiteNumber(grid[i - 1]);
+      const x1 = finiteNumber(grid[i]);
+      if (x1 <= x0) continue;
+      const y0 = Math.max(0, finiteNumber(pdf[i - 1]));
+      const y1 = Math.max(0, finiteNumber(pdf[i]));
+      if (x1 <= threshold) {
+        mass += 0.5 * (x1 - x0) * (y0 + y1);
+      } else if (x0 < threshold) {
+        // Partial bin: integrate up to the threshold with a linear y estimate.
+        const yThreshold = y0 + ((threshold - x0) / (x1 - x0)) * (y1 - y0);
+        mass += 0.5 * (threshold - x0) * (y0 + yThreshold);
+      }
+    }
+    return Math.min(1, mass / area);
+  }
+
   function combineIndependent(grid, leftPDF, rightPDF) {
     if (leftPDF.length !== grid.length || rightPDF.length !== grid.length) {
       throw new Error('Joint posterior inputs must share the same age grid');
@@ -100,5 +124,5 @@
     return { pdf, stats: stats(grid, pdf), status: 'ok' };
   }
 
-  return { integrate, normalize, interpolatePDF, stats, combineIndependent };
+  return { integrate, normalize, interpolatePDF, stats, probabilityBelow, combineIndependent };
 });

@@ -54,3 +54,23 @@ def test_non_overlapping_posteriors_do_not_create_a_joint_age():
     )
 
     assert result == {"pdf": None, "stats": None, "status": "no-overlap"}
+
+
+def test_probability_below_returns_fraction_below_threshold():
+    result = run_posterior_javascript(
+        "(() => { const g=[0,10,20,30,40,50]; const y=p.normalize(g,[0,0,1,1,0,0]); "
+        "return {below25:p.probabilityBelow(g,y,25), below35:p.probabilityBelow(g,y,35), below5:p.probabilityBelow(g,y,5)}; })()"
+    )
+
+    assert result["below25"] == pytest.approx(0.5, abs=0.01)
+    assert result["below35"] == pytest.approx(0.9375, abs=0.01)
+    assert result["below5"] == pytest.approx(0.0, abs=0.01)
+
+
+def test_probability_below_handles_degenerate_inputs():
+    result = run_posterior_javascript(
+        "(() => { const g=[0,10,20]; const y=[0,0,0]; "
+        "return p.probabilityBelow(g,y,15); })()"
+    )
+
+    assert result == 0
