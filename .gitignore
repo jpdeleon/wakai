@@ -1,3 +1,21 @@
+# Large data (see CLAUDE.md: data/ hosts large files, ask before reading)
+data/*
+
+# Large/generated artifacts that leak outside data/
+output/
+wakai/match_toi_cluster.csv
+radius_evolution/*.csv
+notebooks/*.csv
+notebooks/*.pdf
+
+# Large binary/columnar data formats anywhere in the repo
+*.feather
+*.parquet
+*.h5
+*.hdf5
+*.fits
+*.dat.gz
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
