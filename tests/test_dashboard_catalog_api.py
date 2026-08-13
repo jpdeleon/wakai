@@ -62,6 +62,9 @@ class DashboardCatalogApiTests(unittest.TestCase):
 
     @patch("dashboard.backend.server._gaia_tap_query")
     def test_gaia_endpoint_preserves_catalog_precision(self, tap_query):
+        # Columns must match the SELECT in query_gaia: source_id, ra, dec,
+        # parallax, parallax_error, pmra, pmdec, radial_velocity,
+        # teff_gspphot, teff_gspphot_lower, teff_gspphot_upper.
         tap_query.return_value = [[
             123456,
             10.123456789012,
@@ -69,6 +72,8 @@ class DashboardCatalogApiTests(unittest.TestCase):
             3.1415926535,
             0.0123456789,
             -12.345678901,
+            -8.765432109,
+            25.432109876,
             5772.123456,
             5750.123456,
             5798.987654,

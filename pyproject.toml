@@ -1,0 +1,30 @@
+[project]
+name = "wakai"
+version = "0.1.0"
+description = "Age-dating host stars of transiting planets"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "astropy",
+    "astroquery",
+    "requests",
+    "tqdm",
+    "loguru",
+    "typer",
+    "flask",
+    "flask-cors",
+]
+
+[project.scripts]
+wakai = "wakai.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wakai*", "radius_evolution*"]
