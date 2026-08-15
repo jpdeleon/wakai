@@ -16,7 +16,6 @@ dependencies = [
     "loguru",
     "typer",
     "flask",
-    "flask-cors",
 ]
 
 [project.scripts]

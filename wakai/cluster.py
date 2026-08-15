@@ -797,7 +797,15 @@ def crossmatch_target_to_clusters(
     if catalog_df is None:
         catalog_df = load_cluster_catalog(catalog=catalog, data_path=data_path)
 
-    valid = catalog_df.dropna(subset=["ra", "dec", "parallax"]).reset_index(drop=True)
+    # parallax > 0, not just non-null: match_to_catalog_3d (below) builds a
+    # Cartesian KD-tree over every row up front and raises on any NaN entry,
+    # unlike match_to_catalog_sky (2D, ignores distance for matching itself).
+    # A negative parallax always converts to a NaN Distance regardless of
+    # _skycoord_from_frame's allow_negative=True (that flag only suppresses
+    # the error, not the NaN -- see astropy.coordinates.Distance), so those
+    # rows have to be dropped here rather than left for the KD-tree to choke on.
+    valid = catalog_df.dropna(subset=["ra", "dec", "parallax"])
+    valid = valid[valid["parallax"] > 0].reset_index(drop=True)
     if valid.empty:
         raise ValueError("Cluster catalog has no usable ra/dec/parallax rows")
 
@@ -805,7 +813,24 @@ def crossmatch_target_to_clusters(
     cluster_coords = _skycoord_from_frame(
         valid["ra"].values, valid["dec"].values, valid["parallax"].values
     )
-    idx, sep2d, sep3d = target_coord.match_to_catalog_sky(cluster_coords)
+    # match_to_catalog_3d (not _sky) so the nearest cluster is chosen by true
+    # 3D separation, matching this function's own docstring/contract -- two
+    # clusters that are close in sky position but far apart in distance
+    # would otherwise let the angularly-closer one win over the truly
+    # nearest one. Same (idx, sep2d, sep3d) return shape as match_to_catalog_sky.
+    #
+    # Requires the *target's own* parallax to convert to a finite distance
+    # too (match_to_catalog_3d raises ValueError on a NaN query point, unlike
+    # match_to_catalog_sky which only uses ra/dec for matching). A target
+    # with a non-positive parallax -- plausible for a faint/distant real
+    # target, not just bad data -- has no usable distance at all, so "nearest
+    # in 3D" is undefined for it anyway; fall back to the old 2D-angular
+    # matching for that one case rather than raising.
+    target_parallax = target.get("parallax") if hasattr(target, "get") else target["parallax"]
+    if target_parallax is not None and np.isfinite(target_parallax) and target_parallax > 0:
+        idx, sep2d, sep3d = target_coord.match_to_catalog_3d(cluster_coords)
+    else:
+        idx, sep2d, sep3d = target_coord.match_to_catalog_sky(cluster_coords)
     index = int(np.atleast_1d(idx)[0])
     nearest = valid.iloc[index]
     cluster_name = nearest["Name"]

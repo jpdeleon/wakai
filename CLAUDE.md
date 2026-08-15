@@ -5,9 +5,12 @@ The scripts should be installed in .venv in their respective directories using u
 Do not use conda environment.
 
 ## Internal Code
-* useful functions live in ./code/catalog.py which will be refactored later
-* use them as inspiration and point out bugs or optimizations when necessary
-* ask permission if appending new useful functions into catalog.py
+* the `wakai` package (./wakai/) is split by responsibility: star.py, planet.py,
+  cluster.py, iso.py, sed.py, vizier.py, catalog_keys.py, database.py, reference.py
+* ./wakai/catalog.py is a compatibility facade that re-exports from those modules
+  for existing notebooks -- it's already refactored, not a file to review/change
+* use the focused modules as inspiration and point out bugs or optimizations when necessary
+* ask permission before adding new functions to any of these modules
 
 ## External code
 * several packages are needed to run some notebooks such as gyro-interp, eagles, etc.

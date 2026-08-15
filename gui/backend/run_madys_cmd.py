@@ -30,21 +30,17 @@ limitation, not a UI choice). The target's star marker is labeled with its
 real name (`name` in the input, falling back to "Target" if absent) rather
 than a generic "Target" string.
 """
-import base64
-import io
 import json
 import os
 import sys
+
+from _stdio_guard import redirect_stdout_to_stderr
+REAL_STDOUT = redirect_stdout_to_stderr()
 
 # numexpr prints a banner to stdout when the host has more cores than its
 # thread cap; pin the cap before pandas imports so nothing pollutes stdout.
 os.environ["NUMEXPR_MAX_THREADS"] = "8"
 os.environ["NUMEXPR_NUM_THREADS"] = "8"
-
-# Redirect any import-time / compute-time chatter to stderr. The final JSON is
-# written to the saved real stdout below (same pattern as run_cluster.py).
-_REAL_STDOUT = sys.stdout
-sys.stdout = sys.stderr
 
 WAKAI_REPO_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MEMBERS_PARQUET = os.path.join(WAKAI_REPO_DIR, "data", "Perren2023", "UCC_members.parquet")
@@ -52,11 +48,11 @@ MEMBERS_PARQUET = os.path.join(WAKAI_REPO_DIR, "data", "Perren2023", "UCC_member
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as pl  # noqa: E402
 import pandas as pd  # noqa: E402
 import madys  # noqa: E402
 
-PLOT_DPI = 140
+from _plot_utils import fig_to_data_uri  # noqa: E402
+
 MEMBER_CAP = 100
 DEFAULT_MODEL = "parsec2"
 DEFAULT_PLOT_AGES = [1, 3, 5, 10, 20, 30, 100, 200, 500, 1000]  # Myr, madys.CMD's own default
@@ -93,15 +89,6 @@ def _plot_ages(values):
     return DEFAULT_PLOT_AGES
 
 
-def _fig_to_data_uri(fig):
-    buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", dpi=PLOT_DPI, bbox_inches="tight")
-    pl.close(fig)
-    buffer.seek(0)
-    encoded = base64.b64encode(buffer.read()).decode("ascii")
-    return f"data:image/png;base64,{encoded}"
-
-
 def _render_cmd(sample, model, plot_ages, plot_masses, target_phot, target_name, cluster_name, member_ids):
     """One model's CMD plot as a base64 PNG data URI, or raises on failure
     (bad model name, grid range mismatch, etc.) -- caller decides whether
@@ -125,7 +112,7 @@ def _render_cmd(sample, model, plot_ages, plot_masses, target_phot, target_name,
     ax.set_ylabel(r"$G$")
     ax.set_title(f"{cluster_name} | {model.upper()} isochrones" if member_ids else f"{model.upper()} isochrones")
 
-    return _fig_to_data_uri(fig)
+    return fig_to_data_uri(fig)
 
 
 def _load_cluster_member_ids(cluster_name):
@@ -152,7 +139,7 @@ def main():
     data = json.loads(sys.argv[1])
     gaia_id = str(data.get("gaiaid") or data.get("gaia_id") or "").strip()
     if not gaia_id:
-        print(json.dumps({"status": "error", "message": "Target needs a Gaia DR3 ID"}), file=_REAL_STDOUT)
+        print(json.dumps({"status": "error", "message": "Target needs a Gaia DR3 ID"}), file=REAL_STDOUT)
         return
 
     models = [str(m) for m in data.get("models") or []] or [str(data.get("model") or DEFAULT_MODEL)]
@@ -174,20 +161,20 @@ def main():
     try:
         sample = madys.SampleObject(star_list, id_type="DR3", ext_map="leike", verbose=False)
     except Exception as exc:  # noqa: BLE001 -- network/catalog failures, report cleanly
-        print(json.dumps({"status": "error", "message": f"MADYS photometry fetch failed: {exc}"}), file=_REAL_STDOUT)
+        print(json.dumps({"status": "error", "message": f"MADYS photometry fetch failed: {exc}"}), file=REAL_STDOUT)
         return
 
     resolved_ids = list(sample.ID["ID"])
     try:
         target_index = resolved_ids.index(target_query_id)
     except ValueError:
-        print(json.dumps({"status": "error", "message": "MADYS could not resolve this target's photometry"}), file=_REAL_STDOUT)
+        print(json.dumps({"status": "error", "message": "MADYS could not resolve this target's photometry"}), file=REAL_STDOUT)
         return
 
     filters = list(sample.filters)
     target_phot = dict(zip(filters, sample.abs_phot[target_index]))
     if "Gbp" not in target_phot or "Grp" not in target_phot or "G" not in target_phot:
-        print(json.dumps({"status": "error", "message": "MADYS returned no Gaia photometry for this target"}), file=_REAL_STDOUT)
+        print(json.dumps({"status": "error", "message": "MADYS returned no Gaia photometry for this target"}), file=REAL_STDOUT)
         return
 
     plots = {}
@@ -205,7 +192,7 @@ def main():
         print(json.dumps({
             "status": "error",
             "message": f"MADYS CMD plot failed for every selected model: {errors}",
-        }), file=_REAL_STDOUT)
+        }), file=REAL_STDOUT)
         return
 
     output = {
@@ -219,7 +206,7 @@ def main():
         "plots": plots,
         "errors": errors,
     }
-    print(json.dumps(output), file=_REAL_STDOUT)
+    print(json.dumps(output), file=REAL_STDOUT)
 
 
 if __name__ == "__main__":

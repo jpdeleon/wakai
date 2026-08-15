@@ -1,2 +1,16 @@
+# Dependencies for gui/backend/server.py, which imports directly from the
+# wakai package (wakai.reference/database/star) -- mirrors pyproject.toml's
+# [project] dependencies, minus flask-cors (same-origin SPA + API, see
+# GUI_plan.md section 5 -- CORS isn't needed).
 flask>=3.0
 numpy>=1.24
+scipy
+pandas
+matplotlib
+astropy
+astroquery
+pyarrow
+requests
+tqdm
+loguru
+typer

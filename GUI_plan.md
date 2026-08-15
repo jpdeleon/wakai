@@ -22,7 +22,7 @@ The GUI is a **light, editorial "workspace" theme** — not the dark glassmorphi
   - Isochrones: amber `#a6740a` (`--isochrone`, `--isochrone-soft: #f6efe0`)
   - Danger/error: `#ad3d3d` (`--danger`, `--danger-soft: #faecec`)
 - **Shape**: `--radius: 8px`; flat `--shadow` (two soft low-opacity layers, no heavy elevation).
-- **Charts**: [Plotly.js](https://plotly.com/javascript/) 2.24.1 via CDN (`gui/index.html`), not a custom canvas/D3 implementation.
+- **Charts**: [Plotly.js](https://plotly.com/javascript/) 2.24.1, vendored locally at `gui/vendor/plotly-2.24.1.min.js` (`gui/index.html`) so charts still render on an offline/firewalled host -- not a CDN dependency, and not a custom canvas/D3 implementation.
 
 ---
 
@@ -126,7 +126,7 @@ If client-side preview math is wanted again in the future, it must be visually a
 gui/
 ├── index.html              # SPA shell: 5 <section class="page"> blocks, Plotly.js + posterior.js + app.js
 ├── styles.css               # Design tokens (§1) + component styles
-├── app.js                   # State, routing, table editing, API calls, Plotly rendering (~1600 lines)
+├── app.js                   # State, routing, table editing, API calls, Plotly rendering (~2700 lines)
 ├── posterior.js             # PDF/statistics helpers shared with app.js; unit-tested via Node (tests/test_gui_posterior.py)
 ├── favicon.ico / favicon-*.png / apple-touch-icon.png
 └── backend/

@@ -2,14 +2,17 @@
 """Flask backend for wakai GUI — serves frontend + proxies to gyro-interp and BAFFLES."""
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
+import urllib.error
 import urllib.request
 import urllib.parse
 from collections import OrderedDict
 
 from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 GUI_DIR = os.path.dirname(BACKEND_DIR)
@@ -37,6 +40,20 @@ app.config["OUTPUT_DIR"] = OUTPUT_DIR
 app.config["DATABASE_PATH"] = os.environ.get(
     "WAKAI_DATABASE_PATH", os.path.join(OUTPUT_DIR, "wakai.sqlite3")
 )
+
+@app.errorhandler(Exception)
+def _handle_unexpected_error(error):
+    """Every /api/* route's success path returns JSON; make sure its failure
+    path does too. Without this, an uncaught exception (e.g. a route doing
+    arithmetic/comparison on unvalidated request JSON, like GYRO_TEFF_MIN <=
+    teff <= GYRO_TEFF_MAX with a non-numeric teff) falls through to Flask's
+    default HTML error page instead of the {"status": "error", ...} shape
+    every caller already expects."""
+    if isinstance(error, HTTPException):
+        return jsonify({"status": "error", "message": error.description}), error.code
+    app.logger.exception("Unhandled error in %s %s", request.method, request.path)
+    return jsonify({"status": "error", "message": str(error) or error.__class__.__name__}), 500
+
 
 # Serve static frontend files at root
 @app.route("/")
@@ -433,8 +450,17 @@ def run_isochrones():
 GAIA_TAP_URL = "https://gea.esac.esa.int/tap-server/tap/sync"
 
 
-def _gaia_tap_query(adql: str) -> list[dict] | None:
-    """Execute ADQL query against Gaia TAP service, return rows as dicts."""
+class GaiaQueryError(Exception):
+    """The Gaia TAP service was unreachable, timed out, or returned a
+    malformed response -- distinct from a successful query that just found
+    zero rows, so callers can report the two cases differently (502 vs 404)
+    instead of collapsing both into a misleading "not found"."""
+
+
+def _gaia_tap_query(adql: str) -> list[dict]:
+    """Execute ADQL query against Gaia TAP service, return rows as dicts
+    (possibly empty). Raises GaiaQueryError on network/timeout/malformed-
+    response failures."""
     params = urllib.parse.urlencode({
         "REQUEST": "doQuery",
         "LANG": "ADQL",
@@ -445,9 +471,9 @@ def _gaia_tap_query(adql: str) -> list[dict] | None:
     try:
         with urllib.request.urlopen(url, timeout=30) as resp:
             data = json.loads(resp.read())
-            return data.get("data")
-    except Exception:
-        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as e:
+        raise GaiaQueryError(f"Gaia TAP query failed: {e}") from e
+    return data.get("data") or []
 
 
 # 2.5/ln(10), the standard Gaia photometric error propagation constant:
@@ -477,7 +503,13 @@ def _fetch_gaia_2mass_photometry(gaia_id):
         JOIN gaiadr1.tmass_original_valid AS tm ON xmatch.original_ext_source_id = tm.designation
         WHERE g.source_id = {int(gaia_id)}
     """
-    rows = _gaia_tap_query(adql)
+    try:
+        rows = _gaia_tap_query(adql)
+    except GaiaQueryError:
+        # This is a secondary enrichment step after the target's already
+        # been resolved -- a transient Gaia TAP failure here shouldn't fail
+        # the whole target-resolve request, same as "no 2MASS match found".
+        rows = []
     if not rows:
         return {"photometry": {}, "parallax": None, "parallax_err": None}
     r = rows[0]
@@ -635,7 +667,15 @@ def query_gaia():
             numeric_id = int(name)
             where = f"source_id = {numeric_id}"
         except ValueError:
-            where = f"UPPER(designation) LIKE UPPER('%{name.replace(chr(39), '')}%')"
+            # Allowlist rather than blocklist a single quote: Gaia
+            # designations only ever contain letters/digits/spaces/+-., so
+            # stripping anything outside that set can't leave a stray quote
+            # (or any other ADQL metacharacter) to close out of the LIKE
+            # literal, unlike the previous approach of only removing "'".
+            # Also strip ADQL LIKE wildcards (%, _) from user input so a
+            # search term can't widen its own match pattern unexpectedly.
+            safe_name = re.sub(r"[^A-Za-z0-9 +.\-]", "", name)
+            where = f"UPPER(designation) LIKE UPPER('%{safe_name}%')"
     else:
         return jsonify({"status": "error", "message": "Provide 'name' or 'gaia_id'"}), 400
 
@@ -647,7 +687,10 @@ def query_gaia():
         FROM gaiadr3.gaia_source
         WHERE {where}
     """
-    rows = _gaia_tap_query(adql)
+    try:
+        rows = _gaia_tap_query(adql)
+    except GaiaQueryError as e:
+        return jsonify({"status": "error", "message": str(e)}), 502
     if not rows:
         return jsonify({"status": "error", "message": "No match found in Gaia DR3"}), 404
 

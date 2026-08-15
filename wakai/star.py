@@ -90,11 +90,11 @@ class Star:
             return self._vizier_tables
 
         if verbose:
-            print(f"Searching Vizier at {self.target_coord().to_string('hmsdms')} with radius={radius}")
+            logger.info(f"Searching Vizier at {self.target_coord().to_string('hmsdms')} with radius={radius}")
 
         default_columns = ["**", "+_r"]
         if add_cols is not None:
-            print(f"Added columns: {add_cols}")
+            logger.info(f"Added columns: {add_cols}")
             if isinstance(add_cols, str):
                 default_columns.append(add_cols)
             else:
@@ -103,18 +103,18 @@ class Star:
         try:
             tables = viz.query_region(self.target_coord(), radius=radius)
         except Exception as e:
-            print(f"Vizier query failed: {e}")
+            logger.warning(f"Vizier query failed: {e}")
             return None
 
         if tables is None or len(tables) == 0:
             if verbose:
-                print("No Vizier tables found.")
+                logger.info("No Vizier tables found.")
             return None
 
         if verbose:
-            print(f"{len(tables)} tables found.")
-            from pprint import pprint
-            pprint({k: tables[k]._meta.get("description", "") for k in tables.keys()})
+            logger.info(f"{len(tables)} tables found.")
+            from pprint import pformat
+            logger.info(pformat({k: tables[k]._meta.get("description", "") for k in tables.keys()}))
 
         self._vizier_tables = tables
         return tables
@@ -264,7 +264,7 @@ class Star:
                     s = tab.to_pandas().squeeze().dropna()
 
                 if len(s) > 0:
-                    print(f"\nSee also: {base_url}{tab._meta['name']}\n{s}")
+                    logger.info(f"See also: {base_url}{tab._meta['name']}\n{s}")
                     self.variable_star = True
 
     def _query_star_catalog(self, catalog_keys):
@@ -284,7 +284,7 @@ class Star:
             for ref, vkey in catalog_keys.items():
                 if key == vkey:
                     d = tab.to_pandas().squeeze()
-                    print(f"{ref} ({base_url}{key}):\n{d}")
+                    logger.info(f"{ref} ({base_url}{key}):\n{d}")
 
     def query_gaia_catalog(self, radius=None, version=2, return_nearest_xmatch=False, verbose=None):
         """
@@ -311,7 +311,7 @@ class Star:
         try:
             tab = Catalogs.query_region(self.target_coord(), radius=radius_quantity, catalog="Gaia", version=version).to_pandas()
         except Exception as e:
-            raise RuntimeError(f"Gaia query failed: {e}")
+            raise RuntimeError(f"Gaia query failed: {e}") from e
 
         if tab.empty:
             raise ValueError(f"No Gaia star found within {radius_quantity}")
@@ -352,7 +352,7 @@ class Star:
         if self.gaiaid is None and not tab.empty:
             nearest = tab.iloc[0]
             if self.verbose:
-                print(f"Updating target coordinates based on Gaia source (separation: {nearest.separation:.2f}\")")
+                logger.info(f"Updating target coordinates based on Gaia source (separation: {nearest.separation:.2f}\")")
             # Optional: update self.ra and self.dec if desired
 
     def _assign_gaia_metadata(self, target):
@@ -404,7 +404,7 @@ class Star:
             self.data_json = self.tfop_data  # For compatibility with older methods
             return self.tfop_data
         except requests.exceptions.RequestException as e:
-            raise ValueError(f"Error while fetching data for {self.star_name}.\nError: {e}")
+            raise ValueError(f"Error while fetching data for {self.star_name}.\nError: {e}") from e
 
     def get_tfop_data(self) -> None:
         """
@@ -424,7 +424,7 @@ class Star:
         if self.verbose:
             logger.info("Catalog names:")
             for n in self.star_names:
-                print(f"\t{n}")
+                logger.info(f"\t{n}")
 
         # Extract Gaia information
         gaia_mask = np.array([i[:4].lower() == "gaia" for i in self.star_names])
@@ -584,20 +584,20 @@ class Star:
             # Print parameter summary
             if self.verbose:
                 if not np.isnan(self.mstar[0]):
-                    print(f"Mstar=({self.mstar[0]:.2f},{self.mstar[1]:.2f}) Msun")
+                    logger.info(f"Mstar=({self.mstar[0]:.2f},{self.mstar[1]:.2f}) Msun")
                 if not np.isnan(self.rstar[0]):
-                    print(f"Rstar=({self.rstar[0]:.2f},{self.rstar[1]:.2f}) Rsun")
+                    logger.info(f"Rstar=({self.rstar[0]:.2f},{self.rstar[1]:.2f}) Rsun")
                 if not np.isnan(self.rhostar[0]):
-                    print(f"Rhostar=({self.rhostar[0]:.2f},{self.rhostar[1]:.2f}) rhosun")
+                    logger.info(f"Rhostar=({self.rhostar[0]:.2f},{self.rhostar[1]:.2f}) rhosun")
                 if not np.isnan(self.teff[0]):
-                    print(f"teff=({self.teff[0]:.0f},{self.teff[1]:.0f}) K")
+                    logger.info(f"teff=({self.teff[0]:.0f},{self.teff[1]:.0f}) K")
                 if not np.isnan(self.logg[0]):
-                    print(f"logg=({self.logg[0]:.2f},{self.logg[1]:.2f}) cgs")
-                print(f"feh=({self.feh[0]:.2f},{self.feh[1]:.2f}) dex")
+                    logger.info(f"logg=({self.logg[0]:.2f},{self.logg[1]:.2f}) cgs")
+                logger.info(f"feh=({self.feh[0]:.2f},{self.feh[1]:.2f}) dex")
 
         except Exception as e:
-            print(f"Error extracting stellar parameters: {e}")
-            raise ValueError(f"Check exofop: {self.exofop_url}")
+            logger.error(f"Error extracting stellar parameters: {e}")
+            raise ValueError(f"Check exofop: {self.exofop_url}") from e
 
     def query_simbad(self):
         """
@@ -710,7 +710,7 @@ class Star:
         sighi = (self.gaia_params[f"{col}_percentile_upper"] - self.gaia_params[f"{col}_val"])
         uteff = np.sqrt(sighi**2 + siglo**2)
         s_teff = (teff + np.random.randn(nsamples) * uteff)  # Monte Carlo samples
-        print(f"Gaia Teff={teff},{uteff} K")
+        logger.info(f"Gaia Teff={teff},{uteff} K")
         bands=['Gaia','V','J','H','K',
                'WISE 3.4 micron','WISE 4.6 micron','WISE 12 micron']
         mags = {}
@@ -718,12 +718,12 @@ class Star:
             val=self.magnitudes.query("band==@band").value.squeeze()
             err=self.magnitudes.query("band==@band").value_e.squeeze()
             mags[band]=(val,err)
-            print(f"{band}=({val},{err})")
+            logger.info(f"{band}=({val},{err})")
         colors = []
         if 'G-V' in columns:
             gv_color =  mags['Gaia'][0] - mags['V'][0]
             ugv_color = mags['Gaia'][1] + mags['V'][1]
-            print(f"G-V={gv_color:.2f}+/-{ugv_color:.2f}")
+            logger.info(f"G-V={gv_color:.2f}+/-{ugv_color:.2f}")
             s_gv_color = (
                  gv_color + np.random.randn(nsamples) * ugv_color
             )  # Monte Carlo samples
@@ -733,7 +733,7 @@ class Star:
             sources = self.query_gaia_catalog(radius=30)
             bprp_color =  sources.iloc[0]['bp_rp']
             ubprp_color = 0.01
-            print(f"Gaia Bp-Rp={bprp_color:.2f}+/-{ubprp_color:.2f}")
+            logger.info(f"Gaia Bp-Rp={bprp_color:.2f}+/-{ubprp_color:.2f}")
             s_bprp_color = (
                 bprp_color + np.random.randn(nsamples) * ubprp_color
             )
@@ -742,7 +742,7 @@ class Star:
             # J-H color index
             jh_color =  mags['J'][0] - mags['H'][0]
             ujh_color = mags['J'][1] + mags['H'][1]
-            print(f"J-H={jh_color:.2f}+/-{ujh_color:.2f}")
+            logger.info(f"J-H={jh_color:.2f}+/-{ujh_color:.2f}")
             s_jh_color = (
                 jh_color + np.random.randn(nsamples) * ujh_color
             )  # Monte Carlo samples
@@ -751,7 +751,7 @@ class Star:
             # H-Ks color index
             hk_color =  mags['H'][0] - mags['K'][0]
             uhk_color = mags['H'][1] + mags['K'][1]
-            print(f"H-Ks={hk_color:.2f}+/-{uhk_color:.2f}")
+            logger.info(f"H-Ks={hk_color:.2f}+/-{uhk_color:.2f}")
             s_hk_color = (
                 hk_color + np.random.randn(nsamples) * uhk_color
             )
@@ -760,7 +760,7 @@ class Star:
             # W1-W2 color index
             w1w2_color =  mags['WISE 3.4 micron'][0] - mags['WISE 4.6 micron'][0]
             uw1w2_color = mags['WISE 3.4 micron'][1] + mags['WISE 4.6 micron'][1]
-            print(f"W1-W2={w1w2_color:.2f}+/-{uw1w2_color:.2f}")
+            logger.info(f"W1-W2={w1w2_color:.2f}+/-{uw1w2_color:.2f}")
             s_w1w2_color = (
                 w1w2_color + np.random.randn(nsamples) * uw1w2_color
             )
@@ -769,7 +769,7 @@ class Star:
             # W1-W3 color index
             w1w3_color =  mags['WISE 3.4 micron'][0] - mags['WISE 12 micron'][0]
             uw1w3_color = mags['WISE 3.4 micron'][1] + mags['WISE 12 micron'][1]
-            print(f"W1-W3={w1w3_color:.2f}+/-{uw1w3_color:.2f}")
+            logger.info(f"W1-W3={w1w3_color:.2f}+/-{uw1w3_color:.2f}")
             s_w1w3_color = (
                 w1w3_color + np.random.randn(nsamples) * uw1w3_color
             )
@@ -800,7 +800,7 @@ class Star:
             idx = d>100
             ax = d[idx].plot(kind="barh")
             ax.set_xlabel("Counts")
-            print(d[idx].sort_values(ascending=False))
+            logger.info(d[idx].sort_values(ascending=False))
         if return_samples:
             return spt, spec_types
         else:

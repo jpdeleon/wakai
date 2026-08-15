@@ -9,8 +9,10 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/styles.css">
-  <!-- Plotting and deterministic posterior math -->
-  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
+  <!-- Plotting and deterministic posterior math. Vendored locally (not CDN)
+       so charts still render on an offline/firewalled host -- see
+       gui/vendor/plotly-2.24.1.min.js. -->
+  <script src="/vendor/plotly-2.24.1.min.js" charset="utf-8"></script>
   <script src="/posterior.js"></script>
 </head>
 <body>

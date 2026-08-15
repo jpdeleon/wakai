@@ -18,6 +18,13 @@ const state = {
   results: defaultResults(),
 };
 
+// JSON of the last payload actually POSTed to /api/targets/save by
+// saveTargetState() below -- lets it skip the round trip when called again
+// with nothing changed (it's wired to many low-stakes UI toggles, each of
+// which would otherwise re-send the full results object, including any
+// large base64 plot images already saved).
+let _lastSavedPayloadJson = null;
+
 // Shared display grid. Model PDFs are zero-padded outside their native support.
 const ageGrid = [1, ...Array.from({ length: 2600 }, (_, i) => (i + 1) * 5)];
 
@@ -367,7 +374,15 @@ function parsePath(pathname) {
   let targetSlug = null;
   for (const segment of pathname.split('/').filter(Boolean)) {
     if (segment.startsWith('target=')) {
-      targetSlug = decodeURIComponent(segment.slice('target='.length));
+      // A malformed percent-escape (truncated/garbled share link, typed by
+      // hand) throws URIError; degrade to "no target in the URL" rather
+      // than letting that propagate out of applyRoute()/initApp() and
+      // leave the SPA stuck on a blank page.
+      try {
+        targetSlug = decodeURIComponent(segment.slice('target='.length));
+      } catch (error) {
+        targetSlug = null;
+      }
     } else if (ROUTE_PAGES[segment]) {
       pageId = ROUTE_PAGES[segment];
     }
@@ -1129,13 +1144,23 @@ async function saveTargetState({ silent = false } = {}) {
     if (!silent) showToast('Select a target before saving');
     return false;
   }
+  state.results.pageSettings = collectPageSettings();
+  const payload = {
+    target: state.activeTarget,
+    ref_table: state.refTable,
+    results: state.results,
+  };
+  const payloadJson = JSON.stringify(payload);
+  if (payloadJson === _lastSavedPayloadJson) {
+    // Nothing changed since the last successful save -- most calls here are
+    // silent, from low-stakes UI toggles (axis limits, checkboxes), so this
+    // is the common case, not an edge case.
+    if (!silent) showToast(`Saved ref_table and results for ${state.activeTarget.name}`);
+    return true;
+  }
   try {
-    state.results.pageSettings = collectPageSettings();
-    await apiCall('targets/save', {
-      target: state.activeTarget,
-      ref_table: state.refTable,
-      results: state.results,
-    });
+    await apiCall('targets/save', payload);
+    _lastSavedPayloadJson = payloadJson;
     state.activeTarget.parameters = JSON.parse(JSON.stringify(state.refTable));
     const identity = targetIdentity(state.activeTarget);
     state.savedTargets = state.savedTargets.filter(target => targetIdentity(target) !== identity);
@@ -1441,7 +1466,7 @@ function drawGyroPlots() {
     legend: { x: 0, y: 1, font: { color: '#4a5568' }, bgcolor: 'rgba(255,255,255,0.8)' }
   };
 
-  Plotly.newPlot('plot-gyro-grid', dataGrid, layoutGrid, { responsive: true, displayModeBar: false, staticPlot: true });
+  Plotly.react('plot-gyro-grid', dataGrid, layoutGrid, { responsive: true, displayModeBar: false, staticPlot: true });
 
   // PLOT 2: Posterior PDF
   const dataPDF = [{
@@ -1464,7 +1489,7 @@ function drawGyroPlots() {
     showlegend: false
   };
 
-  Plotly.newPlot('plot-gyro-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
+  Plotly.react('plot-gyro-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
 }
 
 // ================= 7. BAFFLES Page Logic =================
@@ -1652,7 +1677,7 @@ function drawBafflesPlots() {
     legend: { x: 0, y: 1.22, orientation: 'h', font: { color: '#4a5568' }, bgcolor: 'transparent' }
   };
 
-  Plotly.newPlot('plot-baffles-indiv', dataIndiv, layoutIndiv, { responsive: true, displayModeBar: false, staticPlot: true });
+  Plotly.react('plot-baffles-indiv', dataIndiv, layoutIndiv, { responsive: true, displayModeBar: false, staticPlot: true });
 
   // PLOT 2: Combined BAFFLES PDF
   const dataPDF = [{
@@ -1675,7 +1700,7 @@ function drawBafflesPlots() {
     showlegend: false
   };
 
-  Plotly.newPlot('plot-baffles-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
+  Plotly.react('plot-baffles-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
 }
 
 // ================= 7B. Cluster Membership Logic =================
@@ -2426,7 +2451,7 @@ function drawIsochronePlots() {
     showlegend: false
   };
 
-  Plotly.newPlot('plot-isochrone-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
+  Plotly.react('plot-isochrone-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
 }
 
 // ================= 8. Summary Page Logic =================
@@ -2590,7 +2615,7 @@ function updateSummaryPage() {
     legend: { x: 0, y: 1.15, orientation: 'h', font: { color: '#4a5568' }, bgcolor: 'transparent' }
   };
 
-  Plotly.newPlot('plot-summary-comparison', data, layout, { responsive: true, displayModeBar: false, staticPlot: true });
+  Plotly.react('plot-summary-comparison', data, layout, { responsive: true, displayModeBar: false, staticPlot: true });
   saveTargetState({ silent: true });
 }
 
@@ -2616,7 +2641,7 @@ function updatePropertiesSummary() {
   if (!state.activeTarget) return;
 
   const titleDiv = document.createElement('div');
-  titleDiv.innerHTML = `Target: <strong>${state.activeTarget.name}</strong> (Gaia DR3 ${state.activeTarget.gaiaid})`;
+  titleDiv.innerHTML = `Target: <strong>${escapeHtml(state.activeTarget.name)}</strong> (Gaia DR3 ${escapeHtml(state.activeTarget.gaiaid)})`;
   titleDiv.style.marginBottom = '0.5rem';
   container.appendChild(titleDiv);
 

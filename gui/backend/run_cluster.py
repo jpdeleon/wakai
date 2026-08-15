@@ -8,21 +8,17 @@ The Perren+2023 member list triggers noisy stdout (numexpr threadpool banner,
 astropy parallax warnings). Only the final JSON result is allowed on the real
 stdout, so everything else is redirected to stderr for the whole run.
 """
-import base64
-import io
 import json
 import os
 import sys
+
+from _stdio_guard import redirect_stdout_to_stderr
+REAL_STDOUT = redirect_stdout_to_stderr()
 
 # numexpr prints a banner to stdout when the host has more cores than its
 # thread cap; pin the cap before pandas imports so nothing pollutes stdout.
 os.environ["NUMEXPR_MAX_THREADS"] = "8"
 os.environ["NUMEXPR_NUM_THREADS"] = "8"
-
-# Redirect any import-time / compute-time chatter to stderr. The final JSON is
-# written to the saved real stdout below.
-_REAL_STDOUT = sys.stdout
-sys.stdout = sys.stderr
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -31,10 +27,10 @@ if BASE_DIR not in sys.path:
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as pl  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from _plot_utils import fig_to_data_uri  # noqa: E402
 from wakai.cluster import (  # noqa: E402
     ClusterMatch,
     assess_cluster_membership,
@@ -46,7 +42,6 @@ from wakai.cluster import (  # noqa: E402
 )
 from wakai.plotting import load_plot_params  # noqa: E402
 
-PLOT_DPI = 140
 # Columns the plotting helpers need from the (out-of-catalog) target.
 _TARGET_PLOT_KEYS = ("ra", "dec", "parallax", "pmra", "pmdec", "radial_velocity")
 
@@ -87,16 +82,6 @@ def _assess_forced_cluster(target, catalog, cluster_name):
     )
 
 
-def _fig_to_data_uri(fig):
-    """Serialize a Matplotlib figure to a base64 PNG data URI."""
-    buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", dpi=PLOT_DPI, bbox_inches="tight")
-    pl.close(fig)
-    buffer.seek(0)
-    encoded = base64.b64encode(buffer.read()).decode("ascii")
-    return f"data:image/png;base64,{encoded}"
-
-
 def _target_series(target):
     """Build a float Series for highlighting a non-member target on the plots."""
     values = {}
@@ -133,7 +118,7 @@ def _render_plots(match, target):
     plots = {}
     try:
         fig_xyz, _ = plot_xyz_uvw(members.copy(), target_ms=18, marker=".", **common)
-        plots["xyz_uvw"] = _fig_to_data_uri(fig_xyz)
+        plots["xyz_uvw"] = fig_to_data_uri(fig_xyz)
     except Exception as exc:  # noqa: BLE001 - surface as a caveat, not a crash
         plots["xyz_uvw_error"] = str(exc)
 
@@ -141,7 +126,7 @@ def _render_plots(match, target):
     rdp_common = {k: v for k, v in common.items() if k != "verbose"}
     try:
         fig_rdp = plot_rdp_pmrv(members.copy(), target_ms=22, marker=".", **rdp_common)
-        plots["rdp_pmrv"] = _fig_to_data_uri(fig_rdp)
+        plots["rdp_pmrv"] = fig_to_data_uri(fig_rdp)
     except Exception as exc:  # noqa: BLE001
         plots["rdp_pmrv_error"] = str(exc)
     return plots
@@ -172,7 +157,7 @@ def main():
             print(json.dumps({
                 "status": "error",
                 "message": f'Cluster "{forced_cluster_name}" not found in {catalog}',
-            }), file=_REAL_STDOUT)
+            }), file=REAL_STDOUT)
             return
     else:
         match = assess_cluster_membership(target, catalog=catalog)
@@ -204,7 +189,7 @@ def main():
         "summary": summary,
         "plots": plots,
     }
-    print(json.dumps(output), file=_REAL_STDOUT)
+    print(json.dumps(output), file=REAL_STDOUT)
 
 
 if __name__ == "__main__":
