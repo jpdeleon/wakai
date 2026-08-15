@@ -1,5 +1,6 @@
 # Large data (see CLAUDE.md: data/ hosts large files, ask before reading)
 data/*
+figures/*
 
 # Large/generated artifacts that leak outside data/
 output/

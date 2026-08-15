@@ -7,12 +7,12 @@ import pytest
 
 
 NODE = shutil.which("node")
-POSTERIOR_JS = Path(__file__).resolve().parents[1] / "dashboard" / "posterior.js"
+POSTERIOR_JS = Path(__file__).resolve().parents[1] / "gui" / "posterior.js"
 
 
 def run_posterior_javascript(expression):
     if NODE is None:
-        pytest.skip("Node.js is required for dashboard numerical tests")
+        pytest.skip("Node.js is required for GUI numerical tests")
     script = f"const p = require({json.dumps(str(POSTERIOR_JS))}); console.log(JSON.stringify({expression}));"
     result = subprocess.run(
         [NODE, "-e", script],

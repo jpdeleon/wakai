@@ -1,7 +1,114 @@
 # `wakai`
-`wakai` is the Japanese word for `young.` This repo contains several youth indicators and other tools to constrain exoplanet ages.
+`wakai` is the Japanese word for `young.` This repo aims to consolidate data and tools to constrain host star ages.
+This also provides a wrapper to run existing tools for convenience.
+Given a Gaia DR3 ID, the target is cross-matched with various catalogs using `astroquery.vizier`.
+A table of measurements called "ref_table" for stellar parameters including their uncertainties and references is created.
+In case of several possibly conflicting independent measurements from various sources, the user should adopt one definitive source.
+Whenever possible, any missing stellar parameter is either measured from raw data (e.g. rotation period from TESS lightcurves) or supplied by the user (e.g. LiEW).
+Depending on available measurements in ref_table, several tools are run:
 
-## Cluster
+### Python modules
+
+The former monolithic `wakai.catalog` implementation is split by responsibility:
+
+* `wakai.star` and `wakai.planet`: target models and archive queries
+* `wakai.vizier` and `wakai.catalog_keys`: catalog discovery, download, and identifiers
+* `wakai.cluster`: cluster membership, kinematics, and diagnostic plots
+* `wakai.iso`: isochrone and stellar-evolution helpers
+* `wakai.sed`: stellar-atmosphere and SED calibration helpers
+* `wakai.gyro`, `wakai.var`, and `wakai.liew`: domain catalog registries
+
+`wakai.catalog` remains a compatibility facade for existing notebooks.
+
+The GUI's Target page can resolve a target with SIMBAD, query nearby
+VizieR tables, populate the default `ref_table` parameters, and search any
+additional VizieR column. Catalog candidates are only added after the user
+selects a source, and every catalog-backed row includes an **Open ↗** link for
+verification in a new browser tab.
+
+Pipeline results are saved under `~/ql/wakai/` by default. This directory is set
+by the GUI launcher (`wakai gui --output-dir`, or the `WAKAI_OUTPUT_DIR`
+env var) — not by the pipeline scripts. Target state is persisted in SQLite at
+`<output-dir>/wakai.sqlite3` (override the file directly with
+`WAKAI_DATABASE_PATH`). **Apply Changes** saves target metadata and the full
+`ref_table`; successful gyro-interp, BAFFLES, and joint results are saved
+automatically and restored by Gaia ID on the next load. SQLite retains the
+full floating-point values, while the GUI displays up to ten significant
+figures and accepts unrestricted decimal precision in numeric inputs.
+
+* module: cluster (or kinematics?)
+ - method: match_cluster
+   Given a Gaia DR2 or Gaia DR3 ID, the star is matched with Perren+2023 catalog members to check which cluster the target belongs to.
+   If there is no direct ID match, a 6-D crossmatching is done to assess which cluster the target most likely belongs to if any.
+   inputs: ra, dec, parallax, pmra, pmdec, rv
+ - method: find_cluster
+   uses comove package in /ut2/jerome/github/research/project/ext_tools/Comove
+   inputs: ra, dec, parallax, pmra, pmdec, rv
+ - method: run_kalkayotl
+   uses kalkayotl in /ut2/jerome/github/research/project/ext_tools/Kalkayotl2
+ - method: run_zoomies
+   uses zoomies in /ut2/jerome/github/research/project/ext_tools/zoomies
+   inputs:
+* module: sed (or star_atmosphere?)
+ - method: run_sedfit
+   uses SedFit in /ut2/jerome/github/research/project/ext_tools/SEDFit
+ - method: run_ariadne
+   uses astroARIADNE in /ut2/jerome/github/research/project/ext_tools/astroARIADNE
+ - method: run_brutus
+   uses brutus in in /ut2/jerome/github/research/project/ext_tools/brutus_package
+   inputs: broadband magnitudes in from NUV to NIR
+   other_source: spherex data
+* module: iso (or star_evol? or star_interior?)
+ - method: run_madys
+   uses madys in /ut2/jerome/github/research/project/ext_tools/madys
+ - method: run_isochrones
+   uses isochrones2 in /ut2/jerome/github/research/project/ext_tools/isochrones2
+   inputs: broadband photometry and optional Teff,logg,[Fe/H]
+* module: gyro
+ - method: run_gyrointerp
+   uses gyro-interp in /ut2/jerome/github/research/project/ext_tools/gyro-interp
+   inputs: Prot, Teff
+ - method: run_fleck
+   uses fleck in
+   input: stellar variability/ rotation amplitude
+* module: var
+ - method: run_eva
+   uses eva package in /ut2/jerome/github/research/project/ext_tools/EVA2
+   inputs: Gaia magnitudes
+* module: liew
+ - method: run_eagles
+   uses EAGLES in /ut2/jerome/github/research/project/ext_tools/eagles
+ - method: run_baffles
+   uses BAFFLES in /ut2/jerome/github/research/project/ext_tools/BAFFLES
+   inputs: LiEW, Teff, Ca-II R_HK
+* others
+ - asteroseismology (only for evolved stars) using pysyd
+ - X-ray-age relation
+ - machine learning
+
+## Methods
+According to Age-dating methods [Soderblom+2014](https://ui.adsabs.harvard.edu/abs/2015ASSP...39....3S/abstract),
+there are
+
+* Fundamental
+radioactive dating of meteorites on Earth for age-dating the Sun
+* Semi-fundamental
+ - Lithium Depletion Boundary (LDB)
+ - Kinematic traceback/ expansion rate
+* Model dependent
+ - isochrones
+ - asteroseismology
+ - surface gravity
+ - radiative convective gap
+* Empirical
+ - rotation, amplitude, activity, disks, LiEW
+* Statistical
+ - metallicity
+ - kinematics
+
+See also this [ppt slides](https://beuther.www3.mpia.de/ppvi/talks/soderblom_jeffries.pdf) for summary.
+
+## Cluster data
 * 10 Myr
   - Upper Sco
   - TW Hya
@@ -27,7 +134,7 @@
   - Group X
 
 * 300 Myr
-  - NGC 3532 
+  - NGC 3532
 
 * 400 Myr
   - M 48 (450 Myr)
@@ -45,21 +152,26 @@
 
 See notebooks/cluster_catalog.ipynb
 
-## Isochrones
+## Stellar interior evolutionary models
 * See [Morton+2015]() using [isochrones v2](https://github.com/timothydmorton/isochrones) code for MIST model
-* See [Vines & Jenkins 2022](https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.2719V/abstract) using [ARIADNE](https://github.com/jvines/astroARIADNE) code for several models
 * See [Squicciarini & Bonavita](https://ui.adsabs.harvard.edu/abs/2022A%26A...666A..15S/abstract) using [MADYS](https://github.com/vsquicciarini/madys) code
+
+## Stellar atmosphere models
+* See [Vines & Jenkins 2022](https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.2719V/abstract) using [ARIADNE](https://github.com/jvines/astroARIADNE) code for several models
 
 ## Kinematics
 * See [Sagear+2024](https://ui.adsabs.harvard.edu/abs/2020AJ....160..239B/abstract) using [zoomies](https://github.com/ssagear/zoomies) code
 * See [Tofflemire+2021](https://ui.adsabs.harvard.edu/abs/2021AJ....161..171T/abstract) using [comove](https://github.com/adamkraus/Comove) code
 * [Gagne+2018]() using [BANYAN SIGMA](https://www.exoplanetes.umontreal.ca/banyan/banyansigma.php) code
-  
+* [Clusterix](http://clusterix.cab.inta-csic.es/clusterix/)
+* [ucc.ar](ucc.ar)
+
 ## Gaia excess
 * See [Barner & Mann 2023](https://ui.adsabs.harvard.edu/abs/2023ApJ...953..127B/abstract) using Gaia excess uncertainty variability [code](https://github.com/madysonb/EVA)
-  
+
 ## Gyrochronology
 * See [Bouma+2023](https://ui.adsabs.harvard.edu/abs/2020AJ....160..239B/abstract) using [gyro-interp](https://github.com/lgbouma/gyro-interp) code
+* See [Messina+2021](https://ui.adsabs.harvard.edu/abs/2021A%26A...645A.144M/abstract)
 * See [Angus+2018]() using [stardate](https://github.com/RuthAngus/stardate) code
 * See also [Astraea](https://github.com/lyx12311/Astraea) code
 * [Barnes 2007]()
@@ -72,7 +184,7 @@ See notebooks/cluster_catalog.ipynb
 * See description in Isaacson & Fischer (2010)
 
 ## Chromospheric emission
- - Ca II K: 3933.5 Å 
+ - Ca II K: 3933.5 Å
  - Ca II H: 3968.5 Å
  - H epsilon: 3970 Å
 
@@ -112,24 +224,10 @@ See notebooks/cluster_catalog.ipynb
 * M 34 (Meibom+2011)
 
 ### Prot vs Teff
-* [Rebull+2016]()
-* [Rebull+2017]()
-* Melange: [Tofflemire+2021]()
-* NGC 3532: [Fritzewski+2021](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/A+A/652/A60)
-* Group X: [Newton+2022]() & [Messina+2022]()
-* Praesepe: [Rampalli+2021]()
-* Pleiades: [Curtis+2020]()
-* Pis-Eri: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/AJ/158/77)
-* NGC 6811: [Curtis+2019](https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/ApJ/879/49)
-* Stars with TESS contamination ratios > 0.2, RUWE > 1.3 (likely binary), or C*>0.04 (corrected GBP and GRP flux excess factor) were not analyzed and are not included in figures. C* calculated from phot_bp_rp_excess_factor following Riello et al. (2021, Table 2 and Equation (6)).
+* See [Bouma+2020]
 
 ### Li EW & Teff
 * See [Jeffries+2023](https://ui.adsabs.harvard.edu/abs/2023MNRAS.523..802J/abstract) using [EAGLES](https://github.com/robdjeff/eagles) code
-* Pleiades: [Soderblom+1993]() & [Bouvier+2018]()
-* IC 2391/2602: [Randich+2001]()
-* young moving groups: [Mentuch+2008]() & [Kraus+2014]() 
-* Praesepe: [Cummings+2017]()
-* Group X: [Newton+2022]() & [Messina+2022]()
 
 ### Summary
 * violin plot e.g. Fig. 14 in [David+2018]()

@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>wakai - Stellar Age-Dating GUI</title>
-  <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/styles.css">
   <!-- Plotting and deterministic posterior math -->
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
-  <script src="posterior.js"></script>
+  <script src="/posterior.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -20,11 +20,12 @@
       <nav class="navbar">
         <div class="logo"><span class="logo-mark">w</span><span class="logo-word">wakai</span><span class="logo-caption">stellar age workspace</span></div>
         <ul class="nav-links">
-          <li><a class="nav-item active" data-page="target">Target Hub</a></li>
-          <li><a class="nav-item" data-page="gyro">gyro-interp</a></li>
-          <li><a class="nav-item" data-page="baffles">BAFFLES</a></li>
-          <li><a class="nav-item" data-page="cluster">Cluster</a></li>
-          <li><a class="nav-item" data-page="summary">Summary</a></li>
+          <li><a class="nav-item active" data-page="target" href="/target">Target</a></li>
+          <li><a class="nav-item" data-page="gyro" href="/gyro-interp">gyro-interp</a></li>
+          <li><a class="nav-item" data-page="baffles" href="/baffles">BAFFLES</a></li>
+          <li><a class="nav-item" data-page="cluster" href="/cluster">Cluster</a></li>
+          <li><a class="nav-item" data-page="isochrones" href="/isochrones">Isochrones</a></li>
+          <li><a class="nav-item" data-page="summary" href="/summary">Summary</a></li>
         </ul>
       </nav>
     </header>
@@ -124,7 +125,7 @@
               <div class="card-eyebrow">Target</div>
               <div class="card-title">Select a star</div>
               <div class="form-group target-search-container">
-                <label for="target-search-input">Search Preloaded or Input Gaia ID</label>
+                <label for="target-search-input">Search Saved Targets, Name, or Gaia ID</label>
                 <input type="text" class="input-control" id="target-search-input" placeholder="Type target name (e.g. TOI-837)..." autocomplete="off">
                 <div class="target-suggestions" id="target-suggestions">
                   <!-- Suggestions populated dynamically -->
@@ -227,6 +228,28 @@
               <div class="card">
                 <div class="card-eyebrow">Input check</div>
                 <div class="card-title">Rotation measurement</div>
+                <label class="model-overlay-toggle" for="chk-gyro-models">
+                  <input type="checkbox" id="chk-gyro-models">
+                  Overplot empirical models (Bouma et al. 2023 slow sequence)
+                </label>
+                <div id="gyro-model-ages" class="age-chip-row" hidden>
+                  <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="80" checked> 80 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="120" checked> 120 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="300" checked> 300 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="500" checked> 500 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="1000"> 1000 Myr</label>
+                </div>
+                <details class="plot-axis-settings">
+                  <summary>Axis settings</summary>
+                  <div class="axis-settings-grid">
+                    <label>Teff min (K)<input type="number" id="gyro-grid-xmin" value="3500" step="50"></label>
+                    <label>Teff max (K)<input type="number" id="gyro-grid-xmax" value="6500" step="50"></label>
+                    <label>Prot min (d)<input type="number" id="gyro-grid-ymin" value="0" step="1"></label>
+                    <label>Prot max (d)<input type="number" id="gyro-grid-ymax" value="40" step="1"></label>
+                    <label class="axis-settings-checkbox"><input type="checkbox" id="chk-gyro-grid-logy"> Log Prot axis</label>
+                    <label class="axis-settings-checkbox"><input type="checkbox" id="chk-gyro-grid-showgrid" checked> Show gridlines</label>
+                  </div>
+                </details>
                 <div id="plot-gyro-grid" class="plotly-chart"></div>
               </div>
               <div class="card">
@@ -287,6 +310,7 @@
                   <div class="meta-value" id="baffles-res-comb-age" style="color: var(--color-baffles); font-size: 1.3rem;">-</div>
                 </div>
               </div>
+              <p id="baffles-caveat-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);" hidden></p>
             </div>
           </div>
 
@@ -335,6 +359,15 @@
                 </select>
               </div>
 
+              <div class="form-group target-search-container">
+                <label for="cluster-name-input">Cluster to plot (optional)</label>
+                <input type="text" class="input-control" id="cluster-name-input" placeholder="Auto (best match) -- or type a cluster name, e.g. IC 2602..." autocomplete="off">
+                <div class="target-suggestions" id="cluster-name-suggestions">
+                  <!-- Suggestions populated dynamically -->
+                </div>
+              </div>
+              <p id="cluster-name-hint" style="margin: -0.5rem 0 0.75rem; font-size: 0.75rem; color: var(--ink-faint);" hidden></p>
+
               <div class="meta-grid" style="margin-top: 0.5rem;">
                 <div class="meta-item">
                   <div class="meta-label">Gaia DR3 ID</div>
@@ -360,7 +393,7 @@
 
               <button class="btn btn-cluster" id="btn-run-cluster" style="width: 100%; margin-top: 1rem;">Check cluster membership</button>
               <p id="cluster-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
-                Load a target on the Target Hub first.
+                Load a target on the Target page first.
               </p>
             </div>
 
@@ -382,6 +415,52 @@
                   <div class="meta-value" id="cluster-res-method" style="font-size: 0.9rem;">-</div>
                 </div>
               </div>
+            </div>
+
+            <div class="card" id="madys-cmd-card">
+              <div class="card-eyebrow cluster">Isochrone placement</div>
+              <div class="card-title">CMD (MADYS)</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                Plots the target's own photometry against theoretical isochrone tracks via <a href="https://madys.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">MADYS</a>. If a cluster has already been matched above, its member stars (highest membership probability first, capped at 100) are overlaid too, to visually confirm cluster youth -- otherwise the plot is target-only. Independent of the "Check cluster membership" run above; either can be run first.
+              </p>
+
+              <label style="display: block; margin-bottom: 4px; font-size: 0.8rem; color: var(--ink-soft);">Isochrone model(s) -- one CMD per model checked</label>
+              <div id="madys-cmd-models" class="age-chip-row">
+                <label class="age-chip"><input type="checkbox" class="chk-madys-model" value="parsec2" checked style="accent-color: var(--cluster);"> PARSEC2</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-model" value="mist" style="accent-color: var(--cluster);"> MIST</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-model" value="bhac15" style="accent-color: var(--cluster);"> BHAC15</label>
+              </div>
+
+              <label style="display: block; margin-bottom: 4px; font-size: 0.8rem; color: var(--ink-soft);">Isochrone ages to plot</label>
+              <div id="madys-cmd-ages" class="age-chip-row">
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="1" checked style="accent-color: var(--cluster);"> 1 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="3" checked style="accent-color: var(--cluster);"> 3 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="5" checked style="accent-color: var(--cluster);"> 5 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="10" checked style="accent-color: var(--cluster);"> 10 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="20" checked style="accent-color: var(--cluster);"> 20 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="30" checked style="accent-color: var(--cluster);"> 30 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="100" checked style="accent-color: var(--cluster);"> 100 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="200" checked style="accent-color: var(--cluster);"> 200 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="500" checked style="accent-color: var(--cluster);"> 500 Myr</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-age" value="1000" checked style="accent-color: var(--cluster);"> 1000 Myr</label>
+              </div>
+
+              <label style="display: block; margin-bottom: 4px; font-size: 0.8rem; color: var(--ink-soft);">Mass tracks to plot (M<sub>Sun</sub>)</label>
+              <div id="madys-cmd-masses" class="age-chip-row">
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="0.1" checked style="accent-color: var(--cluster);"> 0.1</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="0.3" checked style="accent-color: var(--cluster);"> 0.3</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="0.5" checked style="accent-color: var(--cluster);"> 0.5</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="0.7" checked style="accent-color: var(--cluster);"> 0.7</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="0.85" checked style="accent-color: var(--cluster);"> 0.85</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="1.0" checked style="accent-color: var(--cluster);"> 1.0</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="1.3" checked style="accent-color: var(--cluster);"> 1.3</label>
+                <label class="age-chip"><input type="checkbox" class="chk-madys-mass" value="2" checked style="accent-color: var(--cluster);"> 2</label>
+              </div>
+
+              <button class="btn btn-cluster" id="btn-run-madys-cmd" style="width: 100%; margin-top: 0.5rem;">Run CMD plot</button>
+              <p id="madys-cmd-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
+                Load a target on the Target page first.
+              </p>
             </div>
           </div>
 
@@ -425,6 +504,163 @@
                 <div class="card-eyebrow">Astrometry</div>
                 <div class="card-title">RA/Dec, proper motion, parallax & RV</div>
                 <div class="cluster-plot" id="plot-cluster-rdp"></div>
+              </div>
+            </div>
+
+            <div class="card loader-container" id="madys-cmd-loader">
+              <div class="orbital-spinner" style="border-top-color: var(--cluster);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running MADYS CMD plot...</h3>
+              <p>Fetching photometry for the target (and cluster members, if matched) -- typically 45s-2min</p>
+            </div>
+
+            <div class="card" id="madys-cmd-results-panel" style="display: none;">
+              <div class="card-eyebrow cluster">Diagram</div>
+              <div class="card-title">Color-magnitude diagram(s)</div>
+              <p id="madys-cmd-caveat" style="margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);"></p>
+              <div id="plot-madys-cmd"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE: ISOCHRONES ================= -->
+      <section id="page-isochrones" class="page">
+        <div class="grid-side-main">
+          <!-- Inputs / Controls Panel -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow isochrone">HR diagram</div>
+              <div class="card-title">Isochrone fit</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                Fits age, mass, radius, Teff, logg, and Fe/H against MIST isochrones (isochrones2's <code>SingleStarModel</code>), using Gaia BP/G/RP and 2MASS J/H/Ks photometry plus parallax from this target's reference table (Target page). Broadband photometry alone is weakly informative for a main-sequence dwarf's age; checking the optional spectroscopic constraints below can help.
+              </p>
+
+              <div id="isochrone-input-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--line);">
+                <input type="checkbox" id="chk-isochrone-logg" checked style="accent-color: var(--isochrone);">
+                <label for="chk-isochrone-logg" style="margin: 0; flex: 1;">log g (fixed dwarf prior, not a measurement)</label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0 0 1.75rem;">
+                <input type="number" id="isochrone-logg-value" value="4.5" step="0.1" style="width: 5rem;">
+                <span style="color: var(--ink-faint); font-size: 0.85rem;">&plusmn;</span>
+                <input type="number" id="isochrone-logg-err" value="0.1" step="0.05" style="width: 5rem;">
+              </div>
+
+              <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--line);">
+                <label style="margin: 0; font-size: 0.85rem; font-weight: 600;">Priors</label>
+                <p style="margin: 0.25rem 0 0.5rem; font-size: 0.75rem; color: var(--ink-faint);">
+                  Matches <code>notebooks/ext_code_isochrones.ipynb</code>'s <code>mod.set_prior(...)</code> -- restricts age to a flat prior over log&#8321;&#8320;(age/yr), and A<sub>V</sub> extinction to a flat prior in mag. EEP (evolutionary stage) isn't touched by the notebook but is still one of the fit's free parameters, so it's editable here too -- default is the full MIST grid (no restriction).
+                </p>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                  <span style="width: 7rem; font-size: 0.8rem;">log&#8321;&#8320;(age/yr)</span>
+                  <input type="number" id="isochrone-age-prior-min" value="5" step="0.1" style="width: 4.5rem;">
+                  <span style="color: var(--ink-faint);">&ndash;</span>
+                  <input type="number" id="isochrone-age-prior-max" value="10" step="0.1" style="width: 4.5rem;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                  <span style="width: 7rem; font-size: 0.8rem;">A<sub>V</sub> (mag)</span>
+                  <input type="number" id="isochrone-av-prior-min" value="0" step="0.01" min="0" style="width: 4.5rem;">
+                  <span style="color: var(--ink-faint);">&ndash;</span>
+                  <input type="number" id="isochrone-av-prior-max" value="0.1" step="0.01" min="0" style="width: 4.5rem;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="width: 7rem; font-size: 0.8rem;">EEP</span>
+                  <input type="number" id="isochrone-eep-prior-min" value="0" step="10" min="0" style="width: 4.5rem;">
+                  <span style="color: var(--ink-faint);">&ndash;</span>
+                  <input type="number" id="isochrone-eep-prior-max" value="1710" step="10" min="0" style="width: 4.5rem;">
+                </div>
+
+                <details class="plot-axis-settings" style="margin-top: 0.5rem; margin-bottom: 0;">
+                  <summary>EEP phase reference</summary>
+                  <table style="margin-top: 0.5rem; font-size: 0.75rem;">
+                    <thead>
+                      <tr><th>Primary EEP</th><th>EEP Number</th><th>Phase</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>1</td><td>1</td><td>Pre-main sequence (PMS)</td></tr>
+                      <tr><td>2</td><td>202</td><td>Zero age main sequence (ZAMS)</td></tr>
+                      <tr><td>3</td><td>353</td><td>Intermediate age main sequence (IAMS)</td></tr>
+                      <tr><td>4</td><td>454</td><td>Terminal age main sequence (TAMS)</td></tr>
+                      <tr><td>5</td><td>605</td><td>Tip of the red giant branch (RGBTip)</td></tr>
+                      <tr><td>6</td><td>631</td><td>Zero age core helium burning (ZACHeB)<sup>b</sup></td></tr>
+                      <tr><td>7</td><td>707</td><td>Terminal age core helium burning (TACHeB)<sup>c</sup></td></tr>
+                      <tr><td colspan="3" style="padding-top: 0.5rem; font-weight: 600; color: var(--ink-faint);">Low Mass Type</td></tr>
+                      <tr><td>8</td><td>808</td><td>Thermally pulsating asymptotic giant branch (TPAGB)</td></tr>
+                      <tr><td>9</td><td>1409</td><td>Post asymptotic giant branch (post-AGB)</td></tr>
+                      <tr><td>10</td><td>1710</td><td>White dwarf cooling sequence (WDCS)</td></tr>
+                      <tr><td colspan="3" style="padding-top: 0.5rem; font-weight: 600; color: var(--ink-faint);">High Mass Type</td></tr>
+                      <tr><td>8</td><td>808</td><td>Carbon burning (C-burn)</td></tr>
+                    </tbody>
+                  </table>
+                </details>
+              </div>
+
+              <button class="btn btn-isochrone" id="btn-run-isochrones" style="width: 100%; margin-top: 1rem;">Run isochrone fit</button>
+              <p id="isochrone-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
+                Load a target on the Target page first.
+              </p>
+            </div>
+
+            <div class="card" id="isochrone-summary-card" style="display: none;">
+              <div class="card-eyebrow isochrone">Result</div>
+              <div class="card-title">Derived parameters</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Age</div>
+                  <div class="meta-value" id="isochrone-res-age" style="color: var(--isochrone); font-size: 1.3rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Mass (M<sub>Sun</sub>)</div>
+                  <div class="meta-value" id="isochrone-res-mass" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Radius (R<sub>Sun</sub>)</div>
+                  <div class="meta-value" id="isochrone-res-radius" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Teff (K)</div>
+                  <div class="meta-value" id="isochrone-res-teff" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">log g</div>
+                  <div class="meta-value" id="isochrone-res-logg" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Fe/H</div>
+                  <div class="meta-value" id="isochrone-res-feh" style="font-size: 0.95rem;">-</div>
+                </div>
+              </div>
+              <p id="isochrone-inputs-used" style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--ink-faint);"></p>
+            </div>
+          </div>
+
+          <!-- Visualization / Outputs -->
+          <div>
+            <div class="card loader-container" id="isochrone-loader">
+              <div class="orbital-spinner" style="border-top-color: var(--isochrone);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running isochrone MCMC fit...</h3>
+              <p>~30s: sampling mass/age/Fe-H/distance/A<sub>V</sub> against MIST isochrones</p>
+            </div>
+
+            <div id="isochrone-results-panel" style="display: none;">
+              <!-- Reliability caveat for weakly-constrained (very broad) posteriors -->
+              <div class="card" id="isochrone-caveat-card" style="display: none; border-left: 3px solid var(--danger);">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <span style="color: var(--danger); font-size: 18px; line-height: 1.4;">&#9888;</span>
+                  <div>
+                    <strong style="color: var(--danger);">Weakly constrained age</strong>
+                    <p style="margin-top: 4px;" id="isochrone-caveat-text">
+                      This age posterior is very broad -- broadband photometry alone often can't discriminate age well for a main-sequence dwarf (a young and old low-mass star can look nearly identical in color/luminosity). Excluded from the Summary page's joint estimate; cross-check against gyro-interp/BAFFLES.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-eyebrow">Posterior</div>
+                <div class="card-title">Age distribution</div>
+                <div id="plot-isochrone-posterior" class="plotly-chart"></div>
               </div>
             </div>
           </div>
@@ -526,6 +762,12 @@
                       <td id="td-baffles-ci">-</td>
                       <td id="td-baffles-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Emp. Idle</span></td>
                     </tr>
+                    <tr>
+                      <td><strong>Isochrones</strong></td>
+                      <td id="td-isochrone-age">-</td>
+                      <td id="td-isochrone-ci">-</td>
+                      <td id="td-isochrone-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                    </tr>
                     <tr style="border-top: 1px solid var(--glass-border);">
                       <td><strong>Joint Product</strong></td>
                       <td id="td-joint-age" style="color: var(--color-joint); font-weight: 700;">-</td>
@@ -533,6 +775,10 @@
                       <td id="td-joint-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
                     </tr>
                   </tbody>
+                  <!-- Literature/reported ages from the reference table's own -->
+                  <!-- rows (e.g. a manually-added "Age" row with a citation), -->
+                  <!-- shown alongside the computed methods above when present. -->
+                  <tbody id="reported-ages-body"></tbody>
                 </table>
               </div>
 
@@ -563,6 +809,6 @@
   <div class="toast-msg" id="toast">Changes applied successfully.</div>
 
   <!-- App logic script -->
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

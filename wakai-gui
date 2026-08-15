@@ -1,0 +1,35 @@
+#!/usr/bin/env zsh
+# wakai-gui: launch the wakai stellar age-dating dashboard
+# Serves frontend + API on a single port (7000)
+
+set -e
+BACKEND_DIR="$(cd "$(dirname "$0")" && pwd)/gui/backend"
+WAKAI_PYTHON="/ut3/jerome/miniconda3/envs/wakai/bin/python"
+PORT=7000
+
+cleanup() {
+  print "\nShutting down..."
+  kill $PID 2>/dev/null
+  wait $PID 2>/dev/null
+}
+trap cleanup SIGINT SIGTERM EXIT
+
+print "Starting wakai dashboard on 127.0.0.1:$PORT ..."
+WAKAI_PORT=$PORT $WAKAI_PYTHON "$BACKEND_DIR/server.py" &
+PID=$!
+
+sleep 1
+
+print ""
+print "╔═══════════════════════════════════════════╗"
+print "║  wakai stellar age-dating GUI            ║"
+print "║                                           ║"
+print "║  http://localhost:${PORT}                    ║"
+print "║                                           ║"
+print "║  SSH tunnel:                              ║"
+print "║  ssh -L ${PORT}:localhost:${PORT} <u>@<h>  ║"
+print "╚═══════════════════════════════════════════╝"
+print ""
+print "Press Ctrl+C to stop."
+
+wait

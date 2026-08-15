@@ -1,0 +1,418 @@
+% mnras_template.tex 
+%
+% LaTeX template for creating an MNRAS paper
+%
+% v3.3 released April 2024
+% (version numbers match those of mnras.cls)
+%
+% Copyright (C) Royal Astronomical Society 2015
+% Authors:
+% Keith T. Smith (Royal Astronomical Society)
+
+% Change log
+%
+% v3.3 April 2024
+%   Updated \pubyear to print the current year automatically
+% v3.2 July 2023
+%	Updated guidance on use of amssymb package
+% v3.0 May 2015
+%    Renamed to match the new package name
+%    Version number matches mnras.cls
+%    A few minor tweaks to wording
+% v1.0 September 2013
+%    Beta testing only - never publicly released
+%    First version: a simple (ish) template for creating an MNRAS paper
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Basic setup. Most papers should leave these options alone.
+\documentclass[fleqn,usenatbib]{mnras}
+
+% MNRAS is set in Times font. If you don't have this installed (most LaTeX
+% installations will be fine) or prefer the old Computer Modern fonts, comment
+% out the following line
+\usepackage{newtxtext,newtxmath}
+% Depending on your LaTeX fonts installation, you might get better results with one of these:
+%\usepackage{mathptmx}
+%\usepackage{txfonts}
+
+% Use vector fonts, so it zooms properly in on-screen viewing software
+% Don't change these lines unless you know what you are doing
+\usepackage[T1]{fontenc}
+
+% Allow "Thomas van Noord" and "Simon de Laguarde" and alike to be sorted by "N" and "L" etc. in the bibliography.
+% Write the name in the bibliography as "\VAN{Noord}{Van}{van} Noord, Thomas"
+\DeclareRobustCommand{\VAN}[3]{#2}
+\let\VANthebibliography\thebibliography
+\def\thebibliography{\DeclareRobustCommand{\VAN}[3]{##3}\VANthebibliography}
+
+
+%%%%% AUTHORS - PLACE YOUR OWN PACKAGES HERE %%%%%
+
+% Only include extra packages if you really need them. Avoid using amssymb if newtxmath is enabled, as these packages can cause conflicts. newtxmatch covers the same math symbols while producing a consistent Times New Roman font. Common packages are:
+\usepackage{graphicx}	% Including figure files
+\usepackage{amsmath}	% Advanced maths commands
+\usepackage{hyperref}
+\usepackage{cprotect}
+\usepackage{multirow}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% AUTHORS - PLACE YOUR OWN COMMANDS HERE %%%%%
+
+% Please keep new commands to a minimum, and use \newcommand not \def to avoid
+% overwriting existing commands. Example:
+%\newcommand{\pcm}{\,cm$^{-2}$}	% per cm-squared
+\newcommand{\jr}{\color{black}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%% TITLE PAGE %%%%%%%%%%%%%%%%%%%
+
+% Title of the paper, and the short title which is used in the headers.
+% Keep the title short and informative.
+\title[On the road to the radius valley]{On the road to the radius valley: distinguishing between gas dwarfs and water worlds with young transiting exoplanets}
+
+% The list of authors, and the short list which is used in the headers.
+% If you need two or more lines of authors, add an extra line using \newauthor
+\author[J. G. Rogers]{
+James G. Rogers$^{1}$\thanks{E-mail: jr2011@cam.ac.uk}
+\\
+% List of institutions
+$^{1}$Institute of Astronomy, University of Cambridge, Madingley Road, Cambridge CB3 0HA, United Kingdom
+}
+
+% These dates will be filled out by the publisher
+\date{Accepted XXX. Received YYY; in original form ZZZ}
+
+% Prints the current year, for the copyright statements etc. To achieve a fixed year, replace the expression with a number. 
+\pubyear{\the\year{}}
+
+% Don't change these lines
+\begin{document}
+\label{firstpage}
+\pagerange{\pageref{firstpage}--\pageref{lastpage}}
+\maketitle
+
+% Abstract of the paper
+\begin{abstract}
+The detection of young transiting exoplanets represents a new frontier in our understanding of planet formation and evolution. For the population of observed close-in sub-Neptunes, two proposed formation pathways can reproduce their observed masses and radii at $\sim$~Gyr ages: the ``gas dwarf'' hypothesis and the ``water world'' hypothesis. We show that a sub-Neptune's size at early ages $\lesssim 100$~Myrs is strongly dependent on the bulk mean molecular weight within its envelope. As a result, gas dwarfs and water worlds should diverge in size at early ages since the mean molecular weight of gas dwarf envelopes is predicted to be smaller than that of water worlds. We construct population models under both scenarios that reproduce \textit{Kepler} demographics in the age range $\sim1-10$~Gyrs. We find tentative evidence that the gas dwarf model is more consistent with the small population of young exoplanets $< 40$~Myrs from \textit{TESS}. We show that planet radius is relatively insensitive to planet mass for young, puffy sub-Neptunes, meaning that well-characterised masses are not necessarily required to exploit the effects of mean molecular weight at the population level. We confirm the predicted difference in planet size between the models is also true under mixed-envelope scenarios, in which envelopes consist of mixtures of hydrogen and steam. We highlight that transit surveys of young exoplanets should target the youngest observable stellar clusters to exploit the effects of mean molecular weight.
+\end{abstract}
+
+% Select between one and six entries from the list of approved keywords.
+% Don't make up new ones.
+\begin{keywords}
+planets and satellites: atmospheres -
+planets and satellites: formation
+\end{keywords}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%% BODY OF PAPER %%%%%%%%%%%%%%%%%%
+
+\section{Introduction} \label{sec:intro}
+Twenty years on from the first sub-Neptune discoveries \citep{Santos2004,Rivera2005}, understanding their nature still remains a mystery \citep[e.g.][]{Bean2021}.  With typical sizes between $\sim2 - 4 R_\oplus$, and orbital periods $\lesssim 100$~days, sub-Neptunes orbit $\sim 50\%$ of Sun-like stars \citep{Petigura2013,Batalha2013,Fressin2013}. Sub-Neptunes sit above the ``radius valley'', an observed paucity of planets at $\sim 1.8R_\oplus$, although its exact location varies with orbital period and stellar mass \citep[e.g.][]{Fulton2017,Petigura2018,VanEylen2018,Petigura2022,Ho2023}. Their counterparts, referred to as super-Earths, sit below the valley. Crucially, mass measurements have shown that the bulk density for planets above and below the valley are markedly different \citep[e.g.][]{Wu_Lithwick2013,Weiss2014,Rogers2015,Wolfgang2016,Chen2017}. Super-Earths are consistent with a rocky, Earth-like composition. Conversely, sub-Neptunes have much lower bulk densities, suggesting the presence of low-density compositional components within these planets. The radius valley can thus also be interpreted as an approximate delineation between planet types of different bulk densities \citep{Luque2022}. Despite the discovery of thousands of sub-Neptunes, their compositions and formation pathways are still highly debated.
+
+Two major hypotheses exist to explain these observations. In the ``gas dwarf'' scenario, super-Earths and sub-Neptunes formed from a single population of progenitor planets with thick primordial H$_2$/He-dominated atmospheres accreted from the nascent protoplanetary disc \citep[e.g.][]{Lee2014,Ginzburg2016}. Then, through atmospheric escape processes, including boil-off \citep{Owen2016,Ginzburg2016}, core-powered mass loss \citep{Ginzburg2018} and XUV photoevaporation \citep{Owen2013,LopezFortney2013}, planets that are smaller in mass and closer to their host stars were stripped of their envelopes, leaving behind bare cores. These rocky cores thus formed the population of super-Earths, whereas the planets that could retain their H$_2$/He envelopes formed the sub-Neptune population. This evolutionary model is supported by direct observations of escaping hydrogen and helium \citep[e.g.][]{DosSantos2023a}.
+
+%Direct evidence for this hypothesis exists with observations of escaping H$_2$/He atmospheres through transit spectroscopy and demographic studies 
+
+On the other hand, the ``water world'' hypothesis states that the radius valley represents the end-product of two distinct planet formation pathways \citep[e.g.][]{Mordasini2009,Venturini2016,Raymond2018,Zeng2019,Mousis2020,Burn2024}. Rocky super-Earths were formed in the inner regions of protoplanetary discs, where the major solid components are silicates. Sub-Neptunes formed beyond the water-ice line, where the available solid mass increases due to the condensation of volatile species. They accrete large quantities of ice/water content (typically $\sim 50\%$ of their mass) and then migrate inwards to the orbital locations we observe them at today.
+
+Seeking evidence in favour of either model at the population level is a complex challenge, largely due to the compositional degeneracy when only measuring a planet's bulk density \citep[e.g.][]{Rogers2015,Bean2021}. Models for both mechanisms can reproduce demographic observations in various parameter spaces, such as orbital period, planet radius, planet mass, and stellar mass spaces \cite[e.g.][]{Gupta2019,Rogers2021,Burn2024}. Water worlds are predicted to be more prominent around M-dwarfs since the water-ice line may be closer to the host star, providing a larger reservoir of water-rich material closer to the location where sub-Neptunes are observed. However, observational evidence for this remains unclear \citep{Rogers2023b,Ho2024}. 
+
+In this paper, we present a new approach to distinguishing between gas dwarfs and water worlds, which relies on the characterisation of planet demographics at early stellar ages. We exploit the difference in predicted mean molecular weights in the envelopes of such planets, which produce very different evolutionary behaviour at young ages. Gas dwarf envelopes are expected to be H$_2$/He-dominated, yielding a relatively low mean-molecular weight and, thus, large scale height. The thickness of this envelope is sensitive to the thermal state of the planet, which will be larger when the planet is young. Thus, gas dwarfs are predicted to be puffy at young ages. Water worlds, on the other hand, are expected to have volatile-rich envelopes with high mean molecular weights and small scale heights. The thickness of such envelopes will respond weakly to changes in thermal state, meaning that they will not undergo significant contraction with time \citep[see also][]{Lopez2017,Aguichine2024}. This provides an observational difference between the models, which can be exploited. Recent atmospheric characterisation of evolved, temperate sub-Neptunes from \textit{JWST} have revealed a wide range in upper atmospheric mean molecular weights \citep[e.g.][]{Madhusudhan2023,Benneke2024,Piaulet-Ghorayeb2024,Davenport2025}. Meanwhile, \textit{JWST}/\textit{HST} observations of young sub-Neptunes have suggested low mean molecular weights \citep[e.g.][]{Barat2024,Thao2024}. However, these observations are sparse, biased towards M-dwarfs, and only probe the upper atmospheres of sub-Neptunes, preventing robust constraints from being placed on formation pathways at the population level.
+
+Our paper is laid out as follows: in Section \ref{sec:modelmethod}, we present a semi-analytical model for gas dwarf and water world structure and evolution, and justify that their radii differ greatly at young ages in Section \ref{sec:MeanMolecularWeight}. In Section \ref{sec:populationlevel}, we compare population-level models with observed planets from \textit{Kepler} and \textit{TESS}. Discussion and conclusions are provided in Sections \ref{sec:discussion} and \ref{sec:conclusion}, respectively.
+
+
+\section{A simple model for gas dwarfs and water worlds} \label{sec:modelmethod}
+The envelopes of close-in, highly irradiated sub-Neptunes are expected to be in radiative-convective equilibrium. To investigate their evolution, we construct semi-analytic models based on previous works for H$_2$/He-dominated envelopes \citep[e.g.][]{Owen2017,Gupta2019,Misener2021} and steam-dominated envelopes \citep{Rogers2025}. Assuming an ideal gas equation of state, the density profile in the convective envelope is assumed to be adiabatic and given by \citep[e.g.][]{Ginzburg2016}:
+\begin{equation} \label{eq:temperature_profile_adiabat}
+    \rho(r) = \rho_\text{rcb}  \bigg[ 1 + \nabla_\text{ad} \frac{G M_\text{c}}{c_\text{s}^2 R_\text{rcb}} \bigg( \frac{R_\text{rcb}}{r} - 1 \bigg) \bigg]^{\frac{1}{\gamma - 1}},
+\end{equation}
+where the subscript `rcb' refers to quantities evaluated at the radiative-convective boundary. Here,  $\rho$ is the gas density, $\gamma$ is the adiabatic index, $\nabla_\text{ad} \equiv (\gamma - 1) / \gamma$ is the adiabatic temperature gradient, $M_\text{c}$ is the planet's core mass and $R_\text{rcb}$ is the position of the radiative-convective boundary. Above the convective region sits a radiative layer, assumed to be isothermal at an equilibrium temperature of $T_\text{eq}$. The sound speed in Equation \ref{eq:temperature_profile_adiabat} is evaluated at the radiative-convective boundary, $c_\text{s}^2 \equiv k_\text{B} T_\text{eq} / \mu$, where $\mu$ is the mean molecular weight of the envelope, and is a crucial variable in this study. We highlight here that, for simplicity, we assume the mean molecular weight to be constant in the envelope as a function of radius. We will frequently refer to $\mu$ as the ``bulk'' mean molecular weight, which can be interpreted as a mass-averaged value throughout the envelope. The density profile in this radiative layer is given by:
+\begin{equation} \label{eq:temperature_profile_isotherm}
+    \rho = \rho_\text{rcb} \exp \bigg\{ \frac{GM_\text{c}}{c_\text{s}^2} \bigg( \frac{1}{r} - \frac{1}{R_\text{rcb}} \bigg) \bigg\}.
+\end{equation}
+To evolve the model, we numerically solve a set of coupled ordinary differential equations:
+\begin{equation} \label{eq:dMdt}
+    \frac{d M_\text{env}}{dt} = - \dot{M},
+\end{equation}
+\begin{equation} \label{eq:dEdt}
+    \frac{d E_\text{p}}{dt} = -L_\text{rad}.
+\end{equation}
+Here, Equation \ref{eq:dMdt} represents the conservation of mass, where $M_\text{env}$ is the envelope mass and $\dot{M}$ is the mass loss rate. Equation \ref{eq:dEdt} represents the conservation of planet energy, $E_\text{p}$.\footnote{Strictly speaking, Equation \ref{eq:dEdt} should have an extra term proportional to the mass loss rate, $\dot{M}$, since escaping material also removes energy from the planet. This is important for extreme mass loss processes such as boil-off \citep[e.g.][]{Owen2016}. However, our evolution models begin after this phase. Hence we can safely ignore this term.} Here, $L_\text{rad}$ is the radiative luminosity of the planet, which, in radiative-convective equilibrium, is given by:
+\begin{equation} \label{eq:Lrad}
+    L_\text{rad} = \frac{64 \pi \nabla_\text{ad} G M_\text{p}  \sigma T_\text{eq}^4}{3 \, c_\text{s}^2 \, \kappa_\text{rcb} \, \rho_\text{rcb}},
+\end{equation}
+where $\kappa_\text{rcb}$ is the gas Rosseland mean opacity evaluated at the radiative-convective boundary. 
+
+Calculating the envelope mass $M_\text{env}$ and planetary energy $E_\text{p}$ requires integrating through the planetary structure. For envelope mass:
+\begin{equation}
+    M_\text{env} = \int_{R_\text{c}}^{R_\text{out}} 4 \pi r^2 \rho(r) dr,
+\end{equation}
+where $R_\text{c}$ is the core radius and $\rho$ is given by Equations \ref{eq:temperature_profile_adiabat} and \ref{eq:temperature_profile_isotherm}. The outer boundary, $R_\text{out}$ is given by: 
+\begin{equation}
+    R_\text{out} = \text{min} ( R_\text{B}, R_\text{H} ),
+\end{equation}
+where $R_\text{B} = G M_\text{c} / 2 c_\text{s}^2$ is the Bondi radius and $R_\text{H} = a (M_\text{c} / 3M_*)^{1/3}$ is the Hill radius. Planetary energy is calculated by:
+\begin{equation}
+\begin{split}
+    E_\text{p} & = \int_{R_\text{c}}^{R_\text{out}} 4 \pi r^2 \rho(r) \, \bigg( \frac{k_\text{B} T(r)}{ \mu \,(\gamma - 1) } - \frac{GM_\text{c}}{r} \bigg) \, dr \\
+    & + \frac{M_\text{c} k_\text{B} T_\text{c}}{\mu_\text{c} \, (\gamma_\text{c} - 1)} ,
+\end{split}
+\end{equation}
+where the first and second terms represent energy stored in the envelope and core, respectively. For the core, we follow \citet{Misener2021} and assume an incompressible and isothermal core at a temperature of $T_\text{c}$ with mean molecular weight $\mu_c$ and adiabatic index $\gamma_\text{c} = 4/3$ from the Dulong-Petit law. 
+
+To solve Equations \ref{eq:dMdt} and \ref{eq:dEdt}, we use a \verb|RK45| adaptive-step integrator with a numerical tolerance of $10^{-6}$. At each timestep, the updated envelope mass, $M_\text{env}$, and planet energy, $E_\text{p}$, are used to solve for the new radiative-convective boundary density, $\rho_\text{rcb}$, and radius, $R_\text{rcb}$. We also calculate the position of the photospheric radius, $R_\text{ph}$, and transit radius, $R_\text{tr}$, via \verb|RK45| numerical integration \citep[e.g.][]{Guillot2010}. This is required since the difference between photospheric and transit radii of young planets with large scale heights can become significant $(\gtrsim 10\%) $.
+
+Since we are interested in young planets and their host stars, we include pre-main sequence stellar evolution from \citet{Johnstone2021}. The stellar luminosity, $L_*(t)$, for a given stellar mass and age, is used to calculate planetary equilibrium temperature as follows:
+\begin{equation}
+    T_\text{eq} = \bigg( \frac{L_*}{16 \sigma \pi a^2} \bigg)^\frac{1}{4},
+\end{equation}
+where we have assumed a zero Bond albedo. 
+
+For initial conditions, we take a simple, agnostic approach in setting each planet's cooling timescale, $\tau_\text{cool}$, equal to the planet's age, $t_\text{pl}$. The cooling timescale, which is closely related to the Kelvin-Helmholtz timescale used in other works \citep[e.g.][]{Owen2017,Owen2020}, is given by:
+\begin{equation} \label{eq:coolingtimescale}
+    \tau_\text{cool} = \frac{E_\text{c} - E_\text{env}}{L_\text{rad}},
+\end{equation}
+where the energy of the envelope $E_\text{env}$ is always negative if the envelope is gravitationally bound. This initial condition of $\tau_\text{cool} = t_\text{pl}$ enforces an initial planet entropy appropriate for its age. In the early stages of planetary evolution, the planet’s thermal state and cooling rate are closely tied to its formation process and contraction. Assuming the cooling timescale is comparable to the planet's age ensures that the initial model reflects a system for which cooling balances with the internal thermal content over the planet’s lifetime. In other words, if $\tau_\text{cool} \ll t_\text{pl}$, the planet will start very inflated and contract unphysically quickly. On the other hand, $\tau_\text{cool} \gg t_\text{pl}$ would imply a very contracted initial size and very little thermal evolution with time, which is likely also unphysical for a recently formed planet. We note here that extreme mass loss events, such as boil-off during protoplanetary disc dispersal, may increase a planet's initial cooling timescale since high entropy material is removed from the planet very quickly, thus introducing premature cooling \citep{Owen2016,Ginzburg2016,Owen2020,Rogers2024a,Tang2024}. To account for this, we also enforce that a planet's initial radiative-convective boundary cannot exceed $0.1 R_\text{B}$, where $R_\text{B} = G M_\text{p} / 2 c_\text{s}^2$ is the Bondi radius. This constraint is appropriate for a planet in which a bolometrically-driven transonic wind, triggered by disc dispersal, has largely shut off \cite[see][]{Owen2016}. These initial conditions are thus appropriate for a planet for which its nascent protoplanetary disc has dispersed and any consequential mass loss has concluded.
+
+In addition to the initial conditions, various model parameters, including the core's mean molecular weight, $\mu_\text{c}$, gas mean molecular weight, $\mu$, gas opacity, $\kappa$, and gas adiabatic index, $\gamma$, depend on the assumed formation model. These are discussed in Sections \ref{sec:GasDwarfParams} and \ref{sec:WaterWorldParams}.
+
+\subsection{Gas Dwarfs} \label{sec:GasDwarfParams}
+
+For our simplest gas dwarf models, we assume a gas mean molecular weight of $\mu = 2.35$~atomic mass units (amu), appropriate for Solar-metallicity gas \citep[e.g.][]{Anders1989}, a gas adiabatic index of $\gamma = 7/5$ for molecular hydrogen, and interpolate the Rosseland mean opacity tables from \citet{Kempton2023} for Solar-metallicity gas. For the cores of gas dwarfs, multiple studies have shown that their interiors are consistent with an Earth-like composition \citep[e.g.][]{Owen2017,Gupta2020,Rogers2021,Rogers2023}. Thus, we assume a core mean molecular weight of $\mu_\text{c} = 60$, motivated by Earth \citep{Szurgot2015}. To calculate the core radius, $R_\text{c}$, we adopt the mass-radius relations of \citet{Fortney2007}, assuming an Earth-like interior composition of $25\%$ iron, $75\%$ rock, as inferred from \citet{Rogers2021,Rogers2023}.
+
+Hydrogen-dominated gas is susceptible to atmospheric escape, which can include mechanisms such as boil-off during disc dispersal \citep{Owen2016,Ginzburg2016,Rogers2024a}, core-powered mass loss \citep[e.g.][]{Ginzburg2018,Gupta2019,Misener2024} and XUV photoevaporation \citep[e.g.][]{OwenJackson2012,Kubyshkina2022,Schulik2022,Caldiroli2022}. For simplicity, we choose to model planets after the protoplanetary disc has fully dissipated. As shown in \citet{Rogers2024a}, boil-off and core-powered mass loss should dominate during disc dispersal, then photoevaporation dictates the planetary outflow once the gas disc is optically thin to XUV photons through its midplane. Nevertheless, photoevaporation and core-powered mass loss are similar hydrodynamic escape processes \citep{Owen2024}, and thus, this simplifying assumption has little effect on our results. We calculate photoevaporative mass loss rates with the following \citep{Lecavelier2007,Erkaev2007}:
+\begin{equation} \label{eq:Mdot}
+    \dot{M} = \eta \frac{L_\text{XUV}}{4\pi a^2} \frac{\pi R_\text{ph}^3}{GM_\text{p}},
+\end{equation}
+where $\eta$ is the mass loss efficiency, calculated by interpolating over the grid of hydrodynamic models from \citet{OwenJackson2012}. Typical efficiency values for sub-Neptunes can range between $\sim 10^{-3} - 10^{-1}$, depending on planet mass and radius. The XUV luminosity from the host star, $L_\text{XUV}$, is taken from the pre-main sequence stellar evolution models from \citet{Johnstone2021}.
+
+\subsection{Water Worlds} \label{sec:WaterWorldParams}
+For our simplest water world models, we assume a pure steam envelope with a mean molecular weight of $\mu = 18$~amu, a gas adiabatic index of $\gamma = 4/3$, and Rosseland mean opacities from \citet{Kempton2023} for pure H$_2$O gas. For the core, we assume an interior composition of $50\%$ rock, $50\%$ water, as predicted by population synthesis models \citep[e.g.][]{Mordasini2009,Raymond2018,Zeng2019,Venturini2016,Mousis2020,Burn2024}. This yields a core mean molecular weight of $\mu_\text{c}=27$~amu. We use this composition in the mass-radius relations of \citet{Fortney2007} to calculate a core radius, $R_\text{c}$. Similar to the steam models of \citet{Rogers2025}, we choose not to consider the atmospheric escape of steam-dominated (or, more generally, high mean molecular weight) envelopes due to the many uncertainties of this mechanism. Little is currently known about how processes such as molecular dissociation/ionisation, drag, diffusion, and line-cooling may affect the escape of high mean molecular weight envelopes, and thus, we leave this for future work. Nevertheless, studies have shown that water-rich sub-Neptunes should store most of their water in their rocky interiors \citep{Dorn2021,Luo2024}, meaning that we need only consider small envelope mass fractions, which may either suffer from inefficient atmospheric escape and/or may be replenished from their outgassing interiors. 
+
+\section{The impact of envelope mean molecular weight on planet size} \label{sec:MeanMolecularWeight}
+
+\begin{figure}
+	\includegraphics[width=\columnwidth]{Figures/MMW_effect.pdf}
+    \centering
+        \cprotect\caption{The transit radius evolution of sub-Neptune envelopes for different bulk mean molecular weights of $\mu = 2.35$, $5.0$, $10$ and $18.0$~amu in blue, green, orange and red, respectively. All planets have a $5M_\oplus$ core, with an Earth-like core composition of $25\%$ iron, $75\%$ silicate. Each model has an envelope mass fraction of $X \equiv M_\text{env} / M_\text{c} = 0.01$ and a constant equilibrium temperature of $T_\text{eq}=800$~K and does not undergo any mass loss.} \label{fig:mmw} 
+\end{figure} 
+
+\begin{figure*}
+	\includegraphics[width=2.0\columnwidth]{Figures/SinglePlanet_Comparison_combined.pdf}
+    \centering
+        \cprotect\caption{The radius evolution for different sub-Neptune models: gas dwarfs with Earth-like interiors and H$_2$/He-dominated envelopes (orange) and water worlds with water-rich interiors and steam-dominated atmospheres (blue). Planet size is shown for core masses of $4M_\oplus$, $6M_\oplus$ and $8M_\oplus$ in solid, dashed and dotted, respectively. The left-hand panel shows ``minimal'' models, representing the simplest construction of each planet formation hypothesis. Gas dwarfs have water-poor, Earth-like interiors, host Solar-metallicity envelopes with bulk mean molecular weights of $\mu = 2.35$~amu, initial $5\%$ envelope mass fractions and undergo photoevaporative mass loss. Water worlds have water-rich interiors, host pure steam envelopes with bulk mean molecular weights of $\mu = 18$~amu with envelope mass fractions of $1\%$ and do not undergo mass loss. The right-hand panel shows mixed envelope models, for which gas dwarfs have bulk mean molecular weights of $\mu = 5$~amu and initial envelope mass fractions of $30\%$. Water worlds have bulk mean molecular weights of $\mu = 6$~amu with envelope mass fractions of $1\%$. Despite converging to the same radius after $\sim$~Gyrs of evolution under various assumptions, gas dwarfs and water worlds behave very differently at early times.} \label{fig:Comparison} 
+\end{figure*} 
+
+The mean molecular weight of a gaseous envelope directly controls its scale height, $H$. In the simplistic case of an isothermal ideal gas, the scale height is:
+\begin{equation}
+    H(r) = \frac{c_\text{s}^2}{g} = \frac{ k_\text{B} T}{ \mu} \frac{r^2}{G M_\text{p}} \propto \frac{1}{\mu},
+\end{equation}
+where $g$ is the gravitational acceleration at radius $r$. The scale height is inversely proportional to the mean molecular weight for a given temperature (or, equivalently, thermal state of the envelope). The mean molecular weight also impacts the scale height for a non-isothermal envelope, such as in the convective interior. From Equation \ref{eq:temperature_profile_adiabat}, one can show that the pressure gradient, which is analogous to the scale height, $|dP / dr| \propto \mu^{1 / (\gamma-1)}$. In other words, the envelope pressure in a convective interior falls off more steeply for a high mean molecular weight composition, implying a less puffy envelope for a given mass and entropy. In summary, two envelopes of the same mass and entropy but with different mean molecular weights will, therefore, be different sizes. 
+
+As a sketch of the idea, Figure \ref{fig:mmw} demonstrates the evolution of a sub-Neptune for different bulk mean molecular weights, ranging from $\mu=2.35$~amu (appropriate for Solar metallicity H$_2$/He-dominated gas) to $\mu=18.0$~amu (appropriate for a pure H$_2$O gas). All planets have a $5M_\oplus$ core, with an interior Earth-like core composition. Each model has an envelope mass fraction of $X \equiv M_\text{env} / M_\text{c} = 0.01$. For simplicity, we assume a constant equilibrium temperature of $T_\text{eq}=800$~K (ignoring the pre-main sequence evolution of the host star for now), a constant gas opacity of $\kappa = 0.1 \text{ cm}^2 \text{ g}^{-1}$ and do not include any mass loss. Whereas the size of planets converge after Gyrs of evolution, they differ significantly at early times. The high temperatures from formation increase the size of planets with lower mean molecular weight more substantially, causing them to be more inflated when young. In this work, we highlight that a population of sufficiently young transiting exoplanets would allow one to probe atmospheric bulk mean molecular weights, which are dictated by planet formation and evolution.
+
+\subsection{Gas dwarf vs. water world evolution}
+
+We now consider the evolution of gas dwarfs and water worlds. Figure \ref{fig:Comparison} demonstrates their evolution in orange and blue, respectively. We show planet models with core masses of $4M_\oplus$, $6M_\oplus$ and $8M_\oplus$ in solid, dashed and dotted lines, respectively. Models are initialised at $t=5$~Myrs. In the left-hand panel, we construct ``minimal'' models, as described in Sections \ref{sec:GasDwarfParams} and \ref{sec:WaterWorldParams}, which represent the simplest physical construction of each formation scenario. Under this set of models, gas dwarfs and water worlds have bulk mean molecular weights of $\mu=2.35$~amu and $\mu=18.0$~amu, respectively, initial envelope mass fractions of $X = 0.05$ and $X = 0.01$, respectively, and orbital periods of $10$~days. Gas dwarfs and water worlds converge in size after $\sim 1$~Gyr due to their internal composition producing the same radius: water worlds with water-rich, low-density cores and compact envelopes, gas dwarfs with rocky/iron-rich, high-density cores and extended envelopes. However, their evolution is divergent at early ages. The low bulk mean molecular weight of gas dwarf envelopes means that the energy of formation, which is abundant at early times, puffs the planet up significantly when compared to water worlds. This is particularly apparent for planet ages $\lesssim 100$~Myrs.
+
+In the right-hand panel of Figure \ref{fig:Comparison}, we consider more complex models of gas dwarfs and water worlds, informed by recent theoretical and observational studies. In the case of gas dwarfs, multiple works have shown that the chemical interaction of Solar-metallicity gas with a magma ocean at high temperatures will result in an increase in envelope mean molecular weight \citep{Kite2021,Schlichting2022,Misener2022,Misener2023,Rogers2024b,Young2024}. Most notably, chemical reactions between hydrogen gas and molten silicate can produce large quantities of vapour species such as SiO, MgO, FeO and H$_2$O, increasing the mean molecular weight above Solar values. As an example, recent \textit{JWST} observations of TOI-270 d, an archetypal temperate sub-Neptune, have been interpreted with a mean molecular weight of $\mu \sim 5$~amu \citep{Benneke2024}, consistent with the global chemical equilibrium models of \citet{Schlichting2022,Rogers2024b}. To capture this effect in our simple evolutionary formalism, we produce gas dwarf models with bulk mean molecular weights of $\mu=5.0$~amu, which is indicative of mixed miscible envelopes. Since H$_2$O is a dominant opacity carrier, we use the Rosseland mean opacities from \citet{Kempton2023} for a H$_2$/He/H$_2$O mixture with a H$_2$O mass fraction of $60\%$ to reproduce this bulk mean molecular weight. We continue to assume atmospheric escape according to Equation \ref{eq:Mdot} with the same efficiencies as in the minimal gas dwarf model, but highlight that molecular cooling and drag should reduce such mass loss rates. This model thus provides an upper limit in terms of contraction rate as a test of whether the mixed-envelope models can still be distinguished at early ages. In order for this model to reproduce the typical sizes of sub-Neptunes, we must increase its envelope mass fraction, as highlighted in \citet{Thorngren2019,Misener2022}. For the right-hand panel of Figure \ref{fig:Comparison}, gas dwarfs have an initial envelope mass fraction of $X=0.3$. Note that it is beyond the scope of this work to model the convection-inhibition brought about from mean molecular weight gradients in the lower envelope, as also highlighted in \citet{Misener2022,Misener2023}. Our goal is to demonstrate the population-level impacts of bulk mean molecular weight on the sizes of young sub-Neptunes. Nevertheless, convection inhibition can alter the thermal evolution of planets, and should be considered in future work. 
+
+Similar to our mixed-envelope models of gas dwarfs, the right-hand panel of Figure \ref{fig:Comparison} also shows water worlds with H$_2$/He/H$_2$O mixed envelopes. Recent population synthesis models from \citet{Burn2024, Burn2024b} have considered the accretion of solar-metallicity gas onto water-rich sub-Neptunes. They predict envelope water mass fractions as low as $\sim 70\%$, equating to a mean molecular weight of $\mu \approx 6$~amu, which we adopt in our mixed-envelope models of water worlds. We use the Rosseland mean opacities from \citet{Kempton2023} for a H$_2$/He/H$_2$O mixture with a H$_2$O mass fraction of $70\%$. We retain an atmospheric mass fraction of $X = 0.01$ from our ``minimal'' models, motivated by theoretical studies of water-rich planets hosting most of their H$_2$O in the interior \citep{Luo2024}. Recent \textit{JWST} upper-atmospheric characterisation of GJ 9827 d reveals an abundance of H$_2$O and a mean molecular weight between $\mu \sim 10$ and $18$~amu \citep{Piaulet-Ghorayeb2024}. This planet is thus consistent with some predicted water world scenarios.
+
+% While transit/emission spectroscopy from \textit{JWST} may shed light on the mean molecular weights in the upper regions of sub-Neptune atmospheres, they do not probe the bulk atmospheric composition. Furthermore, these observations are sparse due to the expense and limited number of suitable targets. 
+
+Regardless of the underlying assumptions, Figure \ref{fig:Comparison} highlights that the radius evolution of gas dwarfs and water worlds are dramatically different at early ages. One can also see that planet size is relatively insensitive to planet mass as a function of time. This can be understood from a simple virial theorem argument, which states that, for a spherically-symmetric envelope in hydrostatic equilibrium, its gravitational potential energy, $U = - GM_\text{c} M_\text{env} / R_\text{p}$, is related to its internal energy, $E_\text{i}$:
+\begin{equation}
+    U = -3(\gamma-1) E_\text{i},
+\end{equation}
+where we have safely ignored vanishing boundary terms at large radii and assumed an adiabatic equation of state for gas pressure, $P\propto \rho^\gamma$. The internal energy for an ideal gas envelope scales as $E_\text{i} \propto \bar{P}_\text{env}V_\text{env}$, where $V_\text{env}$ is the volume of the atmosphere and $\bar{P}_\text{env}$ is a mass-averaged envelope pressure \citep[e.g.][]{kippenhahn2012stellar}. In the case of gas dwarfs with non-self-gravitating envelopes, particularly at young ages, the volume is dominated by the radius of the envelope, hence $V_\text{env} \propto R_\text{p}^3$ and the pressure can be approximated as $\bar{P}_\text{env} \propto (M_\text{env} / R_\text{p}^3)^\gamma$ from the adiabatic equation of state. Combining, and recalling that $M_\text{env} \equiv XM_\text{c}$, one finds that:
+\begin{equation} \label{eq:Rp_Vs_X_Mc}
+    R_\text{p} \propto X^\frac{2}{3} \, M_\text{c}^{-\frac{1}{3}}.
+\end{equation}
+In other words, the radius of a planet is insensitive to its mass for a given atmospheric mass fraction and age.\footnote{Equation \ref{eq:Rp_Vs_X_Mc} is derived assuming an adiabatic index of $\gamma = 5/3$, since $\gamma=4/3$ provides an analytic singularity. When the full semi-analytic structure equations are numerically solved, as in Figure \ref{fig:Comparison}, one recovers an insensitive planet size as a function of planet mass for a fixed envelope mass fraction.} This is well-documented in other works \citep[see Figure 1 from][]{Lopez2014}.
+
+\section{Young transiting exoplanets as a probe of planet formation at the population level} \label{sec:populationlevel}
+
+In Section \ref{sec:MeanMolecularWeight} we have demonstrated that the radius evolution of sub-Neptune envelopes can vary substantially with different bulk mean molecular weights. We now build population-level models under the two categories, gas dwarfs vs. water worlds, to showcase how such scenarios would present at early times. For simplicity, we only construct population models from the ``minimal'' formation scenarios since these are better studied when compared to mixed-envelope models as described in Sections \ref{sec:GasDwarfParams} and \ref{sec:WaterWorldParams}. As such, we assume that gas dwarfs and water worlds have bulk envelope mean molecular weights of $\mu = 2.35$~amu and $18.0$~amu, respectively, for the remainder of this paper. Nevertheless, Figure \ref{fig:Comparison} demonstrates that more complex mixed-envelope models also show similar differences in radius evolution at early times. 
+
+\subsection{Modelling synthetic transit surveys} \label{sec:survey}
+The prerequisite for our population models is that they reproduce the observed exoplanet population at late times $\gtrsim 1$~Gyr. To do so, we choose to compare the models at late times with the \textit{California Kepler Survey} (CKS) from \citet{Petigura2022}. We seek to construct underlying models that, when injected through the \textit{CKS} pipeline, reproduce the observed (biased) population. For each model, we evolve $10^6$ planets, with stellar masses drawn from a Gaussian distribution with a mean of $1M_\odot$ and a standard deviation of $0.3M_\odot$ \citep{Rogers2021b}. We also randomly draw a disc dispersal time, which defines the initial time for each planet model, uniformly drawn between $3$~Myrs and $10$~Myrs \citep[e.g.][]{Kenyon1995,Ercolano2011,Koepferl2013}. The typical ages of host stars in the \textit{CKS} catalogue are in the range of $\approx 1-10$~Gyrs \citep[e.g.][]{Berger2020}. Hence, we terminate each planet model at a random time, uniformly drawn between these limits. Finally, we statistically model observational uncertainty in planetary radii by introducing a random Gaussian perturbation to each planet radius with zero mean and a standard deviation of $5\%$ the planet's true size.
+
+
+We produce synthetic \textit{CKS} surveys at late times by randomly drawing $25,200$ planets from the underlying population of $10^6$ modelled planets. This value comes from an assumed occurrence rate of $0.7$ planets per star in the \textit{CKS} stellar catalogue of $36,000$ stars \citep{Fulton2017}. Thus, the expectation value for planets orbiting the surveyed stars is $0.7 \times 36,000 = 25,200$. For each planet, we calculate the probability of transit and detection following \citet{Fulton2017,Rogers2021,Petigura2022}. The probability of transit is given by:
+\begin{equation}
+    p_\text{tr} = \frac{R_*}{a},
+\end{equation}
+where $R_*$ is the stellar radius and $a$ is the semi-major axis. The probability of detection, $p_\text{det}$, takes the form of a $\Gamma$ cumulative distribution function of the form:
+\begin{equation} \label{eq:pdet}
+    p_\text{det} = A \, \Gamma(k) \int^{\frac{m-l}{\theta}}_{0} t^{k-1} \; e^{-t} \; \mathrm{d} t,
+\end{equation}
+where $A=1.0$, $k=17.56$, $l=1.00$ and $\theta=-0.49$ following \citet{Fulton2017}. The signal-to-noise ratio, $m$, for a transiting planet is:
+\begin{equation} \label{eq:SNR}
+   m = \bigg( \frac{R_\text{p}}{R_*}\bigg)^2 \; \sqrt \frac{T_\text{obs}}{P} \; \frac{1}{\text{CDPP}},
+\end{equation}
+where $T_\text{obs}=4$~years is the observation time for \textit{Kepler}, $P$ is the orbital period, and the combined differential photometric precision (CDPP) is a measure of noise for the host star, measured in ppm. To match the results from \citet{Koch2010}, we randomly draw $\log (\text{CDPP})$ as a Gaussian distribution with a mean and standard deviation of $-4.0$ and $0.25$, respectively. The product of $p_\text{tr} \times p_\text{det}$ is the probability that a given planet will be observed in a transit survey. For each planet, we draw a random number between $0$ and $1$. If this number is less than $p_\text{tr} \times p_\text{det}$, then this planet is ``observed'' in the survey. For each sub-Neptune formation model, we repeat this process to produce $1000$ synthetic surveys. We then use a kernel density estimator (KDE) to calculate a probability density function (PDF) for planet detection in period-radius space from the combined surveys. This PDF is then scaled to the integrated expectation value for survey yield, i.e. the number of detected planets in each modelled survey. An underlying formation model is a good fit to the data if this expectation value approximately matches the actual yield of $926$ planets in the \textit{CKS} catalogue, as well as the distribution shape of observed planets in period-radius space.
+
+Given a population-level model that reproduces the late-time demographics, the next step is to inspect the model predictions at early times. We choose to compare these models with a small sample of observed transiting exoplanets from \textit{TESS} \citep{Vach2024a}. Figure \ref{fig:Comparison} highlights that the gas dwarf and water world models diverge the most at the earliest times, hence we only include planets within this sample with host stellar ages $<40$~Myrs.\footnote{We also update this sample to include the recently detected $3$~Myr old planet from \citet{Barber2024}.} We evaluate each modelled planet radius at a random time, uniformly drawn up to $40$~Myrs and again add a radius measurement uncertainty of $5\%$. In the \textit{TESS} survey of \citet{Vach2024a}, the stellar sample for stars $<40$~Myrs contains $\approx 2500$ stars. In order to produce synthetic surveys, we again assume the same occurrence rate of $0.7$ planets per star, and draw $1750$ planets from our underlying population of young planets. Since \textit{Kepler} and \textit{TESS} have different completeness and noise properties, we approximate the probability of detection for \textit{TESS} with the same functional form as in Equation \ref{eq:pdet} with $A=0.85$, $k=5.0$, $l=1.00$ and $\theta=2.5$, which best reproduces Figure 8 from \citet{Vach2024a} for young FGK stars. Similarly, the signal-to-noise ratio for \textit{TESS} transits is calculated with Equation \ref{eq:SNR} with $T_\text{obs}=60$~days. Although \textit{TESS} does not quantify photometric precision with a CDPP, we find an effective $\log (\text{CDPP})$ randomly drawn from a Gaussian distribution with a mean and standard deviation of $-1.5$ and $0.25$, respectively, best reproduces completeness maps from \citet{Fernandes2022,Vach2024a}. As with the \textit{CKS} synthetic surveys, we repeat this entire procedure $1000$ times and produce a combined PDF for planet detection, scaled to the integrated expectation value of synthetic survey yield. This is compared to the $14$ planets with hosts stars $< 40$~Myrs in the \citet{Vach2024a} survey.
+
+We stress that comparing models at early evolutionary times is only valid if the population models reproduce the observations at late times. In order to reproduce the \textit{CKS} sample at $\sim 1 - 10$~Gyrs, both population-level models require different planetary initial conditions, including initial envelope mass fraction distributions, core mass distributions, and orbital period distributions. We discuss these in the following sections. 
+
+
+\subsection{Gas dwarf population model}
+
+% We stress that this model predicts that both super-Earths and sub-Neptunes formed through the same formation pathway and then separated due to atmospheric escape. Hence, all planets in this model are given the same core composition.
+
+For the gas dwarf case, both super-Earths and sub-Neptunes are drawn from the same underlying population, and atmospheric escape is responsible for separating the two sub-populations over time and forming the radius valley. We use the inferred underlying distributions from \citet{Rogers2021}, who fitted the XUV photoevaporation ``minimal'' model from Section \ref{sec:GasDwarfParams} to the \textit{CKS} data of \citet{Fulton2018} using a Bayesian hierarchical model. Both the core mass and initial envelope mass fraction distributions are parameterised using Bernstein polynomials of $5^{\text{th}}$ order. These are peaked distributions, with centres at $\sim 4M_\oplus$ and $\sim 2\%$, respectively. The orbital period distribution is parameterised with a smooth broken power-law as follows:
+\begin{equation} \label{eq:Porb_dist}
+    \frac{dN}{dP} \propto \frac{1}{(\frac{P}{P_0})^{-k_1} + (\frac{P}{P_0})^{-k_2}},
+\end{equation}
+where $P_0 = 5.5$~days, $k_1 = 2.3$, and $k_2=0.0$. We assume all cores have a composition of $25\%$ iron, $75\%$ rock \citep{Rogers2021,Rogers2023} with Solar-metallicity H$_2$/He envelopes with mean-molecular weights of $\mu=2.35$~amu. Again, we stress that models that include self-consistent interior-envelope chemical coupling are still in their infancy \citep[e.g.][]{Kite2021,Schlichting2022,Misener2023}. They are also computationally expensive, meaning that population modelling is currently challenging. While we leave these considerations for future work, Figure \ref{fig:Comparison} highlights that the difference in early evolution between gas dwarfs and water worlds under this scenario is still significant, meaning our results will remain largely the same. 
+
+\subsection{Water world population model}
+
+The fundamental prediction of the water world hypothesis is that super-Earths and sub-Neptunes formed through different channels. Therefore, we require different underlying distributions for the two classes of planets. For simplicity, we choose not to model these planets during the disc phase, as done in population-synthesis modelling \citep[e.g.][]{Burn2024}, which includes large-scale disc migration to bring water worlds interior to the water-ice line. Instead, we produce appropriate underlying distributions for the post-disc evolution phase that reproduce the \textit{CKS} data at $\sim$~Gyr times. To match the ratio of super-Earths and sub-Neptunes in these observations, $35\%$ of the underlying planet population are modelled as super-Earths, $65\%$ as sub-Neptunes.
+
+For the core mass distribution, we adopt a log-Gaussian distribution:
+\begin{equation}
+    \frac{dN}{d\,\log M_\text{c}} \propto \exp \bigg\{ -\frac{(\log M_\text{c} - \log \mu_\text{M})^2}{2\sigma_\text{M}^2}\bigg\}.
+\end{equation}
+For super-Earths, we set the mean and standard deviation to $\mu_\text{M} = 3M_\oplus$ and $\sigma_\text{M} = 0.35$, respectively. For sub-Neptunes, we set $\mu_\text{M} = 10M_\oplus$ and $\sigma_\text{M} = 0.30$, respectively.
+
+For the orbital period distributions, we use Equation \ref{eq:Porb_dist} with $P_0 = 4.5$~days, $k_1 = 2.0$, and $k_2=-0.5$ for super-Earths, and $P_0 = 8.5$~days, $k_1 = 2.5$, and $k_2=0.1$ for sub-Neptunes. These values are all consistent with the \textit{CKS} study of \citet{Petigura2022}.
+
+As discussed, the water world hypothesis predicts that super-Earths and sub-Neptunes have different core compositions due to their different formation channels. We assume Earth-like compositions of $25\%$ iron, $75\%$ rock for super-Earths with no atmospheres \citep{Rogers2021,Rogers2025}. For sub-Neptunes, we adopt a core composition of $50\%$ water, $50\%$ rock and draw a random steam envelope mass fraction log-uniformly between $0.001\%$ and $10\%$ \citep{Luo2024}.
+
+\subsection{Population-level results}
+
+\begin{figure*}
+	\includegraphics[width=2.0\columnwidth]{Figures/PopulationComparison_Occ.pdf}
+    \centering
+        \cprotect\caption{Population-level predictions of gas dwarf and water world hypotheses for sub-Neptune evolution in the left and right-hand panels, respectively. The populations are shown at times of $1-10$~Gyrs and $<40$~Myrs in the top and bottom panels, respectively. Colour bars represent relative probability of planet occurrence.} \label{fig:PopulationComparison_Occ} 
+\end{figure*} 
+
+\begin{figure*}
+	\includegraphics[width=2.0\columnwidth]{Figures/PopulationComparison_Det.pdf}
+    \centering
+        \cprotect\caption{Same as Figure \ref{fig:PopulationComparison_Occ} but now accounting for survey biases and uncertainty. Colour bars represent the integrated expectation value for survey yield. We perform synthetic \textit{California Kepler Surveys} on each model in the top panels, with the real observed population shown as grey points \citep{Petigura2022}. Similarly, we perform synthetic \textit{TESS} surveys for host stars $<40$~Myrs in the bottom panels, with real observed planets shown as grey points \citep{Vach2024a}.} \label{fig:PopulationComparison_Det} 
+\end{figure*} 
+
+The underlying unbiased planet populations for gas dwarf and water worlds are presented in the left and right-hand panels of Figure \ref{fig:PopulationComparison_Occ}, respectively. These are presented at late times ($1-10$~Gyrs) and early times ($<40$~Myrs) in the top and bottom panels, respectively. Colour bars represent the relative probability of planet occurrence. One can see the emergence of the radius valley in the gas dwarf case, with the ratio of super-Earths to sub-Neptunes increasing with time as atmospheric escape strips primordial sub-Neptunes into bare rocky super-Earths. The typical sizes of gas dwarf sub-Neptunes also significantly decrease with time as a result of their low bulk mean molecular weights. The water world scenario, on the other hand, shows very little evolution since the super-Earths and sub-Neptunes formed separately in the disc phase, and the water world sub-Neptunes have high bulk mean molecular weight, meaning very little thermal contraction.
+
+Figure \ref{fig:PopulationComparison_Det}, on the other hand, shows the predicted biased survey yields at late and early times, as described in Section \ref{sec:survey}. These are compared to the \textit{CKS} exoplanet sample from \citet{Petigura2022}, and the young \textit{TESS} sample from \citet{Vach2024a}. In this case, colour bars represent the expectation value for integrated survey yield. Both models reproduce the observations at late times, with two distinct sub-populations of super-Earths and sub-Neptunes, separated by the radius valley. The expectation value for survey yield is $910^{+20}_{-16}$ for gas dwarfs, and $931^{+24}_{-14}$ for water worlds, which are both consistent with the real \textit{CKS} survey yield of $926$.
+
+The nature of \textit{TESS}' lower photometric precision and the higher activity of young stars means that the expected yields of such surveys are considerably lower than \textit{Kepler}. The survey completeness is significantly lower for planets smaller than $\sim 3 R_\oplus$, meaning that super-Earths are very unlikely to be detected under either model. As an example, a planet of radius $3 R_\oplus$ at $0.1$~AU orbiting a main-sequence $1 M_\odot$ star is predicted to have a signal-to-noise ratio of $m \sim 100$ from Equation \ref{eq:SNR} as detected by \textit{Kepler}, but $m \sim 5$ if orbiting a young active star detected by \textit{TESS}. This equates to a probability of detection from Equation \ref{eq:pdet} of $p_\text{det} \sim 1$ and $p_\text{det} \sim 0.07$, respectively. As a result of this systematic reduction in detectability for young active stars observed by \textit{TESS}, the expectation value for survey yield under the gas dwarf model is significantly reduced to $15^{+3}_{-2}$ planets. The actual yield from \textit{TESS} is $14$ planets $< 40$~Myrs in \citet{Vach2024a}. For the water world model, the the expected yield is $3^{+3}_{-1}$ planets, which is inconsistent with \textit{TESS} at the $\sim 2-3\sigma$ level. The gas dwarf model is better at reproducing the observations since these planets are larger at younger ages due to their lower bulk mean molecular weights, meaning they are more likely to be detected. One can see that the gas dwarf model predicts planet detections at significantly larger radii at early times, as seen in the \textit{TESS} data.
+
+Although the young transiting exoplanet sample from \textit{TESS} is visually more consistent with the gas dwarf model, it is interesting to note that the predicted orbital period distribution is noticeably different to the data. Young \textit{TESS} planets pile up at $\gtrsim 10$~days, despite completeness being significantly higher at shorter orbital periods. This specific realisation of the gas dwarf model thus over-predicts the number of sub-Neptunes at short orbital periods at young ages. The majority of these predicted close-in sub-Neptunes would eventually lose their atmospheres to become super-Earths on $\sim 100$~Myr to $\sim$~Gyr timescales. The discrepancy could thus be caused by an under-prediction of planets that were ``born rocky'', i.e. began life as super-Earths in the post-disc epoch. Alternatively, it could be due to post-disc inward orbital migration that changes the period distribution with time. We discuss this in Section \ref{sec:super-Earths}. Although not as statistically significant, it is also worth noting that the gas dwarf model slightly under-predicts the number of large sub-Neptunes $\sim 10$R$_\oplus$ at young ages. This could be explained by higher initial entropies of formation or perhaps delayed radial contraction due to convection inhibition in the envelope of such planets \citep[e.g.][]{Misener2022}, which we discuss in Section \ref{sec:theory_uncertainties}.
+
+A full statistical comparison between models and data is beyond the scope of this work, and requires Bayesian model comparison that takes into account the many free parameters of each model. In other words, there are likely realisations of both models that reproduce the data marginally better than those presented in this work, hence a comparison is not fair unless these realisations are fully explored. Model comparison involves calculating a Bayes factor via the posterior distributions of both models, which is a computationally expensive exercise and hence left for future work when the young \textit{TESS} sample has increased in size. We highlight that the sample of young transiting exoplanets is small, and thus current inferences are likely dominated by small number statistics. Nevertheless, various studies have shown a tentative overabundance of large sub-Neptunes ($\gtrsim 4 R_\oplus$) orbiting young stars, which may hint at low mean-molecular weight, gas dwarf evolution \citep[e.g.][]{Fernandes2022,Christiansen2023,Vach2024a,Fernandes2025}. 
+
+\section{Discussion} \label{sec:discussion}
+We have shown that the bulk mean molecular weight of a small exoplanet envelope directly affects its thermal contraction with time. At early times this can result in dramatically different evolution depending on the assumed formation model. In particular, we have focussed on the gas dwarf and water world hypotheses regarding the formation of sub-Neptunes. We now discuss caveats to this strategy, and an observational and theoretical route to determine the nature of sub-Neptunes at the population level.
+
+
+\subsection{Gas opacities and cooling timescales} \label{sec:Opacity}
+
+\begin{figure}
+	\includegraphics[width=\columnwidth]{Figures/Opacity_effect.pdf}
+    \centering
+        \cprotect\caption{The radius evolution of exoplanet atmospheres for different Rosseland mean gas opacities of $\kappa = 0.01$, $0.1$, $1.0$ and $10.0$ cm$^2$ g$^{-1}$ in blue, green, orange and red, respectively. All planets have a $5M_\oplus$ core, with an Earth-like core composition of $25\%$ iron, $75\%$ silicate. Each model has an atmospheric mass fraction of $X \equiv M_\text{atm} / M_\text{c} = 0.01$ and a constant equilibrium temperature of $T_\text{eq}=800$~K. All planets are initialised with a radiative-convective boundary set at $5 R_\oplus$.} \label{fig:kappa} 
+\end{figure} 
+
+An important envelope property that controls the evolution of a planet is gas opacity. Whereas the mean molecular weight influences the instantaneous size of an envelope (via the scale height), the gas opacity also affects the instantaneous \textit{rate of change} of envelope size. From Equation \ref{eq:Lrad}, one can see that the radiative luminosity, which controls the cooling and contraction of a planet, is inversely proportional to the opacity. Thus, higher gas opacities yield slower thermal contraction. As a demonstration of this, Figure \ref{fig:kappa} shows the evolution of the same planet from Figure \ref{fig:mmw}, however, here, we vary the gas Rosseland mean opacity from $0.01 \text{ cm}^2 \text{ g}^{-1}$ to $10.0 \text{ cm}^2 \text{ g}^{-1}$ with a mean molecular weight of $\mu = 5.0$~amu. To highlight the difference in evolution, we set the initial radiative-convective boundary radii to $R_\text{rcb} = 5 R_\oplus$. Again, planets converge to the same size after several Gyrs, but their initial cooling rate is altered by varying opacities. One can also see that the planets with the lowest opacities contract with a timescale much shorter than their age (seen by near-vertical lines in Figure \ref{fig:kappa}). This suggests that the initial condition of $R_\text{rcb} = 5 R_\oplus$ was likely inappropriate for these envelopes. The probability of detecting such a planet at its initially large size is thus vanishingly small, given its rapid contraction. Since we have observed several young sub-Neptunes at young ages with large radii $\sim 10 \,R_\oplus$, it follows from a statistical argument that their cooling timescales must be at least equal to their ages. In our work, we chose to adopt agnostic initial conditions in which the cooling timescale of the planet is equal to its age, which in turn sets the initial size of the planet at the point of disc dispersal. More work is needed to investigate the initial conditions of planets under different scenarios, as discussed in Section \ref{sec:theory_uncertainties}.
+
+To avoid the potential degeneracy between gas opacity and mean molecular weight when comparing models with observations of young transiting planets, one should use self-consistent models that couple the two properties. For example, a steam-dominated envelope will have larger mean opacities than solar metallicity H$_2$/He-dominated gas. This coupling is also true for the adiabatic index, $\gamma$, which in this work parametrises the equation of state within a convective envelope (see Equation \ref{eq:temperature_profile_adiabat}) and can also vary depending on the species present in an atmosphere. The adiabatic index is important since it controls the size of a planet's convective envelope for a given entropy. For example, a lower adiabatic index, implying more degrees of freedom for a species, reduces the size of a convective envelope for a fixed entropy. This effect, however, is smaller in magnitude than that of changing the bulk mean molecular weight in the envelope. For our simplistic models, we have used the opacities for the appropriate mean molecular weight and H$_2$/He/H$_2$O mixture, thus maintaining self-consistency within the model. Nevertheless, future studies should include full opacity and equation of state tables, which account for intricate changes in chemical properties as the planet evolves. Improvement to model sophistication in this manner will help in refining the difference in the size of gas dwarfs and water worlds at young ages. 
+
+If one wishes to exploit the effects of bulk mean molecular weight, an important observational strategy is to observe planets at the youngest possible age. This minimises the number of cooling timescales a planet has evolved over, and thus captures the state of each planet closer to its initial conditions. The major reason that we are unable to infer the underlying nature of sub-Neptunes at $\sim$~Gyr timescales is that they have evolved for many cooling timescales, destroying the information of their individual formation pathway. Recent detections of very young transiting exoplanets $<10$~Myrs \citep[e.g.][]{Barber2024} have shown that these detections are indeed possible and offer exciting glimpses into newly-formed planets.
+
+\subsection{On the benefits of probing the young super-Earth population} \label{sec:super-Earths}
+
+In Figure \ref{fig:PopulationComparison_Det}, we see that the gas dwarf formation model is visually better at reproducing the young planet population than the water world model. However, one can also see that the gas dwarf model over-predicts the number of detected young sub-Neptunes at short orbital periods $\lesssim 10$~days when compared to the \textit{TESS} data. One plausible explanation for this discrepancy is an under-prediction of planets that are ``born rocky'' within the gas dwarf model. \citet{Rogers2021} used \textit{CKS} data to infer that $\lesssim 20\%$ of planets should be born as super-Earths by the end of disc dispersal, which may be explained with a combination of processes, including inefficient gas accretion, boil-off and core-powered mass loss \citep[e.g.][]{Lee2022,Owen2024,Rogers2024a}. Explicitly modelling these processes will likely reduce the number of predicted sub-Neptunes at short orbital periods at early times, and thus allow the model to better reproduce the observations. We leave this increase in model complexity for future work. An alternative explanation for the lack of detected \textit{TESS} planets $\lesssim 10$~days is that the orbital period distribution of sub-Neptunes evolves during the post-disc era. Inward migration of sub-Neptunes and super-Earths could be caused by the interaction of their escaping atmospheres with stellar winds, resulting in a net angular momentum loss for the planet \citep{Hanf2025}, or due to tidal migration \citep[e.g.][]{LeeOwen2025}.
+
+One way to determine which of these mechanisms is responsible for the lack of observed young sub-Neptunes at short orbital periods is to also measure the orbital period distribution of super-Earths. If there is an abundance of super-Earths at short orbital periods at early times, it is likely that inefficient gas accretion and/or atmospheric escape produced this population during the disc phase. Characterising the young super-Earth population can also be used to measure the ratio of super-Earths to sub-Neptunes as a function of time. One clear prediction of the gas dwarf model is that this ratio should increase with time since sub-Neptunes are being stripped of their atmospheres to become super-Earths \citep[e.g.][]{Gupta2020,Rogers2021}. However, probing this area of parameter space $(R_\text{p} \lesssim 2 R_\oplus)$ around young stars is technically challenging for instruments such as \textit{TESS}, and will require next-generation transit observations.
+
+\subsection{An observational route forward}
+More detections of young transiting exoplanets are required to answer science questions regarding planet formation and evolution at the population level. Previous studies have shown that the young planet population is inconsistent with the evolved \textit{Kepler} population at the $\sim 1-3\sigma$ level \citep{Fernandes2022,Christiansen2023,Vach2024a,Fernandes2025}, with a strong indication that young sub-Neptunes are more inflated, and more consistent with gas dwarf models. These studies have been limited, however, by various observational effects, including the heightened activity of pre-main sequence host stars and the requirement of high-resolution imaging to resolve stars within their dense clusters. Recall from Section \ref{sec:Opacity} that the most informative planet detections are those from the youngest stellar clusters, which are limited in number and magnitude for missions such as \textit{TESS}. 
+
+Mission concepts, such as the \textit{Early eVolution Explorer (EVE)}, aim to perform dedicated transit surveys of young stellar clusters \citep{Howard2024}. With the increase in planet yield from this style of survey, one could also investigate mixture models in which planets from both populations are present. This statistical analysis lends itself to a Bayesian framework, allowing one to infer the appropriate fraction of each model that best fits the data. 
+
+As shown in Section \ref{sec:MeanMolecularWeight}, the radius of an inflated planet is insensitive to planet mass, which conveniently means that well-characterised planet masses are not necessary to make inferences from population models. Recent work has also shown that most young transiting exoplanets are very unlikely to be progenitor hot-Jupiters \citep{Karalis2024}. Nevertheless, transit spectroscopy of young planet atmospheres from \textit{JWST}/\textit{HST} can constrain a planet's mass from its scale height \citep[e.g.][]{Barat2024,Thao2024}. Atmospheric characterisation may, in fact, be a more straightforward route to a young planet's mass than conventional methods, such as radial velocity measurements, which are notoriously challenging to obtain around young active stars. This also comes with the obvious benefit of constraints on atmospheric chemistry at early times. \textit{EVE} thus also serves as a path-finder for suitable young planet targets for atmospheric characterisation with \textit{JWST} and future missions such as \textit{ARIEL} and \textit{HWO}.
+
+\subsection{Theoretical uncertainties} \label{sec:theory_uncertainties}
+In this work, we have utilised simple radiative-convective equilibrium models to demonstrate that the bulk mean molecular weight of an envelope alters its size most noticeably at young ages. However, these models have neglected some important physical effects, which should be closely examined in future work. 
+
+The models in this study have assumed a constant mean molecular weight as a function of envelope radius. As discussed in Section \ref{sec:MeanMolecularWeight}, recent theoretical work has shown that planet envelopes chemically react with their interiors, which in turn changes the mean molecular weight within the atmosphere \citep[e.g.][]{Kite2021,Schlichting2022}. Mean molecular weight gradients can form, which may inhibit convection in the deep interior and thus change the envelope structure and evolution \citep[e.g.][]{Leconte2017,Misener2022}. The effects of phase equilibria and miscibility between various species such as H$_2$, H$_2$O, and silicate melt also remain largely unexplored \citep[e.g.][]{Mousis2020,Vazan2022,Pierrehumbert2023,Gupta2024,Young2024}. Coupled models of planet interiors and envelopes must be considered, particularly for young planets due to their higher entropies and thus active geochemistry. As discussed in Section \ref{sec:populationlevel}, the gas dwarf population model presented in this work slightly under-predicts the number of large sub-Neptunes $\sim 10$~R$_\oplus$ at young ages. More sophisticated evolution modelling of such effects may help in interpreting this under-prediction.   
+
+Beyond the interior and envelope structure of a planet, more attention should be given to understanding the initial conditions of planet evolution. For gas dwarf models (as discussed in Section \ref{sec:GasDwarfParams}), studies have shown that the rapid disc dispersal process in the inner regions $\lesssim 1$~AU induces an extreme mass loss event referred to as ``boil-off'', in which a planet may lose $\sim 90$~\% of its atmospheric mass \citep[e.g.][]{Owen2016,Ginzburg2016,Rogers2024a,Tang2024}. These studies have shown that the initial cooling timescale of a gas dwarf post-disc dispersal may be longer than its age, which is caused by extreme cooling of the envelope during boil-off \citep{Owen2020}. In this study, we accounted for boil-off by enforcing initial planet sizes not exceeding $0.1 R_\text{B}$ \citep[see][]{Owen2016}. Nevertheless, in future studies, the initial conditions of sub-Neptunes under various formation and composition models should be investigated. In addition, more work is needed to understand the mass loss of high mean molecular weight species in exoplanet atmospheres. This is a complex challenge due to various species-dependant heating and cooling processes, as well as drag and diffusion.
+
+Finally, the key to statistically inferring properties from a population of young transiting exoplanets is to use self-consistent structure and evolution models that can reproduce the properties of evolved exoplanets at $\sim$~Gyr epochs. These must also be computationally fast in order to run large quantities of population-level models. The balance between model complexity and speed may be aided with machine-learnt emulators \citep{Rogers2023}.
+
+\section{Conclusions} \label{sec:conclusion}
+In this paper, we have discussed the effects of bulk envelope mean molecular weight on the early evolution of close-in exoplanets. The lower the bulk mean molecular weight, the larger the radius of a planet at early times, which provides an observational window into their composition and, thus, formation pathway. We have focussed on sub-Neptunes, which can currently be explained with the ``gas dwarf'' hypothesis (rocky interiors and extended H$_2$/He dominated envelopes) or the ``water world'' hypothesis (rocky interiors with several tens of per cent in water mass fraction). A population of young transiting exoplanets will allow for model comparison to determine which of these models best describes reality. Our conclusions are as follows:
+
+\begin{itemize}
+    \item The observed size of a young sub-Neptune is sensitive to the bulk mean molecular weight of its envelope. The lower the mean molecular weight, the larger the scale height, and thus the larger the radius inflation. However, as planets cool, they contract. As a result, the range in planet radii as a function of mean molecular weight is greatest at earliest times (Figure \ref{fig:mmw}).
+    \vspace{0.2cm}
+    \item The radii of evolved sub-Neptunes can be explained by two interior compositions: "gas dwarfs" with low global water mass fractions and low envelope mean molecular weights in the approximate range of $\mu \sim 2.35-5$~amu, or "water worlds" with high water mass fractions and high envelope mean molecular weights in the range of $\mu \sim 6 - 18$~amu. The radii of sub-Neptunes under these formation pathways converge after $\sim$~Gyrs of evolution. However, their radii diverge significantly at early ages $\lesssim 100$~Myrs (Figure \ref{fig:Comparison}).
+    \vspace{0.2cm}
+    \item The prediction of different planet radii for the gas dwarf and water world hypotheses can be exploited with a population of young transiting exoplanets in order to probe mean molecular weight and, hence, sub-Neptune composition. We show that surveys of young planets should target the youngest observable stellar clusters to maximise this difference to distinguish between formation channels.
+    \vspace{0.2cm}
+    \item For young, puffy sub-Neptunes, planet size is relatively insensitive to planet mass. This removes the necessity of characterising planet masses to infer bulk composition, which is notoriously difficult for planets orbiting young, active stars. Nevertheless, atmospheric spectroscopy may provide a clearer path to determining the masses of young planets as shown in recent works \citep[e.g.][]{Thao2024}.
+    \vspace{0.2cm}
+    \item There is tentative evidence that the population of observed transiting planets from \textit{TESS} \citep{Vach2024a} is inconsistent with a simple water world model (Figure \ref{fig:PopulationComparison_Det}). However, this sample is small and, thus, the results may be driven by small-number statistics. We encourage future statistical comparisons to place emphasis on accounting for this effect, as well as other survey biases in forward models, for a fair comparison.   
+\end{itemize}
+
+Inferring the composition of sub-Neptunes at the population level will inevitably rely on theoretical models. Future studies should place emphasis on understanding the implications of chemical interactions between the interior and envelopes of such planets, as well as possible initial conditions in their post-disc phase under a range of formation scenarios.
+
+
+\section*{Acknowledgements}
+I would like to thank the anonymous referee for valuable comments that helped improve this paper. I would also like to thank Sydney Vach for sharing the \textit{TESS} planet sample used in this study, as well as Jennifer Burt, Neal Turner, Andrew Mann, Madyson Barber, George Zhou, Eric Gaidos, Hilke Schlichting and James Owen for discussions that helped improve this paper. JGR gratefully acknowledges support from the Kavli Foundation.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Data Availability}
+
+ 
+All models will be made available upon reasonable request.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%% REFERENCES %%%%%%%%%%%%%%%%%%
+
+% The best way to enter references is to use BibTeX:
+
+\bibliographystyle{mnras}
+\bibliography{references} % if your bibtex file is called example.bib
+
+
+% Alternatively you could enter them by hand, like this:
+% This method is tedious and prone to error if you have lots of references
+%\begin{thebibliography}{99}
+%\bibitem[\protect\citeauthoryear{Author}{2012}]{Author2012}
+%Author A.~N., 2013, Journal of Improbable Astronomy, 1, 1
+%\bibitem[\protect\citeauthoryear{Others}{2013}]{Others2013}
+%Others S., 2012, Journal of Interesting Stuff, 17, 198
+%\end{thebibliography}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%% APPENDICES %%%%%%%%%%%%%%%%%%%%%
+
+% \appendix
+
+% \section{Some extra material}
+
+% If you want to present additional material which would interrupt the flow of the main paper,
+% it can be placed in an Appendix which appears after the list of references.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Don't change these lines
+\bsp	% typesetting comment
+\label{lastpage}
+\end{document}
+
+% End of mnras_template.tex
