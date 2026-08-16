@@ -3,7 +3,7 @@
  * per-page enter hooks that keep each page's inputs in sync with state.
  */
 import { state } from './state.js';
-import { formatSignificant, showToast } from './dom-utils.js';
+import { formatSignificant, showToast, hideToast } from './dom-utils.js';
 import { loadTarget, triggerMockSearch } from './target.js';
 import { drawGyroPlots } from './gyro.js';
 import { drawBafflesPlots } from './baffles.js';
@@ -100,13 +100,26 @@ export async function applyRoute(pathname) {
     // page's search button, which is invisible if the URL landed on a
     // different page (e.g. /gyro-interp/target=...) -- without this, the
     // round trip (real network calls, can take a couple seconds) looks
-    // like a blank, unresponsive page until it resolves.
-    showToast(`Loading ${targetSlug}...`);
+    // like a blank, unresponsive page until it resolves. Persist this
+    // message for the whole resolution instead of letting the toast's own
+    // 2.5s timer hide it mid-load.
+    showToast(`Loading ${targetSlug}...`, { persist: true });
     const known = /^\d+$/.test(targetSlug) ? findSavedTargetByGaiaId(targetSlug) : null;
-    if (known) {
-      await loadTarget(known);
-    } else {
-      await triggerMockSearch(targetSlug);
+    try {
+      if (known) {
+        await loadTarget(known);
+      } else {
+        await triggerMockSearch(targetSlug);
+      }
+    } finally {
+      // The successful paths above replace the loading message with their
+      // own toast (e.g. "Restored saved results...", "Loaded target ...
+      // from Gaia DR3"); only hide it ourselves if it is still the stale
+      // loading message (the silent 404 restore path replaces it with
+      // nothing), so we never yank a fresh success toast away.
+      if (document.getElementById('toast')?.innerText === `Loading ${targetSlug}...`) {
+        hideToast();
+      }
     }
     onPageEnter(pageId);
   }

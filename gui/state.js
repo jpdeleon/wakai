@@ -26,10 +26,10 @@ export const ageGrid = [1, ...Array.from({ length: 2600 }, (_, i) => (i + 1) * 5
 // GET /api/gyro/slow-sequence and reused for every target -- this reference
 // data is target-independent, unlike everything in `state`, so it lives
 // outside state/target save-load rather than being refetched per toggle.
-// Colors are matplotlib viridis at np.linspace(100/1000, 1, 5), matching the
-// exploratory notebook this overlay is based on. All ages are fetched and
-// cached in one call; which ones are drawn is a pure client-side filter
-// (checked .chk-gyro-age boxes), no re-fetch per age toggle.
+// Overlay colors come from the shared colormap system below (viridis by
+// default). All ages are fetched and cached in one call; which ones are
+// drawn is a pure client-side filter (checked .chk-gyro-age boxes), no
+// re-fetch per age toggle.
 //
 // A plain `let` export can't be reassigned by importers (ES module bindings
 // to a `let`/`var` are live but read-only from outside the declaring
@@ -39,7 +39,74 @@ export let gyroSlowSequenceCache = null;
 export function setGyroSlowSequenceCache(value) {
   gyroSlowSequenceCache = value;
 }
-export const GYRO_SLOW_SEQUENCE_COLORS = { 80: '#482475', 120: '#31668e', 300: '#1e9c89', 500: '#6ccd5a', 1000: '#fde725' };
+
+// Real EAGLES empirical Li EW(Teff) isochrones (Jeffries+2023 analytic /
+// Weaver+2024 ML), fetched once from GET /api/eagles/models and reused for
+// every target -- the same target-independent reference-data pattern as
+// gyroSlowSequenceCache above. Both models come back in one call; which one
+// is drawn follows the page's model selector. All ages are fetched and
+// cached in one call, with age selection a pure client-side filter (checked
+// .chk-eagles-age boxes), no re-fetch per toggle.
+export let eaglesModelsCache = null;
+export function setEaglesModelsCache(value) {
+  eaglesModelsCache = value;
+}
+export const EAGLES_MODEL_AGES = [10, 30, 50, 100, 500, 1000];
+
+// Colormaps for the empirical-model overlays on the gyro-interp and EAGLES
+// pages. Each entry is 16 stops sampled across the full matplotlib colormap
+// (generated with matplotlib.colormaps; the arrays below are those hex
+// values); cmapColor() interpolates between stops so every age gets a color
+// that still reads as one sequence. The per-page dropdowns
+// (#gyro-cmap-select / #eagles-cmap-select) choose which map the overlay
+// uses; viridis matches the exploratory notebook both overlays are based on.
+export const EMPIRICAL_COLORMAPS = {
+  viridis: ['#440154', '#481a6c', '#472f7d', '#414487', '#39568c', '#31688e', '#2a788e', '#23888e', '#1f988b', '#22a884', '#35b779', '#54c568', '#7ad151', '#a5db36', '#d2e21b', '#fde725'],
+  plasma: ['#0d0887', '#330597', '#5002a2', '#6a00a8', '#8405a7', '#9c179e', '#b12a90', '#c33d80', '#d35171', '#e16462', '#ed7953', '#f68f44', '#fca636', '#fec029', '#f9dc24', '#f0f921'],
+  inferno: ['#000004', '#0c0826', '#240c4f', '#420a68', '#5d126e', '#781c6d', '#932667', '#ae305c', '#c73e4c', '#dd513a', '#ed6925', '#f8850f', '#fca50a', '#fac62d', '#f2e661', '#fcffa4'],
+  magma: ['#000004', '#0b0924', '#20114b', '#3b0f70', '#57157e', '#721f81', '#8c2981', '#a8327d', '#c43c75', '#de4968', '#f1605d', '#fa7f5e', '#fe9f6d', '#febf84', '#fddea0', '#fcfdbf'],
+  turbo: ['#30123b', '#4143a7', '#4771e9', '#3e9bfe', '#22c5e2', '#1ae4b6', '#46f884', '#88ff4e', '#b9f635', '#e1dd37', '#faba39', '#fd8d27', '#f05b12', '#d63506', '#af1801', '#7a0403'],
+  cool: ['#00ffff', '#11eeff', '#22ddff', '#33ccff', '#44bbff', '#55aaff', '#6699ff', '#7788ff', '#8877ff', '#9966ff', '#aa55ff', '#bb44ff', '#cc33ff', '#dd22ff', '#ee11ff', '#ff00ff'],
+  autumn: ['#ff0000', '#ff1100', '#ff2200', '#ff3300', '#ff4400', '#ff5500', '#ff6600', '#ff7700', '#ff8800', '#ff9900', '#ffaa00', '#ffbb00', '#ffcc00', '#ffdd00', '#ffee00', '#ffff00'],
+  winter: ['#0000ff', '#0011f6', '#0022ee', '#0033e6', '#0044dd', '#0055d4', '#0066cc', '#0077c3', '#0088bb', '#0099b2', '#00aaaa', '#00bba2', '#00cc99', '#00dd90', '#00ee88', '#00ff80'],
+};
+export const DEFAULT_EMPIRICAL_COLORMAP = 'viridis';
+
+function hexToRgb(hex) {
+  const value = parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+function rgbToHex(r, g, b) {
+  const channel = v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0');
+  return `#${channel(r)}${channel(g)}${channel(b)}`;
+}
+
+export function cmapColor(cmapName, t) {
+  const stops = EMPIRICAL_COLORMAPS[cmapName] || EMPIRICAL_COLORMAPS[DEFAULT_EMPIRICAL_COLORMAP];
+  const x = Math.max(0, Math.min(1, t)) * (stops.length - 1);
+  const i = Math.floor(x);
+  if (i >= stops.length - 1) return stops[stops.length - 1];
+  const f = x - i;
+  const from = hexToRgb(stops[i]);
+  const to = hexToRgb(stops[i + 1]);
+  return rgbToHex(
+    from[0] + (to[0] - from[0]) * f,
+    from[1] + (to[1] - from[1]) * f,
+    from[2] + (to[2] - from[2]) * f,
+  );
+}
+
+// Color for every age of an overlay, sampled across the whole colormap by
+// each age's rank within the full fetched age set -- so an age keeps the
+// same color regardless of which ages are currently checked.
+export function ageColors(cmapName, ages) {
+  const sorted = [...ages].sort((a, b) => a - b);
+  return Object.fromEntries(sorted.map((age, i) => [
+    age,
+    cmapColor(cmapName, sorted.length > 1 ? i / (sorted.length - 1) : 0.5),
+  ]));
+}
 
 export function emptyDefaultParameters() {
   return [
@@ -116,12 +183,18 @@ export function defaultResults() {
       gyro: {
         showModels: false,
         modelAges: [80, 120, 300, 500],
+        cmap: 'viridis',
         xmin: 3500, xmax: 6500, ymin: 0, ymax: 40,
         logY: false, showGrid: true,
       },
       eagles: {
         // The ANN model (Weaver+2024) is EAGLES v2's recommended relation.
         model: 'ml',
+        // Empirical Li EW(Teff) isochrone overlay on the diagnostic plot
+        // (same pattern as the gyro page's slow-sequence overlay).
+        showModels: false,
+        modelAges: [10, 30, 50, 100, 500],
+        cmap: 'viridis',
       },
       cluster: {
         catalog: 'Perren2023',

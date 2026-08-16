@@ -3,7 +3,7 @@
  * axis-fit controls, and the two Plotly plots.
  */
 import {
-  state, ageGrid, GYRO_SLOW_SEQUENCE_COLORS, gyroSlowSequenceCache, setGyroSlowSequenceCache,
+  state, ageGrid, ageColors, gyroSlowSequenceCache, setGyroSlowSequenceCache,
   interpolatePDF, positiveUncertainty,
 } from './state.js';
 import { formatSignificant, showToast } from './dom-utils.js';
@@ -94,9 +94,12 @@ export function setupGyroModelOverlay() {
   const checkbox = document.getElementById('chk-gyro-models');
   if (!checkbox) return;
   const ageRow = document.getElementById('gyro-model-ages');
+  const cmapRow = document.getElementById('gyro-cmap-row');
+  const cmapSelect = document.getElementById('gyro-cmap-select');
 
   checkbox.addEventListener('change', async () => {
     if (ageRow) ageRow.hidden = !checkbox.checked;
+    if (cmapRow) cmapRow.hidden = !checkbox.checked;
     if (checkbox.checked && !gyroSlowSequenceCache) {
       checkbox.disabled = true;
       try {
@@ -105,6 +108,7 @@ export function setupGyroModelOverlay() {
         showToast(`Could not load empirical models: ${error.message}`);
         checkbox.checked = false;
         if (ageRow) ageRow.hidden = true;
+        if (cmapRow) cmapRow.hidden = true;
       } finally {
         checkbox.disabled = false;
       }
@@ -125,6 +129,11 @@ export function setupGyroModelOverlay() {
       drawGyroPlots();
       saveTargetState({ silent: true });
     });
+  });
+
+  cmapSelect?.addEventListener('change', () => {
+    drawGyroPlots();
+    saveTargetState({ silent: true });
   });
 
   ['gyro-grid-xmin', 'gyro-grid-xmax', 'gyro-grid-ymin', 'gyro-grid-ymax'].forEach(id => {
@@ -207,6 +216,10 @@ export function drawGyroPlots() {
   const overlayCheckbox = document.getElementById('chk-gyro-models');
   if (overlayCheckbox?.checked && gyroSlowSequenceCache?.status === 'ok') {
     const { teff, ages_myr, prot } = gyroSlowSequenceCache;
+    const colors = ageColors(
+      document.getElementById('gyro-cmap-select')?.value || 'viridis',
+      ages_myr,
+    );
     const checkedAges = new Set(
       Array.from(document.querySelectorAll('.chk-gyro-age:checked')).map(el => Number(el.value))
     );
@@ -217,7 +230,7 @@ export function drawGyroPlots() {
         mode: 'lines',
         type: 'scatter',
         name: `${age} Myr`,
-        line: { color: GYRO_SLOW_SEQUENCE_COLORS[age] || '#9ca3af', width: 2 },
+        line: { color: colors[age] || '#9ca3af', width: 2 },
         hoverinfo: 'skip',
       });
     });

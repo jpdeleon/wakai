@@ -391,6 +391,31 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("model must be", response.get_json()["message"])
 
+    @patch("routes_run._run_wrapper")
+    def test_eagles_models_endpoint_returns_both_model_families(self, run_wrapper):
+        # Target-independent empirical EW(Teff) tracks for the overlay -- both
+        # EAGLES models come back in one GET, called with empty input (defaults).
+        run_wrapper.return_value = {
+            "status": "ok",
+            "teff": [3000.0, 4742.6, 6500.0],
+            "ages_myr": [10, 30, 50, 100, 500, 1000],
+            "models": {
+                "ml": {"ew": {"10": [510.1, 202.4, 92.0], "30": [480.0, 150.2, 60.1]}},
+                "analytic": {"ew": {"10": [500.0, 198.3, 90.0], "30": [470.0, 145.7, 55.9]}},
+            },
+        }
+
+        response = self.client.get("/api/eagles/models")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertEqual(body["status"], "ok")
+        self.assertEqual(body["models"]["ml"]["ew"]["10"], [510.1, 202.4, 92.0])
+        self.assertIn("analytic", body["models"])
+        sent_python, sent_script, sent_input = run_wrapper.call_args.args[:3]
+        self.assertIn("run_eagles_models.py", sent_script)
+        self.assertEqual(sent_input, {})
+
     def test_index_has_eagles_page_nav_and_workflow_stage(self):
         project_root = Path(__file__).resolve().parents[1]
         html = (project_root / "gui" / "index.html").read_text()
@@ -402,6 +427,11 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertIn('id="plot-eagles-posterior"', html)
         self.assertIn('id="td-eagles-status"', html)
         self.assertIn('id="status-eagles-dot"', html)
+        self.assertIn('id="chk-eagles-models"', html)
+        self.assertIn('class="chk-eagles-age"', html)
+        self.assertIn('id="chk-gyro-models"', html)
+        self.assertIn('id="gyro-cmap-select"', html)
+        self.assertIn('id="eagles-cmap-select"', html)
 
 
 if __name__ == "__main__":

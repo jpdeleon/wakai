@@ -240,6 +240,19 @@
                   <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="500" checked> 500 Myr</label>
                   <label class="age-chip"><input type="checkbox" class="chk-gyro-age" value="1000"> 1000 Myr</label>
                 </div>
+                <label id="gyro-cmap-row" class="cmap-select-row" hidden>
+                  Colormap
+                  <select id="gyro-cmap-select">
+                    <option value="viridis" selected>viridis</option>
+                    <option value="plasma">plasma</option>
+                    <option value="inferno">inferno</option>
+                    <option value="magma">magma</option>
+                    <option value="turbo">turbo</option>
+                    <option value="cool">cool</option>
+                    <option value="autumn">autumn</option>
+                    <option value="winter">winter</option>
+                  </select>
+                </label>
                 <details class="plot-axis-settings">
                   <summary>Axis settings</summary>
                   <div class="axis-settings-grid">
@@ -414,6 +427,31 @@
               <div class="card">
                 <div class="card-eyebrow">Model diagnostic</div>
                 <div class="card-title">Best-fit Li EW - Teff isochrone</div>
+                <label class="model-overlay-toggle" for="chk-eagles-models">
+                  <input type="checkbox" id="chk-eagles-models">
+                  Overplot empirical models (Li EW - Teff tracks)
+                </label>
+                <div id="eagles-model-ages" class="age-chip-row" hidden>
+                  <label class="age-chip"><input type="checkbox" class="chk-eagles-age" value="10" checked> 10 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-eagles-age" value="30" checked> 30 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-eagles-age" value="50" checked> 50 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-eagles-age" value="100" checked> 100 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-eagles-age" value="500" checked> 500 Myr</label>
+                  <label class="age-chip"><input type="checkbox" class="chk-eagles-age" value="1000"> 1000 Myr</label>
+                </div>
+                <label id="eagles-cmap-row" class="cmap-select-row" hidden>
+                  Colormap
+                  <select id="eagles-cmap-select">
+                    <option value="viridis" selected>viridis</option>
+                    <option value="plasma">plasma</option>
+                    <option value="inferno">inferno</option>
+                    <option value="magma">magma</option>
+                    <option value="turbo">turbo</option>
+                    <option value="cool">cool</option>
+                    <option value="autumn">autumn</option>
+                    <option value="winter">winter</option>
+                  </select>
+                </label>
                 <div id="plot-eagles-iso" class="plotly-chart"></div>
               </div>
               <div class="card">

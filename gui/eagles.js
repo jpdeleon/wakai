@@ -6,9 +6,12 @@
  * it needs no (B-V)o derivation; inputs are Teff and Li EW straight from the
  * reference table.
  */
-import { state, ageGrid, interpolatePDF, positiveUncertainty } from './state.js';
+import {
+  state, ageGrid, interpolatePDF, positiveUncertainty,
+  eaglesModelsCache, setEaglesModelsCache, ageColors,
+} from './state.js';
 import { formatSignificant, showToast } from './dom-utils.js';
-import { apiCall } from './api.js';
+import { apiCall, apiGet } from './api.js';
 import { invalidateJointResult, updateWorkflowStrip } from './joint-status.js';
 import { saveTargetState } from './target.js';
 
@@ -143,8 +146,37 @@ export function drawEaglesPlots() {
 
   // PLOT 1: best-fit EW-vs-Teff isochrone at the derived age, with the
   // target's (Teff, Li EW) overlaid -- the same diagnostic the EAGLES
-  // package's own *_prob.pdf figures show.
+  // package's own *_prob.pdf figures show. The empirical model tracks
+  // (fixed-age Li EW(Teff) isochrones from the selected EAGLES model) are
+  // drawn first so the best-fit isochrone and target marker sit on top;
+  // they're target-independent reference data fetched once via
+  // GET /api/eagles/models, unlike the best-fit isochrone which is per-star.
   const dataIso = [];
+  const overlayCheckbox = document.getElementById('chk-eagles-models');
+  const selectedModel = document.getElementById('eagles-model-select')?.value || 'ml';
+  if (overlayCheckbox?.checked && eaglesModelsCache?.status === 'ok') {
+    const modelData = eaglesModelsCache.models?.[selectedModel];
+    if (modelData) {
+      const colors = ageColors(
+        document.getElementById('eagles-cmap-select')?.value || 'viridis',
+        eaglesModelsCache.ages_myr,
+      );
+      const checkedAges = new Set(
+        Array.from(document.querySelectorAll('.chk-eagles-age:checked')).map(el => Number(el.value))
+      );
+      eaglesModelsCache.ages_myr.filter(age => checkedAges.has(age)).forEach(age => {
+        dataIso.push({
+          x: eaglesModelsCache.teff,
+          y: modelData.ew[String(age)],
+          mode: 'lines',
+          type: 'scatter',
+          name: `${age} Myr`,
+          line: { color: colors[age] || '#94a3b8', width: 1.5, dash: 'dot' },
+          hoverinfo: 'skip',
+        });
+      });
+    }
+  }
   const iso = state.results.eagles.iso;
   if (iso) {
     const eew = iso.eew.map((v, i) => iso.ew[i] + v);
@@ -189,7 +221,7 @@ export function drawEaglesPlots() {
   const layoutIso = {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'rgba(0,0,0,0.015)',
-    margin: { l: 50, r: 20, t: 46, b: 40 },
+    margin: { l: 50, r: 20, t: 64, b: 40 },
     xaxis: {
       title: 'Teff (K)',
       range: [6500, 3000], // inverted, matching EAGLES's own figures
@@ -201,7 +233,7 @@ export function drawEaglesPlots() {
       gridcolor: 'rgba(0,0,0,0.06)',
       color: '#4a5568',
     },
-    legend: { x: 0, y: 1.22, orientation: 'h', font: { color: '#4a5568' }, bgcolor: 'transparent' }
+    legend: { x: 0, y: 1.28, orientation: 'h', font: { color: '#4a5568', size: 11 }, bgcolor: 'transparent' }
   };
 
   Plotly.react('plot-eagles-iso', dataIso, layoutIso, { responsive: true, displayModeBar: false, staticPlot: true });
@@ -231,10 +263,55 @@ export function drawEaglesPlots() {
   Plotly.react('plot-eagles-posterior', dataPDF, layoutPDF, { responsive: true, displayModeBar: false, staticPlot: true });
 }
 
+export function setupEaglesModelOverlay() {
+  const checkbox = document.getElementById('chk-eagles-models');
+  if (!checkbox) return;
+  const ageRow = document.getElementById('eagles-model-ages');
+  const cmapRow = document.getElementById('eagles-cmap-row');
+  const cmapSelect = document.getElementById('eagles-cmap-select');
+
+  checkbox.addEventListener('change', async () => {
+    if (ageRow) ageRow.hidden = !checkbox.checked;
+    if (cmapRow) cmapRow.hidden = !checkbox.checked;
+    if (checkbox.checked && !eaglesModelsCache) {
+      checkbox.disabled = true;
+      try {
+        setEaglesModelsCache(await apiGet('eagles/models'));
+      } catch (error) {
+        showToast(`Could not load empirical models: ${error.message}`);
+        checkbox.checked = false;
+        if (ageRow) ageRow.hidden = true;
+        if (cmapRow) cmapRow.hidden = true;
+      } finally {
+        checkbox.disabled = false;
+      }
+    }
+    drawEaglesPlots();
+    saveTargetState({ silent: true });
+  });
+
+  // Display-only settings (no model re-run needed to see them take effect),
+  // so like the gyro age chips, save on every change -- see setupGyroModelOverlay.
+  document.querySelectorAll('.chk-eagles-age').forEach(ageCheckbox => {
+    ageCheckbox.addEventListener('change', () => {
+      drawEaglesPlots();
+      saveTargetState({ silent: true });
+    });
+  });
+
+  cmapSelect?.addEventListener('change', () => {
+    drawEaglesPlots();
+    saveTargetState({ silent: true });
+  });
+}
+
 export function setupEaglesPageControls() {
   const select = document.getElementById('eagles-model-select');
   if (!select) return;
   select.addEventListener('change', () => {
+    // The empirical overlay draws the selected model's tracks, so a change
+    // here must repaint the diagnostic plot too.
+    drawEaglesPlots();
     saveTargetState({ silent: true });
   });
 }

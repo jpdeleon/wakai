@@ -232,6 +232,25 @@ header {
 }
 .age-chip input[type="checkbox"] { accent-color: var(--gyro); cursor: pointer; }
 
+.cmap-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 14px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+}
+.cmap-select-row select {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  font: 600 11px/1.4 var(--font-sans);
+  cursor: pointer;
+}
+
 .plot-axis-settings {
   margin-bottom: 14px;
   color: var(--ink-soft);

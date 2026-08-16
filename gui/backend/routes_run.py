@@ -30,6 +30,7 @@ GYRO_SLOW_SEQUENCE_WRAPPER = os.path.join(BACKEND_DIR, "run_gyro_slow_sequence.p
 BAFFLES_WRAPPER = os.path.join(BACKEND_DIR, "run_baffles.py")
 BV_LOOKUP_WRAPPER = os.path.join(BACKEND_DIR, "run_bv_lookup.py")
 EAGLES_WRAPPER = os.path.join(BACKEND_DIR, "run_eagles.py")
+EAGLES_MODELS_WRAPPER = os.path.join(BACKEND_DIR, "run_eagles_models.py")
 CLUSTER_WRAPPER = os.path.join(BACKEND_DIR, "run_cluster.py")
 CLUSTER_NAMES_WRAPPER = os.path.join(BACKEND_DIR, "run_cluster_names.py")
 ISOCHRONES_WRAPPER = os.path.join(BACKEND_DIR, "run_isochrones.py")
@@ -57,6 +58,10 @@ GYRO_SLOW_SEQUENCE_TIMEOUT_SECONDS = 60
 # step (nTeff=21 x nAge=820 when a Teff error is given), timed locally at
 # ~50s for the ML model with eTeff -- the analytic model is a few seconds.
 EAGLES_TIMEOUT_SECONDS = 300
+# Model evaluation against the analytic relation / ANN grid for the empirical
+# overlay (both models in one subprocess call), not the posterior scan above
+# -- cheap, but the ML model reads the ~295k-row grid once, so keep headroom.
+EAGLES_MODELS_TIMEOUT_SECONDS = 60
 
 # Scanning the Perren+2023 member list (~1M rows) can take a few seconds even
 # with predicate pushdown, so allow more headroom than the default.
@@ -246,6 +251,24 @@ def run_eagles():
             "model": model,
         },
         timeout=EAGLES_TIMEOUT_SECONDS,
+    )
+    if result.get("status") == "error":
+        return jsonify(result), 500
+    return jsonify(result)
+
+
+@run_bp.route("/api/eagles/models", methods=["GET"])
+def eagles_models():
+    """Weaver+2024 (ML) and Jeffries+2023 (analytic) empirical Li EW(Teff)
+    isochrones at fixed ages, for the EAGLES page's "overplot empirical
+    models" overlay. Target-independent empirical tracks, not a per-star
+    posterior -- the frontend fetches this once and caches it rather than
+    re-requesting per toggle, same pattern as GET /api/gyro/slow-sequence.
+    Both models come back in one call; which one is drawn is a pure
+    client-side choice following the page's model selector.
+    """
+    result = _run_wrapper(
+        EAGLES_ENV_PYTHON, EAGLES_MODELS_WRAPPER, {}, timeout=EAGLES_MODELS_TIMEOUT_SECONDS
     )
     if result.get("status") == "error":
         return jsonify(result), 500

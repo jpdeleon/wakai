@@ -5,6 +5,7 @@
 import {
   state, emptyDefaultParameters, defaultResults, sanitizeStoredResults,
   gyroSlowSequenceCache, setGyroSlowSequenceCache,
+  eaglesModelsCache, setEaglesModelsCache,
 } from './state.js';
 import { escapeHtml, safeSourceUrl, formatSignificant, showToast } from './dom-utils.js';
 import { apiCall, apiGet } from './api.js';
@@ -191,6 +192,7 @@ export function collectPageSettings() {
     gyro: {
       showModels: document.getElementById('chk-gyro-models')?.checked ?? false,
       modelAges: Array.from(document.querySelectorAll('.chk-gyro-age:checked')).map(el => Number(el.value)),
+      cmap: document.getElementById('gyro-cmap-select')?.value || 'viridis',
       xmin: num('gyro-grid-xmin', 3500),
       xmax: num('gyro-grid-xmax', 6500),
       ymin: num('gyro-grid-ymin', 0),
@@ -204,6 +206,9 @@ export function collectPageSettings() {
     },
     eagles: {
       model: document.getElementById('eagles-model-select')?.value || 'ml',
+      showModels: document.getElementById('chk-eagles-models')?.checked ?? false,
+      modelAges: Array.from(document.querySelectorAll('.chk-eagles-age:checked')).map(el => Number(el.value)),
+      cmap: document.getElementById('eagles-cmap-select')?.value || 'viridis',
     },
     isochrones: {
       checkedIds: ISOCHRONE_INPUT_SPECS
@@ -240,13 +245,17 @@ export async function applyPageSettings(settings) {
   const gyro = s.gyro || {};
   const modelsCheckbox = document.getElementById('chk-gyro-models');
   const ageRow = document.getElementById('gyro-model-ages');
+  const gyroCmapRow = document.getElementById('gyro-cmap-row');
   if (modelsCheckbox) modelsCheckbox.checked = Boolean(gyro.showModels);
   if (ageRow) ageRow.hidden = !modelsCheckbox?.checked;
+  if (gyroCmapRow) gyroCmapRow.hidden = !modelsCheckbox?.checked;
   if (Array.isArray(gyro.modelAges)) {
     document.querySelectorAll('.chk-gyro-age').forEach(el => {
       el.checked = gyro.modelAges.includes(Number(el.value));
     });
   }
+  const gyroCmapSelect = document.getElementById('gyro-cmap-select');
+  if (gyroCmapSelect && gyro.cmap) gyroCmapSelect.value = gyro.cmap;
   setNum('gyro-grid-xmin', gyro.xmin);
   setNum('gyro-grid-xmax', gyro.xmax);
   setNum('gyro-grid-ymin', gyro.ymin);
@@ -277,6 +286,28 @@ export async function applyPageSettings(settings) {
   const eagles = s.eagles || {};
   const eaglesModelSelect = document.getElementById('eagles-model-select');
   if (eaglesModelSelect && eagles.model) eaglesModelSelect.value = eagles.model;
+  // Same lazy-fetch pattern as the gyro model overlay (see the gyro block
+  // above): the overlay's tracks are target-independent reference data.
+  const eaglesOverlay = document.getElementById('chk-eagles-models');
+  const eaglesAgeRow = document.getElementById('eagles-model-ages');
+  const eaglesCmapRow = document.getElementById('eagles-cmap-row');
+  if (eaglesOverlay) eaglesOverlay.checked = Boolean(eagles.showModels);
+  if (eaglesAgeRow) eaglesAgeRow.hidden = !eaglesOverlay?.checked;
+  if (eaglesCmapRow) eaglesCmapRow.hidden = !eaglesOverlay?.checked;
+  const eaglesCmapSelect = document.getElementById('eagles-cmap-select');
+  if (eaglesCmapSelect && eagles.cmap) eaglesCmapSelect.value = eagles.cmap;
+  if (Array.isArray(eagles.modelAges)) {
+    document.querySelectorAll('.chk-eagles-age').forEach(el => {
+      el.checked = eagles.modelAges.includes(Number(el.value));
+    });
+  }
+  if (eaglesOverlay?.checked && !eaglesModelsCache) {
+    try {
+      setEaglesModelsCache(await apiGet('eagles/models'));
+    } catch (error) {
+      // Overlay just won't render until the user retoggles the checkbox.
+    }
+  }
 
   const iso = s.isochrones || {};
   if (Array.isArray(iso.checkedIds)) {

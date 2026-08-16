@@ -17,7 +17,7 @@ import {
   setupModelRunControls,
 } from './target.js';
 import { setupGyroModelOverlay } from './gyro.js';
-import { setupEaglesPageControls } from './eagles.js';
+import { setupEaglesPageControls, setupEaglesModelOverlay } from './eagles.js';
 import { setupClusterPageControls } from './cluster.js';
 import { setupIsochronesPageControls } from './isochrones.js';
 import { setupSummaryActions } from './summary.js';
@@ -44,6 +44,7 @@ async function initApp() {
   setupModelRunControls();
   setupGyroModelOverlay();
   setupEaglesPageControls();
+  setupEaglesModelOverlay();
   setupClusterPageControls();
   setupIsochronesPageControls();
   setupSummaryActions();

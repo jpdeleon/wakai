@@ -21,27 +21,39 @@ export function safeSourceUrl(value) {
   }
 }
 
-export function formatSignificant(value, significantFigures = 10) {
+export function formatSignificant(value) {
   const number = Number(value);
   if (value === null || value === undefined || value === '' || !Number.isFinite(number)) return '';
-  if (number === 0) return '0';
-  const formatted = number.toPrecision(significantFigures);
-  if (formatted.includes('e')) {
-    const [mantissa, exponent] = formatted.split('e');
-    return `${mantissa.replace(/\.?0+$/, '')}e${Number(exponent)}`;
-  }
-  return formatted.includes('.') ? formatted.replace(/\.?0+$/, '') : formatted;
+  return number.toFixed(2);
 }
 
 export function formatMetadata(value, significantFigures = 10) {
   return formatSignificant(value, significantFigures) || '-';
 }
 
-export function showToast(text) {
+let toastTimeout = null;
+
+export function showToast(text, { persist = false } = {}) {
   const toast = document.getElementById('toast');
   toast.innerText = text;
   toast.style.display = 'block';
-  setTimeout(() => {
-    toast.style.display = 'none';
-  }, 2500);
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+    toastTimeout = null;
+  }
+  if (!persist) {
+    toastTimeout = setTimeout(() => {
+      toast.style.display = 'none';
+      toastTimeout = null;
+    }, 2500);
+  }
+}
+
+export function hideToast() {
+  const toast = document.getElementById('toast');
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+    toastTimeout = null;
+  }
+  toast.style.display = 'none';
 }
