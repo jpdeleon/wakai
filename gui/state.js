@@ -284,6 +284,12 @@ export function defaultResults() {
       madysAge: {
         model: 'parsec2',
       },
+      summary: {
+        // {} = no checkbox has been manually touched yet -- see
+        // JOINT_METHODS/syncJointCheckboxes() in joint-status.js for the
+        // untouched default each one gets instead.
+        jointInclude: {},
+      },
     },
   };
 }

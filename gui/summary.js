@@ -4,22 +4,21 @@
  */
 import { state, ageGrid } from './state.js';
 import { escapeHtml, safeSourceUrl, formatSignificant, referenceLabel, showToast } from './dom-utils.js';
-import { getStatsFromPDF, recomputeJointStatus, updateWorkflowStrip } from './joint-status.js';
+import { getStatsFromPDF, getJointInclusion, recomputeJointStatus, updateWorkflowStrip } from './joint-status.js';
 import { saveTargetState } from './target.js';
 
 export function updateSummaryPage() {
+  // Syncs the Joint-column checkboxes against current eligibility and
+  // computes state.results.joint -- must run before reading getJointInclusion()
+  // or rendering the checkboxes' own disabled/checked state below.
+  recomputeJointStatus();
+  const inclusion = getJointInclusion();
+
   const isGyroRun = state.results.gyro.status === 'Calculated';
   const isBafflesRun = state.results.baffles.status === 'Calculated';
   const isEaglesRun = state.results.eagles.status === 'Calculated';
   const isIsochroneRun = state.results.isochrone.status === 'Calculated';
-  // A very broad (weakly constrained) isochrone posterior is shown on its
-  // own page/row but excluded here so it can't dominate/distort the joint
-  // product -- see ISOCHRONE_BROAD_DEX.
-  const isIsochroneUsable = isIsochroneRun && !state.results.isochrone.broad;
   const isMadysAgeRun = state.results.madysAge.status === 'Calculated';
-  // isochrone and madysAge fit the same photometry+parallax observable
-  // through different stellar-model grids -- see recomputeJointStatus().
-  const isMadysAgeUsable = isMadysAgeRun && !isIsochroneUsable;
 
   const gyroPdf = state.results.gyro.agePDF;
   const bafflesPdf = state.results.baffles.agePDF;
@@ -27,23 +26,22 @@ export function updateSummaryPage() {
   const isochronePdf = state.results.isochrone.agePDF;
   const madysAgePdf = state.results.madysAge.agePDF;
 
-  const statusBadge = (calculated, label) => calculated
-    ? `<span class="status-indicator"><div class="dot dot-active"></div>${label}</span>`
-    : '<span class="status-indicator" style="color: var(--text-muted);"><div class="dot dot-inactive"></div>Not yet run</span>';
+  // Active = eligible and checked (feeding the joint below); Excluded =
+  // eligible but unchecked (the user's choice, or an untouched default --
+  // e.g. isochrone/madysAge's mutual default, or a weakly-constrained
+  // isochrone fit -- see JOINT_METHODS in joint-status.js); Not yet run =
+  // no result to include at all.
+  const statusBadge = (eligible, included) => !eligible
+    ? '<span class="status-indicator" style="color: var(--text-muted);"><div class="dot dot-inactive"></div>Not yet run</span>'
+    : included
+      ? '<span class="status-indicator"><div class="dot dot-active"></div>Active</span>'
+      : '<span class="status-indicator" style="color: var(--text-muted);"><div class="dot dot-inactive"></div>Excluded</span>';
 
-  document.getElementById('td-gyro-status').innerHTML = statusBadge(isGyroRun, 'Active');
-  document.getElementById('td-baffles-status').innerHTML = statusBadge(isBafflesRun, 'Active');
-  document.getElementById('td-eagles-status').innerHTML = statusBadge(isEaglesRun, 'Active');
-  document.getElementById('td-isochrone-status').innerHTML = !isIsochroneRun
-    ? statusBadge(false, '')
-    : isIsochroneUsable
-      ? statusBadge(true, 'Active')
-      : '<span class="status-indicator" style="color: var(--danger);"><div class="dot dot-danger"></div>Excluded (weak)</span>';
-  document.getElementById('td-madys-age-status').innerHTML = !isMadysAgeRun
-    ? statusBadge(false, '')
-    : isMadysAgeUsable
-      ? statusBadge(true, 'Active')
-      : '<span class="status-indicator" style="color: var(--text-muted);"><div class="dot dot-inactive"></div>Excluded (isochrones2 used instead)</span>';
+  document.getElementById('td-gyro-status').innerHTML = statusBadge(inclusion.gyro.eligible, inclusion.gyro.included);
+  document.getElementById('td-baffles-status').innerHTML = statusBadge(inclusion.bafflesActivity.eligible, inclusion.bafflesActivity.included);
+  document.getElementById('td-eagles-status').innerHTML = statusBadge(inclusion.eagles.eligible, inclusion.eagles.included);
+  document.getElementById('td-isochrone-status').innerHTML = statusBadge(inclusion.isochrone.eligible, inclusion.isochrone.included);
+  document.getElementById('td-madys-age-status').innerHTML = statusBadge(inclusion.madysAge.eligible, inclusion.madysAge.included);
 
   const setRow = (prefix, calculated, pdf) => {
     if (calculated) {
@@ -64,44 +62,35 @@ export function updateSummaryPage() {
   updatePropertiesSummary();
   renderReportedAges();
 
-  // Joint posterior: product of whichever of {gyro, BAFFLES-activity,
-  // EAGLES, isochrone} are usable, requiring at least two -- a "joint" of a
-  // single method isn't a joint constraint, so don't synthesize one from a
-  // partial result. BAFFLES and EAGLES are both lithium-EW ages, so the
-  // joint takes at most one lithium posterior (EAGLES's); BAFFLES
-  // contributes only its chromospheric-activity component, which is
-  // independent of lithium -- see recomputeJointStatus().
-  // The actual PDF product lives in recomputeJointStatus() (shared with
-  // updateWorkflowStrip(), so the top nav's "Joint age" stage stays live on
-  // every page, not just this one) -- this only builds the plot's trace
-  // list and then renders whatever state.results.joint ends up holding.
-  const usable = [];
-  if (isGyroRun) usable.push({ label: 'gyro-interp PDF', pdf: gyroPdf, color: '124, 58, 237' });
-  if (isBafflesRun && state.results.baffles.actPDF) {
-    usable.push({ label: 'BAFFLES activity PDF', pdf: state.results.baffles.actPDF, color: '234, 88, 12' });
-  }
-  if (isEaglesRun) usable.push({ label: 'EAGLES PDF', pdf: eaglesPdf, color: '14, 116, 144' });
-  if (isIsochroneUsable) usable.push({ label: 'Isochrone PDF', pdf: isochronePdf, color: '166, 116, 10' });
-  else if (isMadysAgeUsable) usable.push({ label: 'MADYS (PARSEC2) PDF', pdf: madysAgePdf, color: '124, 58, 237' });
+  // Joint posterior: product of whichever methods are checked in the Joint
+  // column above, requiring at least two -- a "joint" of a single method
+  // isn't a joint constraint, so don't synthesize one from a partial
+  // result. The actual PDF product lives in recomputeJointStatus() (shared
+  // with updateWorkflowStrip(), so the top nav's "Joint age" stage stays
+  // live on every page, not just this one) -- this only builds the plot's
+  // trace list from the same inclusion decision, then renders whatever
+  // state.results.joint ends up holding.
+  const comparisonTraces = [];
+  if (inclusion.gyro.included) comparisonTraces.push({ label: 'gyro-interp PDF', pdf: gyroPdf, color: '124, 58, 237' });
+  if (inclusion.bafflesActivity.included) comparisonTraces.push({ label: 'BAFFLES activity PDF', pdf: state.results.baffles.actPDF, color: '234, 88, 12' });
+  if (inclusion.eagles.included) comparisonTraces.push({ label: 'EAGLES PDF', pdf: eaglesPdf, color: '14, 116, 144' });
+  if (inclusion.isochrone.included) comparisonTraces.push({ label: 'Isochrone PDF', pdf: isochronePdf, color: '166, 116, 10' });
+  if (inclusion.madysAge.included) comparisonTraces.push({ label: 'MADYS (PARSEC2) PDF', pdf: madysAgePdf, color: '124, 58, 237' });
 
-  const comparisonTraces = usable.map(m => ({ ...m }));
-  if (isIsochroneRun && !isIsochroneUsable) {
-    comparisonTraces.push({ label: 'Isochrone PDF (excluded, weakly constrained)', pdf: isochronePdf, color: '166, 116, 10' });
+  // Shown for transparency (unchecked but real results), distinct from the
+  // active traces above by an "(excluded)" label.
+  if (inclusion.isochrone.eligible && !inclusion.isochrone.included) {
+    comparisonTraces.push({ label: 'Isochrone PDF (excluded)', pdf: isochronePdf, color: '166, 116, 10' });
   }
-  if (isMadysAgeRun && !isMadysAgeUsable) {
-    // Shown for transparency but not fed to the joint: it's the same
-    // photometry+parallax observable as the isochrones2 fit above, just
-    // through a different stellar-model grid -- see recomputeJointStatus().
-    comparisonTraces.push({ label: 'MADYS (PARSEC2) PDF (excluded: same observable as Isochrones)', pdf: madysAgePdf, color: '124, 58, 237' });
+  if (inclusion.madysAge.eligible && !inclusion.madysAge.included) {
+    comparisonTraces.push({ label: 'MADYS (PARSEC2) PDF (excluded)', pdf: madysAgePdf, color: '124, 58, 237' });
   }
   if (isBafflesRun && state.results.baffles.actPDF) {
-    // Shown for transparency but not fed to the joint: BAFFLES's combined
-    // (lithium x activity) posterior would double-count the lithium
-    // constraint already carried by EAGLES.
-    comparisonTraces.push({ label: 'BAFFLES combined PDF (excluded: lithium)', pdf: bafflesPdf, color: '234, 88, 12' });
+    // BAFFLES's combined (lithium x activity) PDF is never itself an
+    // include/exclude checkbox choice (only its activity component is,
+    // above) -- shown here for transparency only.
+    comparisonTraces.push({ label: 'BAFFLES combined PDF (not offered: lithium)', pdf: bafflesPdf, color: '234, 88, 12' });
   }
-
-  recomputeJointStatus();
 
   if (state.results.joint.status === 'Idle') {
     document.getElementById('summary-joint-age').innerText = '-';
@@ -149,14 +138,15 @@ export function updateSummaryPage() {
   document.getElementById('summary-joint-ci').innerText = `${formatSignificant(jointStats.lower, 8)} - ${formatSignificant(jointStats.upper, 8)} Myr`;
   document.getElementById('td-joint-age').innerText = `${formatSignificant(jointStats.median, 8)} Myr`;
   document.getElementById('td-joint-ci').innerText = `${formatSignificant(jointStats.lower, 8)}-${formatSignificant(jointStats.upper, 8)} Myr`;
+  const includedCount = Object.values(inclusion).filter(m => m.included).length;
   document.getElementById('td-joint-status').innerHTML =
-    `<span class="status-indicator"><div class="dot dot-active"></div>Synthesized (${usable.length}-way)</span>`;
+    `<span class="status-indicator"><div class="dot dot-active"></div>Synthesized (${includedCount}-way)</span>`;
 
   // Update Evolutionary Stage Timeline
   updateEvolutionTimeline(jointStats.median);
 
-  // Draw Comparison Plot -- every run method (including an excluded, broad
-  // isochrone posterior, for transparency) plus the joint product.
+  // Draw Comparison Plot -- every run method (including ones excluded from
+  // the joint via their checkbox, for transparency) plus the joint product.
   const data = comparisonTraces.map(t => ({
     x: ageGrid,
     y: t.pdf,
@@ -246,7 +236,7 @@ export function renderReportedAges() {
   if (!reported.length) return;
 
   const header = document.createElement('tr');
-  header.innerHTML = `<td colspan="4" style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem; font-size: 0.75rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.04em;">Reported (from reference table)</td>`;
+  header.innerHTML = `<td colspan="5" style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem; font-size: 0.75rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.04em;">Reported (from reference table)</td>`;
   tbody.appendChild(header);
 
   reported.forEach(row => {
@@ -266,12 +256,25 @@ export function renderReportedAges() {
       <td>${escapeHtml(formatSignificant(row.value, 8))}</td>
       <td>${range}</td>
       <td><span class="status-indicator"><div class="dot dot-inactive"></div>Reported</span></td>
+      <td></td>
     `;
     tbody.appendChild(tr);
   });
 }
 
 export function setupSummaryActions() {
+  // Joint-column checkboxes (see JOINT_METHODS in joint-status.js): marking
+  // one userTouched here is what stops syncJointCheckboxes() from
+  // overwriting the user's choice with its own default the next time
+  // recomputeJointStatus() runs (e.g. on every page load).
+  document.querySelectorAll('.chk-joint-include').forEach(chk => {
+    chk.addEventListener('change', () => {
+      chk.dataset.userTouched = '1';
+      updateSummaryPage();
+      saveTargetState({ silent: true });
+    });
+  });
+
   document.getElementById('btn-export-report').addEventListener('click', () => {
     // Refresh state.results.joint right before reading it, same as
     // updateSummaryPage()/updateWorkflowStrip() -- recomputeJointStatus() is

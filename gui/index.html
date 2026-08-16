@@ -931,6 +931,7 @@
                       <th>Peak Age (Myr)</th>
                       <th>68% range</th>
                       <th>Status</th>
+                      <th title="Include this method's PDF in the joint posterior product below">Joint</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -939,36 +940,42 @@
                       <td id="td-gyro-age">-</td>
                       <td id="td-gyro-ci">-</td>
                       <td id="td-gyro-status"><span class="status-indicator"><div class="dot dot-inactive"></div>MCMC Idle</span></td>
+                      <td style="text-align: center;"><input type="checkbox" id="chk-joint-gyro" class="chk-joint-include" disabled aria-label="Include gyro-interp in joint posterior"></td>
                     </tr>
                     <tr>
                       <td><strong>BAFFLES</strong></td>
                       <td id="td-baffles-age">-</td>
                       <td id="td-baffles-ci">-</td>
                       <td id="td-baffles-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Emp. Idle</span></td>
+                      <td style="text-align: center;"><input type="checkbox" id="chk-joint-baffles" class="chk-joint-include" disabled aria-label="Include BAFFLES activity in joint posterior"></td>
                     </tr>
                     <tr>
                       <td><strong>EAGLES</strong></td>
                       <td id="td-eagles-age">-</td>
                       <td id="td-eagles-ci">-</td>
                       <td id="td-eagles-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                      <td style="text-align: center;"><input type="checkbox" id="chk-joint-eagles" class="chk-joint-include" disabled aria-label="Include EAGLES in joint posterior"></td>
                     </tr>
                     <tr>
                       <td><strong>Isochrones</strong></td>
                       <td id="td-isochrone-age">-</td>
                       <td id="td-isochrone-ci">-</td>
                       <td id="td-isochrone-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                      <td style="text-align: center;"><input type="checkbox" id="chk-joint-isochrone" class="chk-joint-include" disabled aria-label="Include Isochrones in joint posterior"></td>
                     </tr>
                     <tr>
                       <td><strong>MADYS (PARSEC2)</strong></td>
                       <td id="td-madys-age-age">-</td>
                       <td id="td-madys-age-ci">-</td>
                       <td id="td-madys-age-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                      <td style="text-align: center;"><input type="checkbox" id="chk-joint-madys-age" class="chk-joint-include" disabled aria-label="Include MADYS PARSEC2 in joint posterior"></td>
                     </tr>
                     <tr style="border-top: 1px solid var(--glass-border);">
                       <td><strong>Joint Product</strong></td>
                       <td id="td-joint-age" style="color: var(--color-joint); font-weight: 700;">-</td>
                       <td id="td-joint-ci" style="font-weight: 600;">-</td>
                       <td id="td-joint-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                      <td></td>
                     </tr>
                   </tbody>
                   <!-- Literature/reported ages from the reference table's own -->

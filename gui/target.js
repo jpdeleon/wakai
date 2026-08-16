@@ -231,6 +231,17 @@ export function collectPageSettings() {
     madysAge: {
       model: document.getElementById('madys-age-model-select')?.value || 'parsec2',
     },
+    summary: {
+      // Only checkboxes the user has actually touched (see JOINT_METHODS in
+      // joint-status.js) -- everything else stays on syncJointCheckboxes()'s
+      // own default, keyed by checkbox id rather than a fixed array so this
+      // survives methods being added/removed later.
+      jointInclude: Object.fromEntries(
+        Array.from(document.querySelectorAll('.chk-joint-include'))
+          .filter(chk => chk.dataset.userTouched)
+          .map(chk => [chk.id, chk.checked])
+      ),
+    },
   };
 }
 
@@ -362,6 +373,18 @@ export async function applyPageSettings(settings) {
 
   const madysAgeSelect = document.getElementById('madys-age-model-select');
   if (madysAgeSelect && s.madysAge?.model) madysAgeSelect.value = s.madysAge.model;
+
+  // Only restores checkboxes the user had actually touched -- everything
+  // else is left for syncJointCheckboxes() (joint-status.js) to default,
+  // same "partial object = restore verbatim, missing = auto" pattern as
+  // isochrones.checkedIds above.
+  Object.entries(s.summary?.jointInclude || {}).forEach(([id, checked]) => {
+    const chk = document.getElementById(id);
+    if (chk) {
+      chk.checked = Boolean(checked);
+      chk.dataset.userTouched = '1';
+    }
+  });
 
   saveClusterPageSettingsToLocalStorage();
 }

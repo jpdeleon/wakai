@@ -490,6 +490,17 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertIn('id="td-madys-age-status"', html)
         self.assertIn('id="madys-age-summary-card"', html)
 
+    def test_index_has_joint_include_checkboxes(self):
+        project_root = Path(__file__).resolve().parents[1]
+        html = (project_root / "gui" / "index.html").read_text()
+
+        for checkbox_id in (
+            "chk-joint-gyro", "chk-joint-baffles", "chk-joint-eagles",
+            "chk-joint-isochrone", "chk-joint-madys-age",
+        ):
+            self.assertIn(f'id="{checkbox_id}"', html)
+            self.assertIn(f'id="{checkbox_id}" class="chk-joint-include"', html)
+
 
 if __name__ == "__main__":
     unittest.main()
