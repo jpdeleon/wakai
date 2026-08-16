@@ -35,6 +35,7 @@ CLUSTER_WRAPPER = os.path.join(BACKEND_DIR, "run_cluster.py")
 CLUSTER_NAMES_WRAPPER = os.path.join(BACKEND_DIR, "run_cluster_names.py")
 ISOCHRONES_WRAPPER = os.path.join(BACKEND_DIR, "run_isochrones.py")
 MADYS_CMD_WRAPPER = os.path.join(BACKEND_DIR, "run_madys_cmd.py")
+MADYS_AGE_WRAPPER = os.path.join(BACKEND_DIR, "run_madys_age.py")
 
 # gyrointerp's Bouma+2023 rotation-sequence grids are only calibrated for
 # 3800-6200 K (gyrointerp.gyro_posterior.gyro_age_posterior docstring); outside
@@ -78,6 +79,12 @@ CLUSTER_NAMES_TIMEOUT_SECONDS = 60
 # itself is cheap; only the photometry fetch is slow), so this budget covers
 # a full multi-model, full-member-cap run too.
 MADYS_CMD_TIMEOUT_SECONDS = 300
+
+# Same ~30-45s MADYS photometry-fetch overhead as MADYS_CMD_TIMEOUT_SECONDS
+# above, plus get_params() itself -- timed locally at ~3s for n_steps=[400,
+# 500], save_maps=True against real photometry (run_madys_age.py's own
+# N_STEPS/N_TRY). Generous headroom over that combined ~40-50s in practice.
+MADYS_AGE_TIMEOUT_SECONDS = 180
 
 # Timed locally against real Gaia+2MASS photometry: the full MCMC run
 # (isochrones' own fit_mcmc_old defaults -- 1700 steps x 50 walkers) takes
@@ -421,6 +428,32 @@ def run_isochrones():
 
     result = _run_wrapper(
         ISOCHRONES_ENV_PYTHON, ISOCHRONES_WRAPPER, payload, timeout=ISOCHRONES_TIMEOUT_SECONDS
+    )
+    if result.get("status") == "error":
+        return jsonify(result), 500
+    return jsonify(result)
+
+
+@run_bp.route("/api/run/madys-age", methods=["POST"])
+def run_madys_age():
+    """Fit age/mass/radius/Teff/logg from broadband photometry via MADYS's
+    SampleObject.get_params() -- PARSEC v2 by default. A second, independent
+    age-fitting method alongside /api/run/isochrones (isochrones2/MIST):
+    isochrones2 has no PARSEC support to add a model option to (only a MIST
+    ModelGridInterpolator exists in ext_tools/isochrones2), so this calls
+    MADYS directly instead. Unlike /api/run/isochrones, this re-queries its
+    own photometry over the network by Gaia ID (same as /api/run/madys-cmd)
+    rather than reusing this app's ref_table photometry -- MADYS's
+    get_params() has no way to accept externally-supplied photometry.
+    """
+    data = request.get_json(force=True)
+    gaia_id = str(data.get("gaiaid") or data.get("gaia_id") or "").strip()
+    if not gaia_id:
+        return jsonify({"status": "error", "message": "Target needs a Gaia DR3 ID"}), 400
+
+    payload = {"gaiaid": gaia_id, "model": data.get("model") or "parsec2"}
+    result = _run_wrapper(
+        MADYS_ENV_PYTHON, MADYS_AGE_WRAPPER, payload, timeout=MADYS_AGE_TIMEOUT_SECONDS
     )
     if result.get("status") == "error":
         return jsonify(result), 500

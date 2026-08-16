@@ -210,13 +210,26 @@ export function defaultResults() {
     // constrained for main-sequence dwarfs (see run_isochrones.py's
     // docstring); flagged results are shown but excluded from the joint.
     isochrone: { agePDF: null, median: null, ci: null, status: 'Idle', broad: false },
+    // MADYS/PARSEC2 (or MIST-via-MADYS) age fit -- a second, independent
+    // age-fitting method alongside `isochrone` above (isochrones2 has no
+    // PARSEC support to add a model option to; see run_madys_age.py). Feeds
+    // the joint posterior and workflow strip the same way gyro/baffles/
+    // eagles/isochrone do. median/lower_1sig/upper_1sig come from MADYS's
+    // own fit.age/age_min/age_max (its more outlier-robust point estimate),
+    // while agePDF is a separately marginalized+normalized posterior for
+    // plotting/joint combination -- the two won't be pixel-identical, same
+    // as EAGLES's peak-based summary vs. its own agePDF.
+    madysAge: {
+      agePDF: null, median: null, ci: null, status: 'Idle',
+      model: null, mass: null, radius: null, teff: null, logg: null,
+    },
     joint: { agePDF: null, median: null, ci: null, status: 'Idle' },
     cluster: null,
     // MADYS color-magnitude diagram -- a visualization, not an age
-    // estimate, so (unlike gyro/baffles/isochrone) it never feeds the
-    // joint posterior or workflow strip. Independent of `cluster` above:
-    // run separately, though it reuses cluster's matched cluster_name (if
-    // any) to overlay member stars -- see run_madys_cmd.py.
+    // estimate, so (unlike gyro/baffles/isochrone/madysAge) it never feeds
+    // the joint posterior or workflow strip. Independent of `cluster`
+    // above: run separately, though it reuses cluster's matched
+    // cluster_name (if any) to overlay member stars -- see run_madys_cmd.py.
     madysCmd: { status: 'Idle', plots: {}, errors: {}, clusterName: null, nMembers: 0 },
     // Per-page UI controls that aren't model results or ref_table rows, but
     // that a user still deliberately sets and expects to survive a refresh
@@ -268,6 +281,9 @@ export function defaultResults() {
         plotAges: null,
         plotMasses: null,
       },
+      madysAge: {
+        model: 'parsec2',
+      },
     },
   };
 }
@@ -279,7 +295,13 @@ export function positiveUncertainty(row, fallback) {
 
 export function sanitizeStoredResults(results) {
   const clean = { ...defaultResults(), ...(results || {}) };
-  ['gyro', 'baffles', 'eagles'].forEach(method => {
+  // isochrone/madysAge included here too (not just gyro/baffles/eagles) --
+  // a saved target's agePDF length is tied to whatever ageGrid looked like
+  // when it was computed, and ageGrid itself has changed shape before (see
+  // README.md's age-grid table); a stale-length agePDF would otherwise
+  // throw inside combineIndependent() the next time recomputeJointStatus()
+  // runs, which happens unconditionally on every page load.
+  ['gyro', 'baffles', 'eagles', 'isochrone', 'madysAge'].forEach(method => {
     const result = clean[method];
     if (result?.status === 'Calculated' && result.agePDF?.length !== ageGrid.length) {
       clean[method] = defaultResults()[method];

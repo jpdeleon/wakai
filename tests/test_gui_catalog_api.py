@@ -325,6 +325,52 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertEqual(sent["plot_ages"], [10, 30])
         self.assertEqual(sent["plot_masses"], [])
 
+    def test_madys_age_endpoint_requires_gaia_id(self):
+        response = self.client.post("/api/run/madys-age", json={})
+
+        self.assertEqual(response.status_code, 400)
+
+    @patch("routes_run._run_wrapper")
+    def test_madys_age_endpoint_forwards_gaiaid_and_model(self, run_wrapper):
+        run_wrapper.return_value = {
+            "status": "ok", "age_grid": [1.0, 10.0], "pdf": [0.1, 0.2],
+            "median": 9.2, "lower_1sig": 0.6, "upper_1sig": 0.6,
+            "mass": {"median": 0.76, "lower": 0.75, "upper": 0.77},
+            "radius": None, "teff": None, "logg": None,
+            "model": "mist", "fit_status": 0,
+        }
+
+        response = self.client.post("/api/run/madys-age", json={
+            "gaiaid": "6014331902471694464",
+            "model": "mist",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["median"], 9.2)
+        sent_python, sent_script, sent_input = run_wrapper.call_args.args[:3]
+        self.assertIn("run_madys_age.py", sent_script)
+        self.assertEqual(sent_input["gaiaid"], "6014331902471694464")
+        self.assertEqual(sent_input["model"], "mist")
+
+    @patch("routes_run._run_wrapper")
+    def test_madys_age_endpoint_defaults_model_to_parsec2(self, run_wrapper):
+        run_wrapper.return_value = {"status": "ok", "median": 9.2}
+
+        response = self.client.post("/api/run/madys-age", json={"gaiaid": "123456"})
+
+        self.assertEqual(response.status_code, 200)
+        sent_input = run_wrapper.call_args.args[2]
+        self.assertEqual(sent_input["model"], "parsec2")
+
+    @patch("routes_run._run_wrapper")
+    def test_madys_age_endpoint_returns_500_on_wrapper_error(self, run_wrapper):
+        run_wrapper.return_value = {"status": "error", "message": "MADYS fit failed"}
+
+        response = self.client.post("/api/run/madys-age", json={"gaiaid": "123456"})
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.get_json()["message"], "MADYS fit failed")
+
     @patch("routes_run._run_wrapper")
     def test_eagles_endpoint_returns_wrapper_posterior(self, run_wrapper):
         # EAGLES needs no (B-V)o derivation -- Teff + Li EW straight from
@@ -432,6 +478,17 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertIn('id="chk-gyro-models"', html)
         self.assertIn('id="gyro-cmap-select"', html)
         self.assertIn('id="eagles-cmap-select"', html)
+
+    def test_index_has_madys_age_card_and_workflow_stage(self):
+        project_root = Path(__file__).resolve().parents[1]
+        html = (project_root / "gui" / "index.html").read_text()
+
+        self.assertIn('id="workspace-madys-age-stage"', html)
+        self.assertIn('id="btn-run-madys-age"', html)
+        self.assertIn('id="madys-age-model-select"', html)
+        self.assertIn('id="plot-madys-age-posterior"', html)
+        self.assertIn('id="td-madys-age-status"', html)
+        self.assertIn('id="madys-age-summary-card"', html)
 
 
 if __name__ == "__main__":

@@ -47,6 +47,8 @@
         <span class="workflow-connector"></span>
         <span class="workflow-stage" id="workspace-isochrones-stage"><i></i>Isochrones</span>
         <span class="workflow-connector"></span>
+        <span class="workflow-stage" id="workspace-madys-age-stage"><i></i>PARSEC2 (MADYS)</span>
+        <span class="workflow-connector"></span>
         <span class="workflow-stage" id="workspace-joint-stage"><i></i>Joint age</span>
       </div>
     </div>
@@ -757,6 +759,50 @@
               </div>
               <p id="isochrone-inputs-used" style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--ink-faint);"></p>
             </div>
+
+            <div class="card">
+              <div class="card-eyebrow madys">HR diagram</div>
+              <div class="card-title">MADYS / PARSEC2 age fit</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                A second, independent age fit for this target via <a href="https://madys.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">MADYS</a>'s <code>get_params()</code> -- PARSEC v2 by default, since isochrones2 (the fit above) has no PARSEC support to add a model option to. Re-queries this target's own photometry over the network by Gaia DR3 ID (same as the Cluster page's MADYS CMD plot), rather than reusing the reference table above. Only one of this fit or the isochrones2 fit feeds the joint estimate at a time (both use the same photometry+parallax observable, just a different stellar-model grid) -- isochrones2 takes priority when usable.
+              </p>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                Model grid
+                <select id="madys-age-model-select" style="flex: 1;">
+                  <option value="parsec2" selected>PARSEC v2</option>
+                  <option value="mist">MIST</option>
+                </select>
+              </label>
+              <button class="btn btn-madys" id="btn-run-madys-age" style="width: 100%; margin-top: 1rem;">Run MADYS age fit</button>
+            </div>
+
+            <div class="card" id="madys-age-summary-card" style="display: none;">
+              <div class="card-eyebrow madys">Result</div>
+              <div class="card-title">Derived parameters</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Age</div>
+                  <div class="meta-value" id="madys-age-res-age" style="color: var(--madys); font-size: 1.3rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Mass (M<sub>Sun</sub>)</div>
+                  <div class="meta-value" id="madys-age-res-mass" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Radius (R<sub>Sun</sub>)</div>
+                  <div class="meta-value" id="madys-age-res-radius" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Teff (K)</div>
+                  <div class="meta-value" id="madys-age-res-teff" style="font-size: 0.95rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">log g</div>
+                  <div class="meta-value" id="madys-age-res-logg" style="font-size: 0.95rem;">-</div>
+                </div>
+              </div>
+              <p id="madys-age-model-used" style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--ink-faint);"></p>
+            </div>
           </div>
 
           <!-- Visualization / Outputs -->
@@ -785,6 +831,20 @@
                 <div class="card-eyebrow">Posterior</div>
                 <div class="card-title">Age distribution</div>
                 <div id="plot-isochrone-posterior" class="plotly-chart"></div>
+              </div>
+            </div>
+
+            <div class="card loader-container" id="madys-age-loader" style="display: none;">
+              <div class="orbital-spinner" style="border-top-color: var(--madys);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running MADYS age fit...</h3>
+              <p>~35-50s: fetching photometry, then fitting against the selected model grid</p>
+            </div>
+
+            <div id="madys-age-results-panel" style="display: none;">
+              <div class="card">
+                <div class="card-eyebrow madys">Posterior</div>
+                <div class="card-title">Age distribution</div>
+                <div id="plot-madys-age-posterior" class="plotly-chart"></div>
               </div>
             </div>
           </div>
@@ -897,6 +957,12 @@
                       <td id="td-isochrone-age">-</td>
                       <td id="td-isochrone-ci">-</td>
                       <td id="td-isochrone-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>MADYS (PARSEC2)</strong></td>
+                      <td id="td-madys-age-age">-</td>
+                      <td id="td-madys-age-ci">-</td>
+                      <td id="td-madys-age-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
                     </tr>
                     <tr style="border-top: 1px solid var(--glass-border);">
                       <td><strong>Joint Product</strong></td>

@@ -10,6 +10,7 @@ import { drawBafflesPlots } from './baffles.js';
 import { syncEaglesInputParams, drawEaglesPlots } from './eagles.js';
 import { syncClusterInputs, renderClusterResult, renderMadysCmdResult } from './cluster.js';
 import { syncIsochroneInputParams, drawIsochronePlots } from './isochrones.js';
+import { renderMadysAgeResult, drawMadysAgePlot } from './madys-age.js';
 import { updateSummaryPage } from './summary.js';
 
 // Path shape: /<page-slug>[/target=<name>], e.g. /gyro-interp/target=TOI-5973.
@@ -191,6 +192,11 @@ export function onPageEnter(pageId) {
   } else if (pageId === 'isochrones') {
     syncIsochroneInputParams();
     drawIsochronePlots();
+    if (state.results.madysAge.status === 'Calculated') {
+      renderMadysAgeResult(state.results.madysAge);
+      document.getElementById('madys-age-results-panel').style.display = 'block';
+    }
+    drawMadysAgePlot();
   } else if (pageId === 'summary') {
     updateSummaryPage();
   }

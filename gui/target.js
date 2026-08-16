@@ -228,6 +228,9 @@ export function collectPageSettings() {
       plotAges: Array.from(document.querySelectorAll('.chk-madys-age:checked')).map(el => Number(el.value)),
       plotMasses: Array.from(document.querySelectorAll('.chk-madys-mass:checked')).map(el => Number(el.value)),
     },
+    madysAge: {
+      model: document.getElementById('madys-age-model-select')?.value || 'parsec2',
+    },
   };
 }
 
@@ -356,6 +359,10 @@ export async function applyPageSettings(settings) {
       el.checked = madysCmdSettings.plotMasses.includes(Number(el.value));
     });
   }
+
+  const madysAgeSelect = document.getElementById('madys-age-model-select');
+  if (madysAgeSelect && s.madysAge?.model) madysAgeSelect.value = s.madysAge.model;
+
   saveClusterPageSettingsToLocalStorage();
 }
 

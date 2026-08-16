@@ -16,11 +16,16 @@ export function updateSummaryPage() {
   // own page/row but excluded here so it can't dominate/distort the joint
   // product -- see ISOCHRONE_BROAD_DEX.
   const isIsochroneUsable = isIsochroneRun && !state.results.isochrone.broad;
+  const isMadysAgeRun = state.results.madysAge.status === 'Calculated';
+  // isochrone and madysAge fit the same photometry+parallax observable
+  // through different stellar-model grids -- see recomputeJointStatus().
+  const isMadysAgeUsable = isMadysAgeRun && !isIsochroneUsable;
 
   const gyroPdf = state.results.gyro.agePDF;
   const bafflesPdf = state.results.baffles.agePDF;
   const eaglesPdf = state.results.eagles.agePDF;
   const isochronePdf = state.results.isochrone.agePDF;
+  const madysAgePdf = state.results.madysAge.agePDF;
 
   const statusBadge = (calculated, label) => calculated
     ? `<span class="status-indicator"><div class="dot dot-active"></div>${label}</span>`
@@ -34,6 +39,11 @@ export function updateSummaryPage() {
     : isIsochroneUsable
       ? statusBadge(true, 'Active')
       : '<span class="status-indicator" style="color: var(--danger);"><div class="dot dot-danger"></div>Excluded (weak)</span>';
+  document.getElementById('td-madys-age-status').innerHTML = !isMadysAgeRun
+    ? statusBadge(false, '')
+    : isMadysAgeUsable
+      ? statusBadge(true, 'Active')
+      : '<span class="status-indicator" style="color: var(--text-muted);"><div class="dot dot-inactive"></div>Excluded (isochrones2 used instead)</span>';
 
   const setRow = (prefix, calculated, pdf) => {
     if (calculated) {
@@ -49,6 +59,7 @@ export function updateSummaryPage() {
   setRow('baffles', isBafflesRun, bafflesPdf);
   setRow('eagles', isEaglesRun, eaglesPdf);
   setRow('isochrone', isIsochroneRun, isochronePdf);
+  setRow('madys-age', isMadysAgeRun, madysAgePdf);
 
   updatePropertiesSummary();
   renderReportedAges();
@@ -71,10 +82,17 @@ export function updateSummaryPage() {
   }
   if (isEaglesRun) usable.push({ label: 'EAGLES PDF', pdf: eaglesPdf, color: '14, 116, 144' });
   if (isIsochroneUsable) usable.push({ label: 'Isochrone PDF', pdf: isochronePdf, color: '166, 116, 10' });
+  else if (isMadysAgeUsable) usable.push({ label: 'MADYS (PARSEC2) PDF', pdf: madysAgePdf, color: '124, 58, 237' });
 
   const comparisonTraces = usable.map(m => ({ ...m }));
   if (isIsochroneRun && !isIsochroneUsable) {
     comparisonTraces.push({ label: 'Isochrone PDF (excluded, weakly constrained)', pdf: isochronePdf, color: '166, 116, 10' });
+  }
+  if (isMadysAgeRun && !isMadysAgeUsable) {
+    // Shown for transparency but not fed to the joint: it's the same
+    // photometry+parallax observable as the isochrones2 fit above, just
+    // through a different stellar-model grid -- see recomputeJointStatus().
+    comparisonTraces.push({ label: 'MADYS (PARSEC2) PDF (excluded: same observable as Isochrones)', pdf: madysAgePdf, color: '124, 58, 237' });
   }
   if (isBafflesRun && state.results.baffles.actPDF) {
     // Shown for transparency but not fed to the joint: BAFFLES's combined
@@ -87,7 +105,7 @@ export function updateSummaryPage() {
 
   if (state.results.joint.status === 'Idle') {
     document.getElementById('summary-joint-age').innerText = '-';
-    document.getElementById('summary-joint-ci').innerText = 'Run at least two of gyro-interp, BAFFLES activity, EAGLES, or Isochrones to compute a joint age';
+    document.getElementById('summary-joint-ci').innerText = 'Run at least two of gyro-interp, BAFFLES activity, EAGLES, or Isochrones/MADYS to compute a joint age';
     document.getElementById('td-joint-age').innerText = '-';
     document.getElementById('td-joint-ci').innerText = '-';
     document.getElementById('td-joint-status').innerHTML =
@@ -281,6 +299,10 @@ export function setupSummaryActions() {
         isochrone: {
           age: isochroneResult.median, ci: isochroneResult.ci, status: isochroneResult.status,
           broad: isochroneResult.broad,
+        },
+        madysAge: {
+          age: state.results.madysAge.median, ci: state.results.madysAge.ci, status: state.results.madysAge.status,
+          model: state.results.madysAge.model,
         },
         joint: { age: jointResult.median, ci: jointResult.ci, status: jointResult.status },
         // Base64 plot images are intentionally omitted here -- this is a

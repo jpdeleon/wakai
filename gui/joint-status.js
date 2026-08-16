@@ -56,6 +56,7 @@ export function recomputeJointStatus() {
   // Excludes a weakly-constrained (broad) isochrone posterior, same as
   // updateSummaryPage's joint product -- see ISOCHRONE_BROAD_DEX.
   const isIsochroneUsable = isIsochroneRun && !state.results.isochrone.broad;
+  const isMadysAgeRun = state.results.madysAge.status === 'Calculated';
 
   // BAFFLES and EAGLES are BOTH lithium-EW age estimates, so multiplying
   // both posteriors would double-count the lithium constraint (same
@@ -66,11 +67,22 @@ export function recomputeJointStatus() {
   // independent of lithium. When BAFFLES ran without a usable activity
   // posterior (actPDF null), it contributes nothing here rather than falling
   // back to its combined/lithium PDF and double-counting with EAGLES.
+  //
+  // Same reasoning for isochrone (MIST/isochrones2) vs. madysAge (PARSEC2 or
+  // MIST via MADYS): both fit the same photometry+parallax observable
+  // through a different stellar-model grid, so multiplying both in would
+  // double-count that one observable rather than combining two independent
+  // measurements. isochrone's full MCMC (joint sampling of mass/age/Fe-H/
+  // distance/AV) takes priority when usable; madysAge only contributes when
+  // isochrone didn't run, or was excluded as too broad (ISOCHRONE_BROAD_DEX).
+  const isMadysAgeUsable = isMadysAgeRun && !isIsochroneUsable;
+
   const pdfs = [];
   if (isGyroRun) pdfs.push(state.results.gyro.agePDF);
   if (isBafflesRun && state.results.baffles.actPDF) pdfs.push(state.results.baffles.actPDF);
   if (isEaglesRun) pdfs.push(state.results.eagles.agePDF);
   if (isIsochroneUsable) pdfs.push(state.results.isochrone.agePDF);
+  else if (isMadysAgeUsable) pdfs.push(state.results.madysAge.agePDF);
 
   if (pdfs.length < 2) {
     state.results.joint = { ...defaultResults().joint, status: 'Idle' };
@@ -102,6 +114,7 @@ export function updateWorkflowStrip() {
     ['workspace-baffles-stage', state.results.baffles?.status],
     ['workspace-eagles-stage', state.results.eagles?.status],
     ['workspace-isochrones-stage', state.results.isochrone?.status],
+    ['workspace-madys-age-stage', state.results.madysAge?.status],
     ['workspace-joint-stage', state.results.joint?.status],
   ];
   mappings.forEach(([id, status]) => {

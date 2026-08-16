@@ -24,6 +24,8 @@
   --cluster-soft: #e6f0f5;
   --isochrone: #a6740a;
   --isochrone-soft: #f6efe0;
+  --madys: #7c3aed;
+  --madys-soft: #f1eafd;
   --danger: #ad3d3d;
   --danger-soft: #faecec;
   --shadow: 0 1px 2px rgba(22, 33, 43, 0.04), 0 8px 24px rgba(22, 33, 43, 0.04);
@@ -327,6 +329,10 @@ h2 { font: 600 26px/1.15 var(--font-display); }
 .btn-isochrone:hover:not(:disabled) { background: #855d08; }
 .card-eyebrow.isochrone { color: var(--isochrone); }
 .card-title.isochrone { color: var(--isochrone); }
+.btn-madys { background: var(--madys); color: white; }
+.btn-madys:hover:not(:disabled) { background: #6829d1; }
+.card-eyebrow.madys { color: var(--madys); }
+.card-title.madys { color: var(--madys); }
 
 /* Cluster membership verdict banner */
 .verdict {

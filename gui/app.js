@@ -20,6 +20,7 @@ import { setupGyroModelOverlay } from './gyro.js';
 import { setupEaglesPageControls, setupEaglesModelOverlay } from './eagles.js';
 import { setupClusterPageControls } from './cluster.js';
 import { setupIsochronesPageControls } from './isochrones.js';
+import { setupMadysAgePageControls } from './madys-age.js';
 import { setupSummaryActions } from './summary.js';
 
 async function loadSavedTargetIndex() {
@@ -47,6 +48,7 @@ async function initApp() {
   setupEaglesModelOverlay();
   setupClusterPageControls();
   setupIsochronesPageControls();
+  setupMadysAgePageControls();
   setupSummaryActions();
   // Awaited (unlike everything else above) because applyRoute needs
   // state.savedTargets populated to try the local-cache path first -- see
