@@ -19,8 +19,56 @@ export const state = {
   results: defaultResults(),
 };
 
-// Shared display grid. Model PDFs are zero-padded outside their native support.
-export const ageGrid = [1, ...Array.from({ length: 2600 }, (_, i) => (i + 1) * 5)];
+// Shared display grid. Model PDFs are zero-padded outside their native
+// support (see interpolatePDF in posterior.js). Built as the union of two
+// component grids, each matched to a different method's tightest
+// resolution requirement, rather than one scheme approximating both. Only
+// BAFFLES's grid is an intrinsic package property here; gyro-interp is
+// grid-agnostic (it evaluates at whatever ages it's asked for), so its
+// "native step" below is really the grid run_gyro.py requests from it,
+// not something read off gyro-interp itself:
+//  - a log-spaced grid over the full 1-13000 Myr range, at BAFFLES's own
+//    native step (0.0041 dex, its 1000-point AGE grid -- an intrinsic
+//    package property, and the tightest of BAFFLES/EAGLES, both natively
+//    log-spaced; isochrones' own grid is likewise not a package property
+//    -- run_isochrones.py bins raw MCMC age samples into a log-spaced
+//    histogram it defines itself -- but at a comparable resolution, so it
+//    doesn't change which requirement is tightest);
+//  - a linear grid over 1-2600 Myr, at the step run_gyro.py requests from
+//    gyro-interp (2600/499 Myr -- 2600 is gyro-interp's calibration
+//    ceiling per Bouma+2023; its calibration *floor*,
+//    GYRO_CALIBRATION_FLOOR_MYR in summary.js, is a reliability caveat on
+//    the result -- Bouma+2023: below 80 Myr the model doesn't extrapolate,
+//    it just returns a uniform posterior -- not a bound on the grid this
+//    method actually computes over -- run_gyro.py's own request grid runs
+//    the full 0-2600 Myr).
+// A log grid alone would under-resolve the gyro-interp query above ~800
+// Myr, where its ~5.2 Myr step becomes finer than a log grid's widening
+// dex step; a linear grid alone would need ~2500 points just to match
+// BAFFLES's step down at 1 Myr. The union meets every method's own
+// resolution requirement across its own valid range at the same total
+// cost (1500 points) as the log-only grid this replaced -- see README.md's
+// age-grid table.
+const AGE_GRID_MIN_MYR = 1;
+const AGE_GRID_MAX_MYR = 13000;
+const GYRO_GRID_CEILING_MYR = 2600;
+const AGE_GRID_LOG_STEP_DEX = 0.0041139; // BAFFLES's own native step
+const AGE_GRID_GYRO_STEP_MYR = 5.2104; // the step run_gyro.py requests from gyro-interp
+
+function logGrid(min, max, stepDex) {
+  const n = Math.round(Math.log10(max / min) / stepDex) + 1;
+  return Array.from({ length: n }, (_, i) => min * (max / min) ** (i / (n - 1)));
+}
+
+function linearGrid(min, max, step) {
+  const n = Math.round((max - min) / step) + 1;
+  return Array.from({ length: n }, (_, i) => min + (i * (max - min)) / (n - 1));
+}
+
+export const ageGrid = Array.from(new Set([
+  ...logGrid(AGE_GRID_MIN_MYR, AGE_GRID_MAX_MYR, AGE_GRID_LOG_STEP_DEX),
+  ...linearGrid(AGE_GRID_MIN_MYR, GYRO_GRID_CEILING_MYR, AGE_GRID_GYRO_STEP_MYR),
+])).sort((a, b) => a - b);
 
 // Real gyrointerp slow-sequence isochrones (Bouma+2023), fetched once from
 // GET /api/gyro/slow-sequence and reused for every target -- this reference

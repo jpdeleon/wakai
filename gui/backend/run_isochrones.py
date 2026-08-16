@@ -42,10 +42,12 @@ emcee.EnsembleSampler.lnprobability = property(lambda self: self.get_log_prob(fl
 from isochrones import get_ichrone, SingleStarModel  # noqa: E402
 from isochrones.priors import FlatPrior  # noqa: E402
 
-# Matches the shared client-side age grid's upper bound (gui/app.js
-# ageGrid / BAFFLES's own AGE grid) and log-spacing (age posteriors are
-# naturally log-normal-ish; linear bins would be far too coarse at young
-# ages and needlessly fine at old ages).
+# Matches the range and log-spacing of the shared client-side age grid
+# (gui/state.js ageGrid, 1500 points) and BAFFLES's own AGE grid (1000
+# points). Log-spaced because age posteriors are naturally log-normal-ish
+# and linear bins would be far too coarse at young ages and needlessly fine
+# at old ages -- see README.md's age-grid table for the full comparison
+# across all four methods.
 AGE_GRID_MIN_MYR, AGE_GRID_MAX_MYR, N_AGE_BINS = 1, 13000, 300
 
 # isochrones' own defaults for StarModel.fit_mcmc_old (nwalkers=50,

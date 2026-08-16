@@ -36,6 +36,49 @@ automatically and restored by Gaia ID on the next load. SQLite retains the
 full floating-point values, while the GUI displays up to ten significant
 figures and accepts unrestricted decimal precision in numeric inputs.
 
+Each age-dating method's posterior is defined over some age grid, and the
+GUI resamples every method's PDF onto one shared grid (`ageGrid` in
+`gui/state.js`) before combining them into the joint posterior. Only
+BAFFLES's and EAGLES's grids are an intrinsic property of those packages
+(a constant and a function default, respectively); gyro-interp is
+grid-agnostic (it evaluates at whatever ages it's asked for), and
+isochrones' MCMC fit returns raw age samples with no grid at all, so for
+both of those the "grid" below is wakai's own choice -- a query grid for
+gyro-interp (`run_gyro.py`), a histogram binning for isochrones
+(`run_isochrones.py`) -- not something read off the package itself:
+
+| Method | Grid (native, or wakai's own choice) | Points | Range (Myr) |
+|---|---|---|---|
+| gyro-interp | linear, ~5.2 Myr steps -- wakai's query grid, not a gyro-interp property | 500 | 0–2600 |
+| BAFFLES | log-spaced, ~0.1 Myr steps @10 Myr → ~124 Myr steps @13000 Myr -- native (`baffles_ca.const.AGE`) | 1000 | 1–13000 |
+| EAGLES | log-spaced, ~0.12 Myr steps @10 Myr → ~145 Myr steps @12589 Myr -- native (`get_li_age_v2`'s own defaults) | 821 | 1–12589 |
+| isochrones | log-spaced, ~0.32 Myr steps @10 Myr → ~124 Myr steps @13000 Myr -- wakai's histogram binning of raw MCMC samples | 300 bins | 1–13000 |
+| **shared client grid** | union of two grids (below) | 1500 | 1–13000 |
+| — log component | log-spaced, ~0.06 Myr steps @10 Myr → ~82 Myr steps @13000 Myr, matching BAFFLES's own step | 1001 | 1–13000 |
+| — linear component | linear, ~5.2 Myr steps, matching the step `run_gyro.py` requests from gyro-interp | 500 | 1–2600 |
+
+The shared grid is the **union** of two component grids, not one scheme
+approximating both regimes: a log-spaced grid over the full range (constant
+relative/dex resolution, matching BAFFLES/EAGLES's own log-spaced grids and
+isochrones' comparably-spaced histogram binning, sized to resolve at least
+as finely as BAFFLES's own step, the tightest of the three) merged with a
+linear grid over 1–2600 Myr matching the step `run_gyro.py` requests from
+gyro-interp. A log grid alone would under-resolve that gyro-interp query
+above ~800 Myr, where its ~5.2 Myr step becomes finer than a log grid's
+widening dex step; a linear grid alone would need ~2500 points just to
+match BAFFLES's step down at 1 Myr. The union meets every method's own
+resolution requirement across its own valid range (gyro-interp's
+calibration *ceiling* is 2600 Myr, per Bouma+2023; its calibration
+*floor*, ~80 Myr, is a reliability caveat on the result -- see
+`GYRO_CALIBRATION_FLOOR_MYR` in `gui/summary.js`, and Bouma+2023's note
+that below 80 Myr the model doesn't extrapolate, it just returns a uniform
+posterior -- not a bound on the grid `run_gyro.py` actually requests, which
+runs the full 0-2600 Myr) at the same total cost, 1500 points, as a
+log-only grid. Because the log component concentrates points where the
+dex-range is largest, roughly 70% of the shared grid's points fall within
+1–1000 Myr -- the range that matters most for typical (young to
+intermediate-age) transiting-planet hosts.
+
 * module: cluster (or kinematics?)
  - method: match_cluster
    Given a Gaia DR2 or Gaia DR3 ID, the star is matched with Perren+2023 catalog members to check which cluster the target belongs to.

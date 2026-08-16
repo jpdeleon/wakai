@@ -3,7 +3,7 @@
  * properties, reported literature ages, and export/print actions.
  */
 import { state, ageGrid } from './state.js';
-import { escapeHtml, safeSourceUrl, formatSignificant, showToast } from './dom-utils.js';
+import { escapeHtml, safeSourceUrl, formatSignificant, referenceLabel, showToast } from './dom-utils.js';
 import { getStatsFromPDF, recomputeJointStatus, updateWorkflowStrip } from './joint-status.js';
 import { saveTargetState } from './target.js';
 
@@ -207,7 +207,7 @@ export function updatePropertiesSummary() {
     item.style.borderBottom = '1px solid rgba(0,0,0,0.06)';
     item.innerHTML = `
       <span style="color: var(--text-secondary);">${escapeHtml(row.parameter)}:</span>
-      <span style="font-family: var(--font-mono);">${escapeHtml(formatSignificant(row.value, 10) || '—')} ± ${escapeHtml(formatSignificant(row.uncertainty, 8) || '—')} <span style="font-size: 0.75rem; color: var(--text-muted);">(${escapeHtml(row.reference)})</span></span>
+      <span style="font-family: var(--font-mono);">${escapeHtml(formatSignificant(row.value, 10) || '—')} ± ${escapeHtml(formatSignificant(row.uncertainty, 8) || '—')} <span style="font-size: 0.75rem; color: var(--text-muted);">(${escapeHtml(referenceLabel(row))})</span></span>
     `;
     container.appendChild(item);
   });
@@ -235,11 +235,12 @@ export function renderReportedAges() {
     const range = row.uncertainty != null && Number.isFinite(Number(row.uncertainty))
       ? `± ${formatSignificant(row.uncertainty, 6)}`
       : '-';
-    const hasReference = row.reference && row.reference !== 'No catalog measurement selected';
+    const label = referenceLabel(row);
+    const hasReference = label && label !== 'No catalog measurement selected';
     const sourceUrl = safeSourceUrl(row.source_url);
     const referenceHtml = sourceUrl
-      ? `<a class="catalog-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(hasReference ? row.reference : 'Source')} ↗</a>`
-      : escapeHtml(hasReference ? row.reference : 'No reference given');
+      ? `<a class="catalog-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(hasReference ? label : 'Source')} ↗</a>`
+      : escapeHtml(hasReference ? label : 'No reference given');
 
     const tr = document.createElement('tr');
     tr.innerHTML = `

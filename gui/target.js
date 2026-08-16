@@ -7,7 +7,7 @@ import {
   gyroSlowSequenceCache, setGyroSlowSequenceCache,
   eaglesModelsCache, setEaglesModelsCache,
 } from './state.js';
-import { escapeHtml, safeSourceUrl, formatSignificant, showToast } from './dom-utils.js';
+import { escapeHtml, safeSourceUrl, formatSignificant, referenceLabel, showToast } from './dom-utils.js';
 import { apiCall, apiGet } from './api.js';
 import { updateWorkflowStrip, invalidateMethod } from './joint-status.js';
 import { updateUrl } from './routing.js';
@@ -633,7 +633,7 @@ export function renderRefTable() {
       <td><strong>${escapeHtml(row.parameter)}</strong></td>
       <td><input type="number" class="table-input table-input-mono" value="${escapeHtml(formatSignificant(row.value, 10))}" step="any" data-field="value" data-index="${index}"></td>
       <td><input type="number" class="table-input table-input-mono" value="${escapeHtml(formatSignificant(row.uncertainty, 8))}" min="0" step="any" data-field="uncertainty" data-index="${index}"></td>
-      <td><input type="text" class="table-input" value="${escapeHtml(row.reference)}" data-field="reference" data-index="${index}"></td>
+      <td><input type="text" class="table-input" value="${escapeHtml(referenceLabel(row))}" data-field="reference" data-index="${index}"></td>
       <td><input type="text" class="table-input" value="${escapeHtml(row.catalog)}" data-field="catalog" data-index="${index}"></td>
       <td>${sourceUrl ? `<a class="catalog-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : '<span class="source-missing">—</span>'}</td>
       <td style="text-align: center;">
