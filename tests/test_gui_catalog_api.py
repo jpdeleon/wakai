@@ -15,7 +15,7 @@ class GuiCatalogApiTests(unittest.TestCase):
     def tearDown(self):
         self.tempdir.cleanup()
 
-    @patch("gui.backend.server.query_vizier_reference")
+    @patch("routes_query.query_vizier_reference")
     def test_vizier_endpoint_returns_reference_candidates(self, query_reference):
         query_reference.return_value = {
             "ref_table": [{"parameter": "Teff", "value": 5772, "id": "teff"}],
@@ -35,7 +35,7 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertEqual(response.get_json()["candidates"][0]["value"], 5772)
         query_reference.assert_called_once()
 
-    @patch("gui.backend.server.simbad_target_payload")
+    @patch("routes_query.simbad_target_payload")
     def test_simbad_endpoint_returns_resolved_target(self, resolve):
         resolve.return_value = {
             "name": "HD 1",
@@ -60,7 +60,7 @@ class GuiCatalogApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    @patch("gui.backend.server._gaia_tap_query")
+    @patch("gaia_client._gaia_tap_query")
     def test_gaia_endpoint_preserves_catalog_precision(self, tap_query):
         # query_gaia issues two ADQL queries: the astrometry/Teff SELECT
         # (source_id, ra, dec, parallax, parallax_error, pmra, pmra_error,
@@ -167,7 +167,7 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertIn('id="ref-table-card" hidden', html)
         self.assertNotIn("preloadedTargets", javascript)
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_gyro_endpoint_returns_real_wrapper_posterior(self, run_wrapper):
         run_wrapper.return_value = {
             "status": "ok",
@@ -190,7 +190,7 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertIn("outside the range", response.get_json()["message"])
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_baffles_endpoint_derives_bv_then_runs_model(self, run_wrapper):
         run_wrapper.side_effect = [
             {"status": "ok", "bv": 0.7, "bv_err": 0.03},
@@ -222,7 +222,7 @@ class GuiCatalogApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_isochrones_endpoint_forwards_checked_inputs_only(self, run_wrapper):
         # Mirrors what the frontend now sends: photometry/parallax read
         # straight from ref_table (not re-fetched by gaiaid), plus whichever
@@ -242,7 +242,7 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertNotIn("teff", sent)
         self.assertNotIn("feh", sent)
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_isochrones_endpoint_forwards_prior_bounds(self, run_wrapper):
         run_wrapper.return_value = {"status": "ok", "median": 500, "used_inputs": {}}
 
@@ -273,7 +273,7 @@ class GuiCatalogApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_madys_cmd_endpoint_forwards_cluster_name_and_models(self, run_wrapper):
         run_wrapper.return_value = {"status": "ok", "plots": {"mist": "data:image/png;base64,AAA"}, "n_members": 42}
 
@@ -298,7 +298,7 @@ class GuiCatalogApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_madys_cmd_endpoint_cluster_name_is_optional(self, run_wrapper):
         run_wrapper.return_value = {"status": "ok", "plot": "data:image/png;base64,AAA", "n_members": 0}
 
@@ -308,7 +308,7 @@ class GuiCatalogApiTests(unittest.TestCase):
         sent = run_wrapper.call_args.args[2]
         self.assertIsNone(sent["cluster_name"])
 
-    @patch("gui.backend.server._run_wrapper")
+    @patch("routes_run._run_wrapper")
     def test_madys_cmd_endpoint_forwards_name_and_plot_selections(self, run_wrapper):
         run_wrapper.return_value = {"status": "ok", "plot": "data:image/png;base64,AAA", "n_members": 0}
 
@@ -324,6 +324,84 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertEqual(sent["name"], "TOI-6715")
         self.assertEqual(sent["plot_ages"], [10, 30])
         self.assertEqual(sent["plot_masses"], [])
+
+    @patch("routes_run._run_wrapper")
+    def test_eagles_endpoint_returns_wrapper_posterior(self, run_wrapper):
+        # EAGLES needs no (B-V)o derivation -- Teff + Li EW straight from
+        # ref_table. The route defaults `model` to the "ml" ANN relation.
+        run_wrapper.return_value = {
+            "status": "ok",
+            "age_grid": [100, 200, 300],
+            "pdf": [0.1, 0.8, 0.1],
+            "median_myr": 288.4,
+            "peak_myr": 251.2,
+            "model": "ml",
+            "iso": {"teff": [5000.0], "ew": [100.0], "eew": [5.0]},
+        }
+
+        response = self.client.post("/api/run/eagles", json={
+            "teff": 5482.4, "teff_err": 100, "liew": 108.1, "liew_err": 50,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["median_myr"], 288.4)
+        sent = run_wrapper.call_args.args[2]
+        self.assertEqual(sent["teff"], 5482.4)
+        self.assertEqual(sent["liew"], 108.1)
+        self.assertEqual(sent["model"], "ml")
+
+    @patch("routes_run._run_wrapper")
+    def test_eagles_endpoint_forwards_analytic_model_choice(self, run_wrapper):
+        run_wrapper.return_value = {"status": "ok", "age_grid": [100, 200], "pdf": [0.5, 0.5]}
+
+        response = self.client.post("/api/run/eagles", json={
+            "teff": 5200, "liew": 120, "model": "analytic",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        sent = run_wrapper.call_args.args[2]
+        self.assertEqual(sent["model"], "analytic")
+        self.assertEqual(sent["teff_err"], None)
+
+    def test_eagles_endpoint_rejects_uncalibrated_temperature(self):
+        response = self.client.post("/api/run/eagles", json={"teff": 7000, "liew": 100})
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("outside the range", response.get_json()["message"])
+
+    def test_eagles_endpoint_requires_liew(self):
+        response = self.client.post("/api/run/eagles", json={"teff": 5200})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("liew", response.get_json()["message"])
+
+    def test_eagles_endpoint_rejects_out_of_range_liew(self):
+        response = self.client.post("/api/run/eagles", json={
+            "teff": 5200, "liew": 950, "liew_err": 100,
+        })
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("outside a sensible range", response.get_json()["message"])
+
+    def test_eagles_endpoint_rejects_unknown_model(self):
+        response = self.client.post("/api/run/eagles", json={
+            "teff": 5200, "liew": 100, "model": "nope",
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("model must be", response.get_json()["message"])
+
+    def test_index_has_eagles_page_nav_and_workflow_stage(self):
+        project_root = Path(__file__).resolve().parents[1]
+        html = (project_root / "gui" / "index.html").read_text()
+
+        self.assertIn('data-page="eagles"', html)
+        self.assertIn('id="page-eagles"', html)
+        self.assertIn('id="workspace-eagles-stage"', html)
+        self.assertIn('id="btn-run-eagles"', html)
+        self.assertIn('id="plot-eagles-posterior"', html)
+        self.assertIn('id="td-eagles-status"', html)
+        self.assertIn('id="status-eagles-dot"', html)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,8 @@
   --gyro-soft: #eeedf8;
   --baffles: #a85331;
   --baffles-soft: #f8eee9;
+  --eagles: #0e7490;
+  --eagles-soft: #e3f2f7;
   --joint: #20735e;
   --joint-soft: #e8f3ef;
   --cluster: #2f6f8f;
@@ -183,6 +185,7 @@ header {
 .card-eyebrow { margin-bottom: 4px; }
 .card-eyebrow.gyro { color: var(--gyro); }
 .card-eyebrow.baffles { color: var(--baffles); }
+.card-eyebrow.eagles { color: var(--eagles); }
 .card-eyebrow.joint { color: var(--joint); }
 .card-title {
   margin-bottom: 18px;
@@ -295,6 +298,8 @@ h2 { font: 600 26px/1.15 var(--font-display); }
 .btn-gyro:hover:not(:disabled) { background: #4b468e; }
 .btn-baffles { background: var(--baffles); color: white; }
 .btn-baffles:hover:not(:disabled) { background: #91472b; }
+.btn-eagles { background: var(--eagles); color: white; }
+.btn-eagles:hover:not(:disabled) { background: #0b5d74; }
 .btn-cluster { background: var(--cluster); color: white; }
 .btn-cluster:hover:not(:disabled) { background: #275c77; }
 .card-eyebrow.cluster { color: var(--cluster); }

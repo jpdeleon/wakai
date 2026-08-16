@@ -176,10 +176,15 @@ def query_vizier_reference(star: Star, parameter=None, radius=3):
     available = star.query_vizier_param(param=None, radius=radius)
 
     if parameter:
+        # The search box matches column names by substring with optional
+        # `*` wildcards ("log" and "log*" both match logg/logTe/...). Escape
+        # the input so regex metacharacters can't raise, then re-enable the
+        # wildcard before handing it to query_vizier_param(use_regex=True).
+        escaped = re.escape(parameter).replace(r"\*", ".*")
         records = star.query_vizier_param(
-            param=parameter,
+            param=escaped,
             radius=radius,
-            use_regex=False,
+            use_regex=True,
             detailed=True,
         )
         parameter_id = re.sub(r"[^a-z0-9]+", "", parameter.lower())

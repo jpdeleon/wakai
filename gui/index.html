@@ -25,6 +25,7 @@
           <li><a class="nav-item active" data-page="target" href="/target">Target</a></li>
           <li><a class="nav-item" data-page="gyro" href="/gyro-interp">gyro-interp</a></li>
           <li><a class="nav-item" data-page="baffles" href="/baffles">BAFFLES</a></li>
+          <li><a class="nav-item" data-page="eagles" href="/eagles">EAGLES</a></li>
           <li><a class="nav-item" data-page="cluster" href="/cluster">Cluster</a></li>
           <li><a class="nav-item" data-page="isochrones" href="/isochrones">Isochrones</a></li>
           <li><a class="nav-item" data-page="summary" href="/summary">Summary</a></li>
@@ -41,6 +42,10 @@
         <span class="workflow-stage" id="workspace-gyro-stage"><i></i>Rotation</span>
         <span class="workflow-connector"></span>
         <span class="workflow-stage" id="workspace-baffles-stage"><i></i>Lithium + activity</span>
+        <span class="workflow-connector"></span>
+        <span class="workflow-stage" id="workspace-eagles-stage"><i></i>Lithium (EAGLES)</span>
+        <span class="workflow-connector"></span>
+        <span class="workflow-stage" id="workspace-isochrones-stage"><i></i>Isochrones</span>
         <span class="workflow-connector"></span>
         <span class="workflow-stage" id="workspace-joint-stage"><i></i>Joint age</span>
       </div>
@@ -136,25 +141,9 @@
               <button class="btn btn-secondary style-button" id="btn-query-target" style="width: 100%;">Query Catalog Services</button>
 
               <div class="meta-grid" style="margin-top: 1.5rem;">
-                <div class="meta-item">
-                  <div class="meta-label">Gaia DR3 ID</div>
-                  <div class="meta-value" id="meta-gaiaid">-</div>
-                </div>
-                <div class="meta-item">
-                  <div class="meta-label">RA (deg)</div>
-                  <div class="meta-value" id="meta-ra">-</div>
-                </div>
-                <div class="meta-item">
-                  <div class="meta-label">Dec (deg)</div>
-                  <div class="meta-value" id="meta-dec">-</div>
-                </div>
-                <div class="meta-item">
-                  <div class="meta-label">Parallax (mas)</div>
-                  <div class="meta-value" id="meta-parallax">-</div>
-                </div>
-                <div class="meta-item">
-                  <div class="meta-label">RV (km/s)</div>
-                  <div class="meta-value" id="meta-rv">-</div>
+                <div class="meta-item" style="grid-column: 1 / -1;">
+                  <div class="meta-label">Aliases</div>
+                  <div class="meta-value" id="meta-aliases">-</div>
                 </div>
               </div>
             </div>
@@ -175,6 +164,10 @@
                   <div class="dot dot-inactive" id="status-baffles-dot"></div>
                   <span>BAFFLES: <strong id="status-baffles-text">Idle</strong></span>
                 </div>
+                <div class="status-indicator">
+                  <div class="dot dot-inactive" id="status-eagles-dot"></div>
+                  <span>EAGLES: <strong id="status-eagles-text">Idle</strong></span>
+                </div>
               </div>
             </div>
           </div>
@@ -188,6 +181,12 @@
             <div class="card">
               <div class="card-eyebrow gyro">Inputs</div>
               <div class="card-title">Rotation parameters</div>
+              <p style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink-faint);">
+                gyro-interp ages the star from its rotation period and effective
+                temperature, interpolating the observed rotation period against the
+                Bouma et al. (2023) empirical rotation-age sequences and propagating
+                the measurement uncertainties via MCMC sampling.
+              </p>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.5rem;" id="gyro-input-params">
                 <div class="meta-item">
                   <div class="meta-label">Teff (K)</div>
@@ -271,10 +270,20 @@
             <div class="card">
               <div class="card-eyebrow baffles">Inputs</div>
               <div class="card-title">Activity & lithium</div>
+              <p style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink-faint);">
+                BAFFLES (Bouma et al. 2023) derives age posteriors from lithium
+                depletion (Li EW) and chromospheric activity (Ca II log R'HK),
+                simulating both indicators with the target's measurement
+                uncertainties and combining them into a joint BAFFLES age.
+              </p>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.5rem;" id="baffles-input-params">
                 <div class="meta-item">
                   <div class="meta-label">Teff (K)</div>
                   <div class="meta-value" id="baffles-in-teff">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">(B-V)<sub>o</sub> (derived from Teff)</div>
+                  <div class="meta-value" id="baffles-in-bv">-</div>
                 </div>
                 <div class="meta-item">
                   <div class="meta-label">log R'HK</div>
@@ -283,10 +292,6 @@
                 <div class="meta-item">
                   <div class="meta-label">Li EW (mÅ)</div>
                   <div class="meta-value" id="baffles-in-liew">-</div>
-                </div>
-                <div class="meta-item">
-                  <div class="meta-label">Fe/H</div>
-                  <div class="meta-value" id="baffles-in-feh">-</div>
                 </div>
               </div>
               <button class="btn btn-baffles" id="btn-run-baffles" style="width: 100%; margin-top: 0.75rem;">Run BAFFLES</button>
@@ -336,6 +341,85 @@
                 <div class="card-eyebrow">Posterior</div>
                 <div class="card-title">Combined BAFFLES distribution</div>
                 <div id="plot-baffles-posterior" class="plotly-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 3C: EAGLES ================= -->
+      <section id="page-eagles" class="page">
+        <div class="grid-side-main">
+          <div>
+            <div class="card">
+              <div class="card-eyebrow eagles">Inputs</div>
+              <div class="card-title">Lithium EW age model</div>
+              <p style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink-faint);">
+                EAGLES v2 (Jeffries+2023, Weaver+2024) ages the star from its Li I 6708Å EW
+                as a function of Teff. The machine-learning model reproduces the v2
+                probability distributions exactly; the analytical model is the faster
+                empirical relation from v2. Both need only Teff and Li EW from the
+                reference table.
+              </p>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.5rem;" id="eagles-input-params">
+                <div class="meta-item">
+                  <div class="meta-label">Teff (K)</div>
+                  <div class="meta-value" id="eagles-in-teff">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Li EW (mÅ)</div>
+                  <div class="meta-value" id="eagles-in-liew">-</div>
+                </div>
+              </div>
+              <div class="meta-item" style="margin-top: 0.5rem;">
+                <div class="meta-label">Model</div>
+                <select id="eagles-model-select" class="input-control">
+                  <option value="ml">Machine learning (Weaver+2024)</option>
+                  <option value="analytic">Analytical (Jeffries+2023)</option>
+                </select>
+              </div>
+              <button class="btn btn-eagles" id="btn-run-eagles" style="width: 100%; margin-top: 0.75rem;">Run EAGLES</button>
+            </div>
+            <div class="card" id="eagles-summary-card" style="display: none;">
+              <div class="card-eyebrow eagles">Result</div>
+              <div class="card-title">EAGLES age</div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Median Age</div>
+                  <div class="meta-value" id="eagles-res-median" style="color: var(--color-eagles); font-size: 1.3rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Peak Age</div>
+                  <div class="meta-value" id="eagles-res-peak" style="color: var(--color-eagles); font-size: 1.15rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Model</div>
+                  <div class="meta-value" id="eagles-res-model" style="font-size: 0.85rem;">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visualization / Outputs -->
+          <div>
+            <!-- Progress Animation Container -->
+            <div class="card loader-container" id="eagles-loader">
+              <div class="orbital-spinner" style="border-top-color: var(--color-eagles);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running EAGLES model...</h3>
+              <p>Evaluating the Li EW - age relation at the target's Teff</p>
+            </div>
+
+            <!-- Plot Panels -->
+            <div id="eagles-results-panel" style="display: none;">
+              <div class="card">
+                <div class="card-eyebrow">Model diagnostic</div>
+                <div class="card-title">Best-fit Li EW - Teff isochrone</div>
+                <div id="plot-eagles-iso" class="plotly-chart"></div>
+              </div>
+              <div class="card">
+                <div class="card-eyebrow">Posterior</div>
+                <div class="card-title">EAGLES age distribution</div>
+                <div id="plot-eagles-posterior" class="plotly-chart"></div>
               </div>
             </div>
           </div>
@@ -706,7 +790,7 @@
               <div class="card-eyebrow joint">Synthesis</div>
               <div class="card-title">Age posterior comparison</div>
               <p style="margin-bottom: 1.25rem;">
-                The joint posterior is the normalized product of the two model PDFs on a shared age grid, assuming statistical independence.
+                The joint posterior is the normalized product of the method PDFs on a shared age grid, assuming statistical independence between methods. Because BAFFLES and EAGLES both age the star from lithium depletion, the joint combines at most one lithium-based posterior (EAGLES) and BAFFLES contributes only its chromospheric-activity component, so the lithium constraint is not double-counted.
               </p>
               <div id="plot-summary-comparison" class="plotly-chart" style="height: 440px;"></div>
             </div>
@@ -765,6 +849,12 @@
                       <td id="td-baffles-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Emp. Idle</span></td>
                     </tr>
                     <tr>
+                      <td><strong>EAGLES</strong></td>
+                      <td id="td-eagles-age">-</td>
+                      <td id="td-eagles-ci">-</td>
+                      <td id="td-eagles-status"><span class="status-indicator"><div class="dot dot-inactive"></div>Idle</span></td>
+                    </tr>
+                    <tr>
                       <td><strong>Isochrones</strong></td>
                       <td id="td-isochrone-age">-</td>
                       <td id="td-isochrone-ci">-</td>
@@ -810,7 +900,7 @@
   <!-- Toast Notification Popup -->
   <div class="toast-msg" id="toast">Changes applied successfully.</div>
 
-  <!-- App logic script -->
-  <script src="/app.js"></script>
+  <!-- App logic script (ES module: imports the split state/api/routing/page modules) -->
+  <script type="module" src="/app.js"></script>
 </body>
 </html>
