@@ -20,6 +20,7 @@ GYRO_ENV_PYTHON = f"{EXT_TOOLS_DIR}/gyro-interp/.venv/bin/python"
 BAFFLES_ENV_PYTHON = f"{EXT_TOOLS_DIR}/BAFFLES/.venv/bin/python"
 ISOCHRONES_ENV_PYTHON = f"{EXT_TOOLS_DIR}/isochrones2/.venv/bin/python"
 EAGLES_ENV_PYTHON = f"{EXT_TOOLS_DIR}/eagles/.venv/bin/python"
+EVA_ENV_PYTHON = f"{EXT_TOOLS_DIR}/EVA2/.venv/bin/python"
 WAKAI_ENV_PYTHON = "/ut3/jerome/miniconda3/envs/wakai/bin/python"
 # madys is a conda env (not a repo-local .venv under ext_tools), same as
 # WAKAI_ENV_PYTHON above.
@@ -31,6 +32,7 @@ BAFFLES_WRAPPER = os.path.join(BACKEND_DIR, "run_baffles.py")
 BV_LOOKUP_WRAPPER = os.path.join(BACKEND_DIR, "run_bv_lookup.py")
 EAGLES_WRAPPER = os.path.join(BACKEND_DIR, "run_eagles.py")
 EAGLES_MODELS_WRAPPER = os.path.join(BACKEND_DIR, "run_eagles_models.py")
+EVA_WRAPPER = os.path.join(BACKEND_DIR, "run_eva.py")
 CLUSTER_WRAPPER = os.path.join(BACKEND_DIR, "run_cluster.py")
 CLUSTER_NAMES_WRAPPER = os.path.join(BACKEND_DIR, "run_cluster_names.py")
 ISOCHRONES_WRAPPER = os.path.join(BACKEND_DIR, "run_isochrones.py")
@@ -64,6 +66,14 @@ EAGLES_TIMEOUT_SECONDS = 300
 # -- cheap, but the ML model reads the ~295k-row grid once, so keep headroom.
 EAGLES_MODELS_TIMEOUT_SECONDS = 60
 
+# EVA's Monte Carlo age draw (var90Age's 50000-iteration loop per band, see
+# run_eva.py) costs the same regardless of group size -- timed locally at
+# ~15-25s for a ~60-300 star group, most of that the batched Gaia TAP query.
+# EVA needs at least this many comoving group members for a meaningful
+# varX90 percentile (see run_eva.py's MIN_GROUP_MEMBERS).
+EVA_TIMEOUT_SECONDS = 120
+EVA_MIN_MEMBERS = 5
+
 # Scanning the Perren+2023 member list (~1M rows) can take a few seconds even
 # with predicate pushdown, so allow more headroom than the default.
 CLUSTER_TIMEOUT_SECONDS = 300
@@ -80,11 +90,15 @@ CLUSTER_NAMES_TIMEOUT_SECONDS = 60
 # a full multi-model, full-member-cap run too.
 MADYS_CMD_TIMEOUT_SECONDS = 300
 
-# Same ~30-45s MADYS photometry-fetch overhead as MADYS_CMD_TIMEOUT_SECONDS
-# above, plus get_params() itself -- timed locally at ~3s for n_steps=[400,
-# 500], save_maps=True against real photometry (run_madys_age.py's own
-# N_STEPS/N_TRY). Generous headroom over that combined ~40-50s in practice.
-MADYS_AGE_TIMEOUT_SECONDS = 180
+# Unlike MADYS_CMD_TIMEOUT_SECONDS above, this doesn't pay MADYS's own
+# network photometry-fetch cost -- photometry comes from this app's
+# ref_table (mode-2 SampleObject init, see run_madys_age.py's docstring), so
+# both the init and get_params() itself are local: timed locally at <1s
+# init + ~3s fit for n_steps=[400, 500], save_maps=True against real
+# photometry (run_madys_age.py's own N_STEPS/N_TRY). Kept generous anyway --
+# the extinction-map lookup (ext_map="leike") downloads its map file on a
+# cold cache.
+MADYS_AGE_TIMEOUT_SECONDS = 60
 
 # Timed locally against real Gaia+2MASS photometry: the full MCMC run
 # (isochrones' own fit_mcmc_old defaults -- 1700 steps x 50 walkers) takes
@@ -282,6 +296,35 @@ def eagles_models():
     return jsonify(result)
 
 
+@run_bp.route("/api/run/eva", methods=["POST"])
+def run_eva():
+    """Excess Variability-based Age (Barber & Mann 2023) for a group of
+    comoving stars: each member's Gaia photometric excess noise feeds a
+    90th-percentile (varX90) age calibration. Unlike every other /api/run/*
+    route, the input is a *group* of Gaia DR3 ids (typically the target's
+    matched cluster members from /api/run/cluster, or a manually pasted
+    comoving-group list), not one target's ref_table row -- see
+    run_eva.py's docstring.
+    """
+    data = request.get_json(force=True)
+    gaia_ids = data.get("gaia_ids")
+    if not isinstance(gaia_ids, list) or len(gaia_ids) < EVA_MIN_MEMBERS:
+        return jsonify({
+            "status": "error",
+            "message": f"Provide at least {EVA_MIN_MEMBERS} Gaia DR3 ids for the comoving group",
+        }), 400
+
+    payload = {
+        "gaia_ids": gaia_ids,
+        "distance": data.get("distance", True),
+        "plot_band": data.get("plot_band", "G"),
+    }
+    result = _run_wrapper(EVA_ENV_PYTHON, EVA_WRAPPER, payload, timeout=EVA_TIMEOUT_SECONDS)
+    if result.get("status") == "error":
+        return jsonify(result), 500
+    return jsonify(result)
+
+
 @run_bp.route("/api/run/cluster", methods=["POST"])
 def run_cluster():
     """Assess whether a target belongs to a known open cluster.
@@ -441,17 +484,39 @@ def run_madys_age():
     age-fitting method alongside /api/run/isochrones (isochrones2/MIST):
     isochrones2 has no PARSEC support to add a model option to (only a MIST
     ModelGridInterpolator exists in ext_tools/isochrones2), so this calls
-    MADYS directly instead. Unlike /api/run/isochrones, this re-queries its
-    own photometry over the network by Gaia ID (same as /api/run/madys-cmd)
-    rather than reusing this app's ref_table photometry -- MADYS's
-    get_params() has no way to accept externally-supplied photometry.
+    MADYS directly instead. Like /api/run/isochrones, photometry comes from
+    this app's own ref_table (frontend-supplied) rather than a fresh network
+    query -- SampleObject accepts a custom photometry table (its "mode 2"
+    init path) as well as a bare id list, so run_madys_age.py builds one
+    from `photometry`/`parallax`/`parallax_err` instead of re-querying Gaia/
+    2MASS itself (that used to take 30s-2min+ depending on network
+    conditions; see run_madys_age.py's docstring for the mode-2 details).
+    `ra`/`dec` are optional -- used for MADYS's own extinction lookup if
+    given, zero reddening assumed otherwise.
     """
     data = request.get_json(force=True)
     gaia_id = str(data.get("gaiaid") or data.get("gaia_id") or "").strip()
     if not gaia_id:
         return jsonify({"status": "error", "message": "Target needs a Gaia DR3 ID"}), 400
 
-    payload = {"gaiaid": gaia_id, "model": data.get("model") or "parsec2"}
+    photometry = data.get("photometry") or {}
+    parallax = data.get("parallax")
+    parallax_err = data.get("parallax_err")
+    if not photometry or parallax is None or parallax_err is None:
+        return jsonify({
+            "status": "error",
+            "message": "Select parallax plus at least one photometric band to run the MADYS age fit",
+        }), 400
+
+    payload = {
+        "gaiaid": gaia_id,
+        "model": data.get("model") or "parsec2",
+        "photometry": photometry,
+        "parallax": parallax,
+        "parallax_err": parallax_err,
+        "ra": data.get("ra"),
+        "dec": data.get("dec"),
+    }
     result = _run_wrapper(
         MADYS_ENV_PYTHON, MADYS_AGE_WRAPPER, payload, timeout=MADYS_AGE_TIMEOUT_SECONDS
     )

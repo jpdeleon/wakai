@@ -11,12 +11,13 @@ import { syncEaglesInputParams, drawEaglesPlots } from './eagles.js';
 import { syncClusterInputs, renderClusterResult, renderMadysCmdResult } from './cluster.js';
 import { syncIsochroneInputParams, drawIsochronePlots } from './isochrones.js';
 import { renderMadysAgeResult, drawMadysAgePlot } from './madys-age.js';
+import { syncEvaInputs } from './eva.js';
 import { updateSummaryPage } from './summary.js';
 
 // Path shape: /<page-slug>[/target=<name>], e.g. /gyro-interp/target=TOI-5973.
 // The target= segment can also appear alone (/target=TOI-5973 -> Target page
 // with that target loaded) since it's matched independently of page slug.
-export const PAGE_ROUTES = { target: 'target', gyro: 'gyro-interp', baffles: 'baffles', eagles: 'eagles', cluster: 'cluster', isochrones: 'isochrones', summary: 'summary' };
+export const PAGE_ROUTES = { target: 'target', gyro: 'gyro-interp', baffles: 'baffles', eagles: 'eagles', cluster: 'cluster', isochrones: 'isochrones', eva: 'eva', summary: 'summary' };
 export const ROUTE_PAGES = Object.fromEntries(Object.entries(PAGE_ROUTES).map(([pageId, slug]) => [slug, pageId]));
 
 export function buildPath(pageId, targetName) {
@@ -197,6 +198,8 @@ export function onPageEnter(pageId) {
       document.getElementById('madys-age-results-panel').style.display = 'block';
     }
     drawMadysAgePlot();
+  } else if (pageId === 'eva') {
+    syncEvaInputs();
   } else if (pageId === 'summary') {
     updateSummaryPage();
   }

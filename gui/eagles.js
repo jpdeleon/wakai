@@ -7,10 +7,10 @@
  * reference table.
  */
 import {
-  state, ageGrid, interpolatePDF, positiveUncertainty,
+  state, ageGrid, interpolatePDF, positiveUncertainty, isDefaultUncertainty,
   eaglesModelsCache, setEaglesModelsCache, ageColors,
 } from './state.js';
-import { formatSignificant, showToast } from './dom-utils.js';
+import { formatSignificant, showToast, describeDefaultUncertainties, showErrorLog, hideErrorLog } from './dom-utils.js';
 import { apiCall, apiGet } from './api.js';
 import { invalidateJointResult, updateWorkflowStrip } from './joint-status.js';
 import { saveTargetState } from './target.js';
@@ -34,9 +34,14 @@ export async function runEagles() {
   const teffErr = positiveUncertainty(teffRow, 100);
   const liewErr = positiveUncertainty(liewRow, 15);
   const model = document.getElementById('eagles-model-select')?.value || 'ml';
+  const defaultUncertaintyNote = describeDefaultUncertainties([
+    ...(isDefaultUncertainty(teffRow) ? [{ label: 'Teff', value: teffErr, unit: ' K' }] : []),
+    ...(isDefaultUncertainty(liewRow) ? [{ label: 'Li EW', value: liewErr, unit: ' mÅ' }] : []),
+  ]);
 
   document.getElementById('eagles-results-panel').style.display = 'none';
   document.getElementById('eagles-loader').style.display = 'flex';
+  hideErrorLog('eagles-error-log');
   runBtn.disabled = true;
 
   try {
@@ -46,9 +51,12 @@ export async function runEagles() {
       model,
     });
 
-    // Resample the EAGLES posterior (native log-age grid, already expressed
-    // on the Myr axis by the backend) onto the shared JS ageGrid, same as the
-    // other methods.
+    // Resample the EAGLES posterior onto the shared JS ageGrid, same as the
+    // other methods. The backend's own posterior is a density per unit
+    // log10(age/yr) (see run_eagles.py); `result.pdf`/`result.age_grid` are
+    // that same posterior Jacobian-converted to a density per unit linear
+    // age in Myr (via _density.py), not just the same values relabeled onto
+    // a Myr x-axis.
     const pdf = interpolatePDF(result.age_grid, result.pdf, ageGrid);
 
     state.results.eagles.agePDF = pdf;
@@ -99,7 +107,10 @@ export async function runEagles() {
     drawEaglesPlots();
 
     await saveTargetState({ silent: true });
-    showToast("EAGLES run completed successfully");
+    showToast(
+      defaultUncertaintyNote ? `EAGLES run completed successfully. ${defaultUncertaintyNote}` : "EAGLES run completed successfully",
+      { persist: Boolean(defaultUncertaintyNote) }
+    );
   } catch (err) {
     // No simulated fallback: an age here would not have come from the real
     // EAGLES EW-age model, so we show the failure instead of a fabricated
@@ -121,7 +132,7 @@ export async function runEagles() {
     document.getElementById('eagles-loader').style.display = 'none';
     document.getElementById('eagles-results-panel').style.display = 'none';
 
-    showToast(`EAGLES error: ${err.message}`);
+    showErrorLog('eagles-error-log', err.message);
   } finally {
     runBtn.disabled = false;
   }
@@ -238,8 +249,8 @@ export function drawEaglesPlots() {
 
   Plotly.react('plot-eagles-iso', dataIso, layoutIso, { responsive: true, displayModeBar: false, staticPlot: true });
 
-  // PLOT 2: Posterior PDF (EAGLES reports the posterior over log age; the
-  // backend's age_grid already expresses it on a Myr axis).
+  // PLOT 2: Posterior PDF (EAGLES reports the posterior over log age;
+  // agePDF is the Jacobian-converted Myr-axis density -- see runEagles()).
   const dataPDF = [{
     x: ageGrid,
     y: state.results.eagles.agePDF,

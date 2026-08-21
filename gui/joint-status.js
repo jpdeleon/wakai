@@ -7,7 +7,7 @@
  * the Summary page.
  */
 import { state, ageGrid, defaultResults } from './state.js';
-import { formatSignificant } from './dom-utils.js';
+import { formatSignificant, hideErrorLog } from './dom-utils.js';
 
 // NOTE: this file previously also contained client-side reimplementations of
 // gyrochronology (Barnes 2007), chromospheric-activity age (Mamajek 2008),
@@ -196,13 +196,19 @@ export function invalidateJointResult() {
   updateWorkflowStrip();
 }
 
-export function invalidateMethod(method) {
+// `staleReason` labels the Target page's status text when a previous result
+// existed -- "Inputs changed" for the automatic ref_table-edit path (the
+// default, see target.js's callers), overridden to "Idle" by the manual
+// "Delete results" buttons (target.js's deleteMethodResults()), since
+// nothing about the inputs actually changed there.
+export function invalidateMethod(method, staleReason = 'Inputs changed') {
   const hadResult = ['Calculated', 'Error'].includes(state.results[method]?.status);
   state.results[method] = defaultResults()[method];
   invalidateJointResult();
   const prefix = method === 'gyro' ? 'gyro' : method === 'eagles' ? 'eagles' : 'baffles';
   document.getElementById(`${prefix}-summary-card`).style.display = 'none';
   document.getElementById(`${prefix}-results-panel`).style.display = 'none';
+  hideErrorLog(`${prefix}-error-log`);
   document.getElementById(`status-${prefix}-dot`).className = 'dot dot-inactive';
-  document.getElementById(`status-${prefix}-text`).innerText = hadResult ? 'Inputs changed' : 'Idle';
+  document.getElementById(`status-${prefix}-text`).innerText = hadResult ? staleReason : 'Idle';
 }

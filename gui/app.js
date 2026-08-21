@@ -7,7 +7,7 @@
  */
 import { state, emptyDefaultParameters } from './state.js';
 import { apiGet } from './api.js';
-import { showToast } from './dom-utils.js';
+import { showToast, setupErrorLogDismissButtons } from './dom-utils.js';
 import { setupNavigation, applyRoute } from './routing.js';
 import { updateWorkflowStrip } from './joint-status.js';
 import {
@@ -21,6 +21,7 @@ import { setupEaglesPageControls, setupEaglesModelOverlay } from './eagles.js';
 import { setupClusterPageControls } from './cluster.js';
 import { setupIsochronesPageControls } from './isochrones.js';
 import { setupMadysAgePageControls } from './madys-age.js';
+import { setupEvaPageControls } from './eva.js';
 import { setupSummaryActions } from './summary.js';
 
 async function loadSavedTargetIndex() {
@@ -38,6 +39,7 @@ async function loadSavedTargetIndex() {
 }
 
 async function initApp() {
+  setupErrorLogDismissButtons();
   setupNavigation();
   setupTargetSelector();
   setupTableActions();
@@ -49,6 +51,7 @@ async function initApp() {
   setupClusterPageControls();
   setupIsochronesPageControls();
   setupMadysAgePageControls();
+  setupEvaPageControls();
   setupSummaryActions();
   // Awaited (unlike everything else above) because applyRoute needs
   // state.savedTargets populated to try the local-cache path first -- see

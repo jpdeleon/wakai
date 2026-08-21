@@ -4,9 +4,9 @@
  */
 import {
   state, ageGrid, ageColors, gyroSlowSequenceCache, setGyroSlowSequenceCache,
-  interpolatePDF, positiveUncertainty,
+  interpolatePDF, positiveUncertainty, isDefaultUncertainty,
 } from './state.js';
-import { formatSignificant, showToast } from './dom-utils.js';
+import { formatSignificant, showToast, describeDefaultUncertainties, showErrorLog, hideErrorLog } from './dom-utils.js';
 import { apiCall, apiGet } from './api.js';
 import { invalidateJointResult, updateWorkflowStrip } from './joint-status.js';
 import { saveTargetState } from './target.js';
@@ -24,10 +24,15 @@ export async function runGyro() {
 
     const teffErr = positiveUncertainty(teffRow, 100);
     const protErr = positiveUncertainty(protRow, Math.max(0.01 * protVal, 0.01));
+    const defaultUncertaintyNote = describeDefaultUncertainties([
+      ...(isDefaultUncertainty(teffRow) ? [{ label: 'Teff', value: teffErr, unit: ' K' }] : []),
+      ...(isDefaultUncertainty(protRow) ? [{ label: 'Prot', value: protErr, unit: ' d' }] : []),
+    ]);
 
     // Show loading spinner
     document.getElementById('gyro-results-panel').style.display = 'none';
     document.getElementById('gyro-loader').style.display = 'flex';
+    hideErrorLog('gyro-error-log');
     runBtn.disabled = true;
 
     try {
@@ -63,7 +68,10 @@ export async function runGyro() {
       drawGyroPlots();
 
       await saveTargetState({ silent: true });
-      showToast("gyro-interp run completed successfully");
+      showToast(
+        defaultUncertaintyNote ? `gyro-interp run completed successfully. ${defaultUncertaintyNote}` : "gyro-interp run completed successfully",
+        { persist: Boolean(defaultUncertaintyNote) }
+      );
     } catch (err) {
       // No simulated fallback: an age here would not have come from
       // gyrointerp's Bouma+2023 rotation-sequence grids, so we show the
@@ -84,7 +92,7 @@ export async function runGyro() {
       document.getElementById('gyro-loader').style.display = 'none';
       document.getElementById('gyro-results-panel').style.display = 'none';
 
-      showToast(`gyro-interp error: ${err.message}`);
+      showErrorLog('gyro-error-log', err.message);
     } finally {
       runBtn.disabled = false;
     }

@@ -1,8 +1,8 @@
 /**
  * Isochrones (isochrones2/MIST) page.
  */
-import { state, ageGrid, interpolatePDF, defaultResults, positiveUncertainty } from './state.js';
-import { formatSignificant, showToast } from './dom-utils.js';
+import { state, ageGrid, interpolatePDF, defaultResults, positiveUncertainty, isDefaultUncertainty } from './state.js';
+import { formatSignificant, showToast, describeDefaultUncertainties, showErrorLog, hideErrorLog } from './dom-utils.js';
 import { apiCall } from './api.js';
 import { invalidateJointResult } from './joint-status.js';
 import { saveTargetState } from './target.js';
@@ -116,6 +116,11 @@ export function setupIsochronesPageControls() {
   }
   const runBtn = document.getElementById('btn-run-isochrones');
   if (runBtn) runBtn.addEventListener('click', runIsochrones);
+  document.getElementById('btn-delete-isochrone')?.addEventListener('click', () => {
+    invalidateIsochrone();
+    saveTargetState({ silent: true });
+    showToast('Isochrone fit results deleted');
+  });
 
   // logg + prior bounds have no other natural save checkpoint before the
   // user clicks Run (unlike the checkboxes above, which mirror ref_table
@@ -136,6 +141,7 @@ export function invalidateIsochrone() {
   state.results.isochrone = defaultResults().isochrone;
   document.getElementById('isochrone-summary-card').style.display = 'none';
   document.getElementById('isochrone-results-panel').style.display = 'none';
+  hideErrorLog('isochrone-error-log');
   invalidateJointResult();
 }
 
@@ -150,6 +156,7 @@ export async function runIsochrones() {
   let parallax = null;
   let parallaxErr = null;
   const payload = {};
+  const defaultedInputs = [];
 
   ISOCHRONE_INPUT_SPECS.forEach(spec => {
     const chk = document.getElementById(`chk-isochrone-${spec.id}`);
@@ -159,6 +166,10 @@ export async function runIsochrones() {
 
     const value = Number(row.value);
     const err = positiveUncertainty(row, spec.fallbackErr);
+    if (isDefaultUncertainty(row)) {
+      const unit = spec.unit ? ` ${spec.unit}` : (spec.band ? ' mag' : '');
+      defaultedInputs.push({ label: spec.label, value: err, unit });
+    }
     if (spec.id === 'parallax') {
       parallax = value;
       parallaxErr = err;
@@ -169,6 +180,7 @@ export async function runIsochrones() {
       payload[`${spec.id}_err`] = err;
     }
   });
+  const defaultUncertaintyNote = describeDefaultUncertainties(defaultedInputs);
 
   if (parallax === null || Object.keys(photometry).length === 0) {
     showToast('Check parallax plus at least one photometric band to run isochrones');
@@ -210,6 +222,7 @@ export async function runIsochrones() {
   const runBtn = document.getElementById('btn-run-isochrones');
   document.getElementById('isochrone-results-panel').style.display = 'none';
   document.getElementById('isochrone-loader').style.display = 'flex';
+  hideErrorLog('isochrone-error-log');
   runBtn.disabled = true;
 
   try {
@@ -236,6 +249,7 @@ export async function runIsochrones() {
       fehDerived: result.feh_derived,
       usedInputs: result.used_inputs,
       priorBounds: result.prior_bounds,
+      convergence: result.convergence,
     };
     invalidateJointResult();
 
@@ -246,14 +260,19 @@ export async function runIsochrones() {
     drawIsochronePlots();
 
     await saveTargetState({ silent: true });
+    const notConverged = result.convergence && !result.convergence.converged;
+    const caveats = [
+      broad ? 'weakly constrained (excluded from joint estimate)' : null,
+      notConverged ? 'MCMC may not have converged (see caveat below)' : null,
+    ].filter(Boolean);
+    const message = caveats.length ? `Isochrone fit complete, but ${caveats.join('; ')}` : 'Isochrone fit completed successfully';
     showToast(
-      broad
-        ? 'Isochrone fit complete, but weakly constrained (excluded from joint estimate)'
-        : 'Isochrone fit completed successfully'
+      defaultUncertaintyNote ? `${message} ${defaultUncertaintyNote}` : message,
+      { persist: caveats.length > 0 || Boolean(defaultUncertaintyNote) }
     );
   } catch (err) {
     document.getElementById('isochrone-loader').style.display = 'none';
-    showToast(`Isochrone fit failed: ${err.message}`);
+    showErrorLog('isochrone-error-log', err.message);
   } finally {
     runBtn.disabled = false;
   }
@@ -284,6 +303,18 @@ export function renderIsochroneResult(iso) {
 
   const caveatCard = document.getElementById('isochrone-caveat-card');
   if (caveatCard) caveatCard.style.display = iso.broad ? 'block' : 'none';
+
+  const convergenceCard = document.getElementById('isochrone-convergence-card');
+  const convergenceText = document.getElementById('isochrone-convergence-text');
+  const convergence = iso.convergence;
+  if (convergenceCard) {
+    convergenceCard.style.display = convergence && !convergence.converged ? 'block' : 'none';
+    if (convergenceText && convergence) {
+      convergenceText.innerText = `${convergence.warning} (acceptance fraction ${convergence.acceptance_fraction}, `
+        + `autocorrelation time ${convergence.autocorr_time ?? 'undetermined'} steps over ${convergence.n_iter} `
+        + 'production steps). Treat this age posterior\'s shape with caution.';
+    }
+  }
 }
 
 export function drawIsochronePlots() {

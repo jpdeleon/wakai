@@ -171,6 +171,16 @@ def main():
     load_plot_params()
     plots = _render_plots(match, target)
 
+    # Member Gaia DR3 ids, for the EVA page's "use matched cluster members"
+    # prefill (EVA needs a group of comoving stars, not a single target --
+    # see run_eva.py) -- not otherwise exposed to the frontend today, since
+    # _render_plots() above is the only other consumer of match.members.
+    member_gaia_ids = (
+        [int(x) for x in match.members["source_id"].tolist()]
+        if match.members is not None and "source_id" in match.members.columns
+        else []
+    )
+
     output = {
         "status": "ok",
         "catalog": catalog,
@@ -188,6 +198,7 @@ def main():
         "n_members": _clean(match.n_members),
         "summary": summary,
         "plots": plots,
+        "member_gaia_ids": member_gaia_ids,
     }
     print(json.dumps(output), file=REAL_STDOUT)
 

@@ -28,6 +28,7 @@
           <li><a class="nav-item" data-page="eagles" href="/eagles">EAGLES</a></li>
           <li><a class="nav-item" data-page="cluster" href="/cluster">Cluster</a></li>
           <li><a class="nav-item" data-page="isochrones" href="/isochrones">Isochrones</a></li>
+          <li><a class="nav-item" data-page="eva" href="/eva">EVA</a></li>
           <li><a class="nav-item" data-page="summary" href="/summary">Summary</a></li>
         </ul>
       </nav>
@@ -200,10 +201,20 @@
                 </div>
               </div>
               <button class="btn btn-gyro" id="btn-run-gyro" style="width: 100%; margin-top: 0.75rem;">Run gyro-interp</button>
+              <div class="error-log" id="gyro-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
             <div class="card" id="gyro-summary-card" style="display: none;">
-              <div class="card-eyebrow gyro">Result</div>
-              <div class="card-title">Rotation age</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow gyro">Result</div>
+                  <div class="card-title">Rotation age</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-gyro">Delete results</button>
+              </div>
               <div class="meta-grid" style="grid-template-columns: 1fr;">
                 <div class="meta-item">
                   <div class="meta-label">Median Gyro Age</div>
@@ -310,10 +321,20 @@
                 </div>
               </div>
               <button class="btn btn-baffles" id="btn-run-baffles" style="width: 100%; margin-top: 0.75rem;">Run BAFFLES</button>
+              <div class="error-log" id="baffles-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
             <div class="card" id="baffles-summary-card" style="display: none;">
-              <div class="card-eyebrow baffles">Result</div>
-              <div class="card-title">BAFFLES age</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow baffles">Result</div>
+                  <div class="card-title">BAFFLES age</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-baffles">Delete results</button>
+              </div>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
                 <div class="meta-item">
                   <div class="meta-label">(B-V)<sub>o</sub> used</div>
@@ -394,10 +415,20 @@
                 </select>
               </div>
               <button class="btn btn-eagles" id="btn-run-eagles" style="width: 100%; margin-top: 0.75rem;">Run EAGLES</button>
+              <div class="error-log" id="eagles-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
             <div class="card" id="eagles-summary-card" style="display: none;">
-              <div class="card-eyebrow eagles">Result</div>
-              <div class="card-title">EAGLES age</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow eagles">Result</div>
+                  <div class="card-title">EAGLES age</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-eagles">Delete results</button>
+              </div>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
                 <div class="meta-item">
                   <div class="meta-label">Median Age</div>
@@ -521,11 +552,21 @@
               <p id="cluster-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
                 Load a target on the Target page first.
               </p>
+              <div class="error-log" id="cluster-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
 
             <div class="card" id="cluster-summary-card" style="display: none;">
-              <div class="card-eyebrow cluster">Result</div>
-              <div class="card-title">Membership</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow cluster">Result</div>
+                  <div class="card-title">Membership</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-cluster">Delete results</button>
+              </div>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
                 <div class="meta-item">
                   <div class="meta-label">Cluster</div>
@@ -587,6 +628,11 @@
               <p id="madys-cmd-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
                 Load a target on the Target page first.
               </p>
+              <div class="error-log" id="madys-cmd-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
           </div>
 
@@ -640,8 +686,13 @@
             </div>
 
             <div class="card" id="madys-cmd-results-panel" style="display: none;">
-              <div class="card-eyebrow cluster">Diagram</div>
-              <div class="card-title">Color-magnitude diagram(s)</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow cluster">Diagram</div>
+                  <div class="card-title">Color-magnitude diagram(s)</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-madys-cmd">Delete results</button>
+              </div>
               <p id="madys-cmd-caveat" style="margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);"></p>
               <div id="plot-madys-cmd"></div>
             </div>
@@ -726,11 +777,21 @@
               <p id="isochrone-input-hint" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--ink-faint);">
                 Load a target on the Target page first.
               </p>
+              <div class="error-log" id="isochrone-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
 
             <div class="card" id="isochrone-summary-card" style="display: none;">
-              <div class="card-eyebrow isochrone">Result</div>
-              <div class="card-title">Derived parameters</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow isochrone">Result</div>
+                  <div class="card-title">Derived parameters</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-isochrone">Delete results</button>
+              </div>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
                 <div class="meta-item">
                   <div class="meta-label">Age</div>
@@ -764,7 +825,7 @@
               <div class="card-eyebrow madys">HR diagram</div>
               <div class="card-title">MADYS / PARSEC2 age fit</div>
               <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
-                A second, independent age fit for this target via <a href="https://madys.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">MADYS</a>'s <code>get_params()</code> -- PARSEC v2 by default, since isochrones2 (the fit above) has no PARSEC support to add a model option to. Re-queries this target's own photometry over the network by Gaia DR3 ID (same as the Cluster page's MADYS CMD plot), rather than reusing the reference table above. Only one of this fit or the isochrones2 fit feeds the joint estimate at a time (both use the same photometry+parallax observable, just a different stellar-model grid) -- isochrones2 takes priority when usable.
+                A second, independent age fit for this target via <a href="https://madys.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">MADYS</a>'s <code>get_params()</code> -- PARSEC v2 by default, since isochrones2 (the fit above) has no PARSEC support to add a model option to. Uses the same photometry and parallax from the reference table above as the isochrones2 fit (no separate network query). Only one of this fit or the isochrones2 fit feeds the joint estimate at a time (both use the same photometry+parallax observable, just a different stellar-model grid) -- isochrones2 takes priority when usable.
               </p>
               <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
                 Model grid
@@ -774,11 +835,21 @@
                 </select>
               </label>
               <button class="btn btn-madys" id="btn-run-madys-age" style="width: 100%; margin-top: 1rem;">Run MADYS age fit</button>
+              <div class="error-log" id="madys-age-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
             </div>
 
             <div class="card" id="madys-age-summary-card" style="display: none;">
-              <div class="card-eyebrow madys">Result</div>
-              <div class="card-title">Derived parameters</div>
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow madys">Result</div>
+                  <div class="card-title">Derived parameters</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-madys-age">Delete results</button>
+              </div>
               <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
                 <div class="meta-item">
                   <div class="meta-label">Age</div>
@@ -827,6 +898,19 @@
                 </div>
               </div>
 
+              <!-- MCMC convergence caveat: acceptance fraction and/or
+                   autocorrelation-time check failed -- see
+                   run_isochrones.py's _convergence_diagnostics(). -->
+              <div class="card" id="isochrone-convergence-card" style="display: none; border-left: 3px solid var(--danger);">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <span style="color: var(--danger); font-size: 18px; line-height: 1.4;">&#9888;</span>
+                  <div>
+                    <strong style="color: var(--danger);">MCMC may not have converged</strong>
+                    <p style="margin-top: 4px;" id="isochrone-convergence-text"></p>
+                  </div>
+                </div>
+              </div>
+
               <div class="card">
                 <div class="card-eyebrow">Posterior</div>
                 <div class="card-title">Age distribution</div>
@@ -837,7 +921,7 @@
             <div class="card loader-container" id="madys-age-loader" style="display: none;">
               <div class="orbital-spinner" style="border-top-color: var(--madys);"></div>
               <h3 style="margin-bottom: 0.25rem;">Running MADYS age fit...</h3>
-              <p>~35-50s: fetching photometry, then fitting against the selected model grid</p>
+              <p>Fitting the reference table's photometry and parallax against the selected model grid</p>
             </div>
 
             <div id="madys-age-results-panel" style="display: none;">
@@ -845,6 +929,109 @@
                 <div class="card-eyebrow madys">Posterior</div>
                 <div class="card-title">Age distribution</div>
                 <div id="plot-madys-age-posterior" class="plotly-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE: EVA (EXCESS VARIABILITY AGE) ================= -->
+      <section id="page-eva" class="page">
+        <div class="grid-side-main">
+          <!-- Inputs / Controls Panel -->
+          <div>
+            <div class="card">
+              <div class="card-eyebrow eva">Group variability</div>
+              <div class="card-title">EVA: Excess Variability-based Age</div>
+              <p style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                <a href="https://iopscience.iop.org/article/10.3847/1538-4357/ace044" target="_blank" rel="noopener noreferrer">Barber &amp; Mann (2023)</a>
+                ages a <em>group</em> of comoving stars from the 90th-percentile Gaia
+                photometric excess noise (varG/BP/RP90) across the group, calibrated
+                against known young moving groups -- unlike every other method page,
+                this needs a list of Gaia DR3 ids, not a single target's reference table.
+                Fill it in from the target's matched cluster (Cluster page), or paste a
+                comoving-group list directly.
+              </p>
+
+              <div class="form-group">
+                <label for="eva-group-ids">Group members (Gaia DR3 ids)</label>
+                <textarea id="eva-group-ids" class="input-control eva-group-textarea" placeholder="One Gaia DR3 id per line, comma-separated, or &quot;Gaia DR3 &lt;id&gt;&quot; rows"></textarea>
+                <p id="eva-group-hint" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--ink-faint);"></p>
+              </div>
+              <button class="btn btn-secondary" id="btn-eva-use-cluster" style="width: 100%; margin-bottom: 0.75rem;" disabled>Use matched cluster members</button>
+
+              <div class="form-group">
+                <label for="eva-plot-band-select">Diagnostic histogram band</label>
+                <select class="input-control" id="eva-plot-band-select">
+                  <option value="G" selected>G</option>
+                  <option value="BP">BP</option>
+                  <option value="RP">RP</option>
+                </select>
+              </div>
+              <label class="model-overlay-toggle" for="chk-eva-distance">
+                <input type="checkbox" id="chk-eva-distance" checked>
+                Include distance calibration (median group distance)
+              </label>
+
+              <button class="btn btn-eva" id="btn-run-eva" style="width: 100%; margin-top: 0.75rem;">Run EVA</button>
+              <div class="error-log" id="eva-error-log" hidden>
+                <button type="button" class="error-log-close" aria-label="Dismiss error">&times;</button>
+                <div class="error-log-label">Error</div>
+                <pre class="error-log-message"></pre>
+              </div>
+            </div>
+
+            <div class="card" id="eva-summary-card" style="display: none;">
+              <div class="card-header-row">
+                <div>
+                  <div class="card-eyebrow eva">Result</div>
+                  <div class="card-title">EVA age</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger btn-delete-result" id="btn-delete-eva">Delete results</button>
+              </div>
+              <div class="meta-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="meta-item">
+                  <div class="meta-label">Overall age (G+BP+RP combined)</div>
+                  <div class="meta-value" id="eva-res-overall" style="color: var(--eva); font-size: 1.3rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Calibration</div>
+                  <div class="meta-value" id="eva-res-distance-note" style="font-size: 0.9rem;">-</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">Group quality</div>
+                  <div class="meta-value" id="eva-res-counts" style="font-size: 0.85rem;">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visualization / Outputs -->
+          <div>
+            <div class="card loader-container" id="eva-loader">
+              <div class="orbital-spinner" style="border-top-color: var(--eva);"></div>
+              <h3 style="margin-bottom: 0.25rem;">Running EVA...</h3>
+              <p>Querying Gaia DR3 photometry for the group, then Monte Carlo sampling the varX90-age calibration</p>
+            </div>
+
+            <div id="eva-results-panel" style="display: none;">
+              <div class="card">
+                <div class="card-eyebrow">Per-band ages</div>
+                <div class="card-title">G / BP / RP excess-variability ages</div>
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr><th>Band</th><th>Age</th><th>varX90</th></tr>
+                    </thead>
+                    <tbody id="eva-band-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-eyebrow">Diagnostic</div>
+                <div class="card-title">varX distribution</div>
+                <div class="cluster-plot" id="plot-eva-hist"></div>
               </div>
             </div>
           </div>

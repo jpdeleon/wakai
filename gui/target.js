@@ -231,6 +231,11 @@ export function collectPageSettings() {
     madysAge: {
       model: document.getElementById('madys-age-model-select')?.value || 'parsec2',
     },
+    eva: {
+      groupIdsText: document.getElementById('eva-group-ids')?.value || '',
+      useDistance: document.getElementById('chk-eva-distance')?.checked ?? true,
+      plotBand: document.getElementById('eva-plot-band-select')?.value || 'G',
+    },
     summary: {
       // Only checkboxes the user has actually touched (see JOINT_METHODS in
       // joint-status.js) -- everything else stays on syncJointCheckboxes()'s
@@ -373,6 +378,14 @@ export async function applyPageSettings(settings) {
 
   const madysAgeSelect = document.getElementById('madys-age-model-select');
   if (madysAgeSelect && s.madysAge?.model) madysAgeSelect.value = s.madysAge.model;
+
+  const eva = s.eva || {};
+  const evaGroupIds = document.getElementById('eva-group-ids');
+  if (evaGroupIds) evaGroupIds.value = eva.groupIdsText || '';
+  const evaDistanceChk = document.getElementById('chk-eva-distance');
+  if (evaDistanceChk) evaDistanceChk.checked = eva.useDistance !== false;
+  const evaPlotBandSelect = document.getElementById('eva-plot-band-select');
+  if (evaPlotBandSelect && eva.plotBand) evaPlotBandSelect.value = eva.plotBand;
 
   // Only restores checkboxes the user had actually touched -- everything
   // else is left for syncJointCheckboxes() (joint-status.js) to default,
@@ -813,8 +826,23 @@ export function setupTableActions() {
   });
 }
 
+// Shared by the gyro/BAFFLES/EAGLES "Delete results" buttons -- invalidateMethod()
+// (joint-status.js) already resets state.results[method], hides that method's
+// summary-card/results-panel, resets its Target-page status dot, and
+// recomputes the joint posterior; this just adds persistence (so the
+// deletion survives a reload, not just the current session) and user
+// feedback on top.
+function deleteMethodResults(method, label) {
+  invalidateMethod(method, 'Idle');
+  saveTargetState({ silent: true });
+  showToast(`${label} results deleted`);
+}
+
 export function setupModelRunControls() {
   document.getElementById('btn-run-gyro').addEventListener('click', runGyro);
   document.getElementById('btn-run-baffles').addEventListener('click', runBaffles);
   document.getElementById('btn-run-eagles').addEventListener('click', runEagles);
+  document.getElementById('btn-delete-gyro')?.addEventListener('click', () => deleteMethodResults('gyro', 'gyro-interp'));
+  document.getElementById('btn-delete-baffles')?.addEventListener('click', () => deleteMethodResults('baffles', 'BAFFLES'));
+  document.getElementById('btn-delete-eagles')?.addEventListener('click', () => deleteMethodResults('eagles', 'EAGLES'));
 }

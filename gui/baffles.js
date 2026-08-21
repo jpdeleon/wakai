@@ -2,8 +2,8 @@
  * BAFFLES (lithium + chromospheric activity) page: run button and the two
  * Plotly plots.
  */
-import { state, ageGrid, interpolatePDF, positiveUncertainty } from './state.js';
-import { formatSignificant, showToast } from './dom-utils.js';
+import { state, ageGrid, interpolatePDF, positiveUncertainty, isDefaultUncertainty } from './state.js';
+import { formatSignificant, showToast, describeDefaultUncertainties, showErrorLog, hideErrorLog } from './dom-utils.js';
 import { apiCall } from './api.js';
 import { invalidateJointResult, updateWorkflowStrip } from './joint-status.js';
 import { saveTargetState } from './target.js';
@@ -29,12 +29,18 @@ export async function runBaffles() {
     const teffErr = positiveUncertainty(teffRow, 100);
     const liewErr = positiveUncertainty(liewRow, 15);
     const rhkErr = positiveUncertainty(rhkRow, 0.05);
+    const defaultUncertaintyNote = describeDefaultUncertainties([
+      ...(isDefaultUncertainty(teffRow) ? [{ label: 'Teff', value: teffErr, unit: ' K' }] : []),
+      ...(hasValidLiew && isDefaultUncertainty(liewRow) ? [{ label: 'Li EW', value: liewErr, unit: ' mÅ' }] : []),
+      ...(hasValidRhk && isDefaultUncertainty(rhkRow) ? [{ label: "log R'HK", value: rhkErr, unit: '' }] : []),
+    ]);
 
     // BAFFLES needs (B-V)o, not Teff. The backend derives it server-side from
     // the real Pecaut & Mamajek dwarf table (wakai.catalog.get_bv_from_teff)
     // rather than the client guessing it from an uncited polynomial.
     document.getElementById('baffles-results-panel').style.display = 'none';
     document.getElementById('baffles-loader').style.display = 'flex';
+    hideErrorLog('baffles-error-log');
     runBtn.disabled = true;
 
     try {
@@ -120,7 +126,10 @@ export async function runBaffles() {
       drawBafflesPlots();
 
       await saveTargetState({ silent: true });
-      showToast("BAFFLES run completed successfully");
+      showToast(
+        defaultUncertaintyNote ? `BAFFLES run completed successfully. ${defaultUncertaintyNote}` : "BAFFLES run completed successfully",
+        { persist: Boolean(defaultUncertaintyNote) }
+      );
     } catch (err) {
       // No simulated fallback: an age here would not have come from the
       // real BAFFLES calcium/lithium calibrations, so we show the failure
@@ -144,7 +153,7 @@ export async function runBaffles() {
       document.getElementById('baffles-loader').style.display = 'none';
       document.getElementById('baffles-results-panel').style.display = 'none';
 
-      showToast(`BAFFLES error: ${err.message}`);
+      showErrorLog('baffles-error-log', err.message);
     } finally {
       runBtn.disabled = false;
     }

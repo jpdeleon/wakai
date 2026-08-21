@@ -26,6 +26,8 @@
   --isochrone-soft: #f6efe0;
   --madys: #7c3aed;
   --madys-soft: #f1eafd;
+  --eva: #b5179e;
+  --eva-soft: #fbe8f7;
   --danger: #ad3d3d;
   --danger-soft: #faecec;
   --shadow: 0 1px 2px rgba(22, 33, 43, 0.04), 0 8px 24px rgba(22, 33, 43, 0.04);
@@ -333,6 +335,79 @@ h2 { font: 600 26px/1.15 var(--font-display); }
 .btn-madys:hover:not(:disabled) { background: #6829d1; }
 .card-eyebrow.madys { color: var(--madys); }
 .card-title.madys { color: var(--madys); }
+.btn-eva { background: var(--eva); color: white; }
+.btn-eva:hover:not(:disabled) { background: #92127d; }
+.card-eyebrow.eva { color: var(--eva); }
+.card-title.eva { color: var(--eva); }
+
+/* Result-card header row: the existing card-eyebrow/card-title pair on the
+   left, a "Delete results" button (see dom-utils.js's setupDeleteResultButtons)
+   flush right. Only the two title elements' own margins move onto this
+   wrapper -- everything else about .card-eyebrow/.card-title is unchanged. */
+.card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.card-header-row .card-title { margin-bottom: 0; }
+.card-header-row .card-eyebrow { margin-bottom: 4px; }
+.btn-delete-result { flex: none; white-space: nowrap; }
+
+/* Persistent embedded error log (see dom-utils.js's showErrorLog/
+   hideErrorLog) -- replaces the toast for run failures, which auto-hides
+   after 2.5s and is easy to miss on a longer backend error message. */
+.error-log {
+  position: relative;
+  margin-top: 0.75rem;
+  padding: 12px 34px 12px 14px;
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  border-radius: var(--radius);
+}
+.error-log-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  color: var(--danger);
+  margin-bottom: 4px;
+}
+.error-log-message {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.error-log-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.error-log-close:hover { background: rgba(173, 61, 61, 0.14); }
+
+.eva-group-textarea {
+  min-height: 140px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
 
 /* Cluster membership verdict banner */
 .verdict {

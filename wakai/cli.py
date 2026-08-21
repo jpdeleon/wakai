@@ -31,6 +31,18 @@ def gui(
     open_browser: bool = typer.Option(
         True, "--open-browser/--no-browser", help="Open the GUI in a browser automatically"
     ),
+    reload: bool = typer.Option(
+        False,
+        "--reload/--no-reload",
+        help=(
+            "Auto-restart the backend when its Python files "
+            "(gui/backend/server.py, routes_*.py, gaia_client.py) change, "
+            "so route/logic edits take effect without a manual restart. "
+            "Development only -- off by default. Static frontend files "
+            "(gui/*.js/html/css) and the gui/backend/run_*.py subprocess "
+            "wrappers are already served/executed fresh regardless."
+        ),
+    ),
 ) -> None:
     """Launch the wakai stellar age-dating GUI."""
     if not GUI_BACKEND.exists():
@@ -44,6 +56,8 @@ def gui(
     env["WAKAI_HOST"] = host
     env["WAKAI_PORT"] = str(port)
     env["WAKAI_OUTPUT_DIR"] = str(resolved_output)
+    if reload:
+        env["WAKAI_RELOAD"] = "1"
 
     if open_browser:
         def _open_when_ready() -> None:

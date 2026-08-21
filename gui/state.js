@@ -34,26 +34,30 @@ export const state = {
 //    -- run_isochrones.py bins raw MCMC age samples into a log-spaced
 //    histogram it defines itself -- but at a comparable resolution, so it
 //    doesn't change which requirement is tightest);
-//  - a linear grid over 1-2600 Myr, at the step run_gyro.py requests from
-//    gyro-interp (2600/499 Myr -- 2600 is gyro-interp's calibration
-//    ceiling per Bouma+2023; its calibration *floor*,
+//  - a linear grid over 1-4000 Myr, at the step run_gyro.py requests from
+//    gyro-interp (4000/499 Myr -- 4000 Myr, M67's age, is gyro-interp's
+//    actual calibration ceiling per its own gyro_age_posterior docstring;
+//    2600 Myr, used here until this was corrected, is merely the age of a
+//    younger reference cluster, not the ceiling. Its calibration *floor*,
 //    GYRO_CALIBRATION_FLOOR_MYR in summary.js, is a reliability caveat on
 //    the result -- Bouma+2023: below 80 Myr the model doesn't extrapolate,
 //    it just returns a uniform posterior -- not a bound on the grid this
 //    method actually computes over -- run_gyro.py's own request grid runs
-//    the full 0-2600 Myr).
+//    the full 0-4000 Myr, with bounds_error='4gyrextrap' so that ceiling is
+//    the package's own recommended non-biased limit rather than its
+//    biased-near-the-edge default).
 // A log grid alone would under-resolve the gyro-interp query above ~800
-// Myr, where its ~5.2 Myr step becomes finer than a log grid's widening
-// dex step; a linear grid alone would need ~2500 points just to match
+// Myr, where its ~8 Myr step becomes finer than a log grid's widening dex
+// step; a linear grid alone would need ~2500 points just to match
 // BAFFLES's step down at 1 Myr. The union meets every method's own
-// resolution requirement across its own valid range at the same total
-// cost (1500 points) as the log-only grid this replaced -- see README.md's
+// resolution requirement across its own valid range -- see README.md's
 // age-grid table.
 const AGE_GRID_MIN_MYR = 1;
 const AGE_GRID_MAX_MYR = 13000;
-const GYRO_GRID_CEILING_MYR = 2600;
+const GYRO_GRID_CEILING_MYR = 4000; // matches run_gyro.py's AGE_GRID_CEILING_MYR
+const GYRO_GRID_N_POINTS = 500; // matches run_gyro.py's np.linspace(0, AGE_GRID_CEILING_MYR, 500)
 const AGE_GRID_LOG_STEP_DEX = 0.0041139; // BAFFLES's own native step
-const AGE_GRID_GYRO_STEP_MYR = 5.2104; // the step run_gyro.py requests from gyro-interp
+const AGE_GRID_GYRO_STEP_MYR = GYRO_GRID_CEILING_MYR / (GYRO_GRID_N_POINTS - 1); // the step run_gyro.py requests from gyro-interp
 
 function logGrid(min, max, stepDex) {
   const n = Math.round(Math.log10(max / min) / stepDex) + 1;
@@ -225,6 +229,12 @@ export function defaultResults() {
     },
     joint: { agePDF: null, median: null, ci: null, status: 'Idle' },
     cluster: null,
+    // EVA (Barber & Mann 2023): a group-based excess-variability age, not a
+    // single-star ref_table method -- like `cluster`/`madysCmd` below, it
+    // never feeds the joint posterior (no per-star agePDF exists to
+    // resample onto ageGrid; see run_eva.py) or the workflow strip. `result`
+    // holds the raw run_eva.py response (overall/bands/var90/plots).
+    eva: { status: 'Idle', result: null },
     // MADYS color-magnitude diagram -- a visualization, not an age
     // estimate, so (unlike gyro/baffles/isochrone/madysAge) it never feeds
     // the joint posterior or workflow strip. Independent of `cluster`
@@ -284,6 +294,14 @@ export function defaultResults() {
       madysAge: {
         model: 'parsec2',
       },
+      eva: {
+        // The group's Gaia DR3 ids as free text (one per line/CSV), so a
+        // manually pasted or "use matched cluster members" list survives a
+        // refresh, same as cluster.clusterName's free-text persistence.
+        groupIdsText: '',
+        useDistance: true,
+        plotBand: 'G',
+      },
       summary: {
         // {} = no checkbox has been manually touched yet -- see
         // JOINT_METHODS/syncJointCheckboxes() in joint-status.js for the
@@ -297,6 +315,16 @@ export function defaultResults() {
 export function positiveUncertainty(row, fallback) {
   const value = Number(row?.uncertainty);
   return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+// True when positiveUncertainty(row, ...) would fall back to its default
+// rather than use a real measured uncertainty -- so callers can tell the
+// user a generic error bar (e.g. a flat +-100 K Teff error) was silently
+// substituted, rather than let a result look like it came from real
+// error bars when it didn't.
+export function isDefaultUncertainty(row) {
+  const value = Number(row?.uncertainty);
+  return !(Number.isFinite(value) && value > 0);
 }
 
 export function sanitizeStoredResults(results) {

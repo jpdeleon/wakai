@@ -87,9 +87,25 @@ def static_files(path):
 if __name__ == "__main__":
     host = os.environ.get("WAKAI_HOST", "127.0.0.1")
     port = int(os.environ.get("WAKAI_PORT", 7000))
+    # Werkzeug's stat reloader (independent of Flask's debug=True, which also
+    # turns on the interactive in-browser debugger/pin -- not something to
+    # expose just for auto-restart) re-execs this process whenever an
+    # imported .py file's mtime changes, so editing routes_run.py/
+    # routes_query.py/routes_targets.py/gaia_client.py picks up new routes
+    # without a manual restart. It only watches modules actually imported
+    # into this process -- static frontend files (gui/*.js/html/css) are
+    # already served fresh from disk per-request regardless (see
+    # static_files() above), and the gui/backend/run_*.py wrapper scripts
+    # are invoked fresh via subprocess.run() per call, so neither needed
+    # reload in the first place; this only changes the route-registration
+    # gap those didn't have. Set via `wakai gui --reload`, not a bare env
+    # var, so it's an explicit per-launch dev choice, not sticky in a shell.
+    reload_enabled = os.environ.get("WAKAI_RELOAD") == "1"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     print(f"Starting wakai backend on {host}:{port}")
     print(f"  results dir:         {OUTPUT_DIR}")
     print(f"  gyro-interp wrapper: {GYRO_WRAPPER}")
     print(f"  BAFFLES wrapper:     {BAFFLES_WRAPPER}")
-    app.run(host=host, port=port, debug=False, threaded=True)
+    if reload_enabled:
+        print("  auto-reload:         on (backend .py changes restart the server)")
+    app.run(host=host, port=port, debug=False, use_reloader=reload_enabled, threaded=True)

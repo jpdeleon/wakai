@@ -8,9 +8,26 @@ as run_madys_cmd.py.
 Independent of run_isochrones.py's isochrones2/MIST MCMC fit: isochrones2
 has no PARSEC support at all (only a MIST ModelGridInterpolator exists in
 ext_tools/isochrones2), so this is a second, separate age-fitting method
-rather than a model option added to that one. MADYS re-queries its own
-photometry over the network (same ~30-45s overhead as run_madys_cmd.py),
-rather than reusing this app's own Gaia/2MASS ref_table cache.
+rather than a model option added to that one.
+
+Photometry comes from this app's own ref_table (frontend-supplied, same as
+run_isochrones.py), NOT a fresh network query. SampleObject's docstring
+documents two init modes: mode 1 (a list of IDs -- what this wrapper used to
+pass, forcing MADYS's own ~30-45s Gaia/2MASS query per run) and mode 2 (an
+astropy Table of photometry the caller already has). Passing a Table here
+takes mode 2: SampleObject.__init__'s Table branch reads magnitude columns
+named after MADYS's own filters (BAND_MAP below maps this app's ref_table
+band keys -- BP/G/RP/J/H/K, see gaia_client.py's
+_fetch_gaia_2mass_photometry -- to MADYS's Gbp/G/Grp/J/H/K), plus
+parallax/parallax_err and, if given, ra/dec for its own Leike/Stilism
+extinction lookup (dropped to zero reddening if ra/dec aren't supplied,
+per SampleObject.__init__'s own fallback). get_params() itself is
+identical either way -- the two init modes only differ in how
+self.abs_phot/par/ebv get populated, not in how the isochrone-grid fit
+runs on them -- so this changes only where the photometry comes from, not
+the fit. Confirmed against real photometry: mode 2 init took <1s where
+mode 1 took 30s-2min+ depending on network conditions (this branch's PR
+description has the smoke test).
 
 get_params()'s mass_range must be passed explicitly: leaving it unset makes
 _get_agemass() auto-detect a mass_range via an internal IsochroneGrid(...)
@@ -41,12 +58,20 @@ os.environ["NUMEXPR_NUM_THREADS"] = "8"
 
 import numpy as np  # noqa: E402
 import madys  # noqa: E402
+from astropy.table import Table  # noqa: E402
 
 DEFAULT_MODEL = "parsec2"
 # Local grids actually present under ext_tools/madys (bhac15, dartmouth,
 # etc. are valid madys model names but have no downloaded grid here, and
 # would just fail at fit time) -- see this wrapper's PR description.
 AVAILABLE_MODELS = ("parsec2", "mist")
+
+# This app's ref_table band keys (see gaia_client.py's
+# _fetch_gaia_2mass_photometry and isochrones.js's ISOCHRONE_INPUT_SPECS) ->
+# MADYS's own filter names (madys.madys.stored_data['filters'] keys; G/Gbp/
+# Grp are Gaia (E)DR3, J/H/K are 2MASS -- both available in parsec2 and mist,
+# confirmed via stored_data['filters'][name]['description']).
+BAND_MAP = {"BP": "Gbp", "G": "G", "RP": "Grp", "J": "J", "H": "H", "K": "K"}
 
 # Matches the shared client-side age grid's range (gui/state.js ageGrid).
 AGE_RANGE_MYR = [1, 13000]
@@ -119,12 +144,35 @@ def _stat_dict(fit, key):
     return {"median": float(value[0]), "lower": float(lo[0]), "upper": float(hi[0])}
 
 
+def _build_photometry_table(gaia_id, photometry, parallax, parallax_err, ra, dec):
+    """Mode-2 astropy Table for SampleObject -- one row, columns named per
+    BAND_MAP's MADYS-side filter names (plus their <filter>_err
+    counterparts), id/source_id, parallax/parallax_err, and ra/dec if given
+    (SampleObject.__init__'s Table branch treats every column that isn't in
+    its own kin/parallax/id/ra/dec allowlist as a photometric filter, so
+    nothing else may be added to this table)."""
+    columns = {}
+    if gaia_id:
+        columns["source_id"] = [int(gaia_id)]
+    else:
+        columns["id"] = ["target"]
+    if ra is not None and dec is not None:
+        columns["ra"] = [float(ra)]
+        columns["dec"] = [float(dec)]
+    columns["parallax"] = [float(parallax)]
+    columns["parallax_err"] = [float(parallax_err)]
+    for band, (value, err) in photometry.items():
+        filt = BAND_MAP.get(band)
+        if filt is None:
+            continue
+        columns[filt] = [float(value)]
+        columns[f"{filt}_err"] = [float(err)]
+    return Table(columns)
+
+
 def main():
     data = json.loads(sys.argv[1])
     gaia_id = str(data.get("gaiaid") or data.get("gaia_id") or "").strip()
-    if not gaia_id:
-        print(json.dumps({"status": "error", "message": "Target needs a Gaia DR3 ID"}), file=REAL_STDOUT)
-        return
 
     model_version = str(data.get("model") or DEFAULT_MODEL)
     if model_version not in AVAILABLE_MODELS:
@@ -134,11 +182,23 @@ def main():
         }), file=REAL_STDOUT)
         return
 
-    target_query_id = f"Gaia DR3 {gaia_id}"
+    photometry = {k: v for k, v in (data.get("photometry") or {}).items() if k in BAND_MAP}
+    parallax = data.get("parallax")
+    parallax_err = data.get("parallax_err")
+    if not photometry or parallax is None or parallax_err is None:
+        print(json.dumps({
+            "status": "error",
+            "message": "Select parallax plus at least one photometric band (BP/G/RP/J/H/K) to run the MADYS age fit",
+        }), file=REAL_STDOUT)
+        return
+
+    phot_table = _build_photometry_table(
+        gaia_id, photometry, parallax, parallax_err, data.get("ra"), data.get("dec"),
+    )
     try:
-        sample = madys.SampleObject([target_query_id], id_type="DR3", ext_map="leike", verbose=False)
-    except Exception as exc:  # noqa: BLE001 -- network/catalog failures, report cleanly
-        print(json.dumps({"status": "error", "message": f"MADYS photometry fetch failed: {exc}"}), file=REAL_STDOUT)
+        sample = madys.SampleObject(phot_table, ext_map="leike", verbose=0)
+    except Exception as exc:  # noqa: BLE001 -- bad/malformed input table, report cleanly
+        print(json.dumps({"status": "error", "message": f"MADYS could not read the supplied photometry: {exc}"}), file=REAL_STDOUT)
         return
 
     try:

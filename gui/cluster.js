@@ -1,8 +1,8 @@
 /**
  * Cluster membership + MADYS CMD page.
  */
-import { state } from './state.js';
-import { escapeHtml, formatMetadata, formatSignificant, showToast } from './dom-utils.js';
+import { state, defaultResults } from './state.js';
+import { escapeHtml, formatMetadata, formatSignificant, showToast, showErrorLog, hideErrorLog } from './dom-utils.js';
 import { apiCall, apiGet } from './api.js';
 import { saveTargetState } from './target.js';
 
@@ -30,15 +30,18 @@ export function syncClusterInputs() {
   const ready = Boolean(target) && (hasId || hasCoords);
   runBtn.disabled = !ready;
 
-  // Clear any stale result rendered for a previous target.
+  // Clear any stale result (and any stale error log) rendered for a
+  // previous target.
   if (!state.results.cluster) {
     document.getElementById('cluster-results-panel').style.display = 'none';
     document.getElementById('cluster-loader').style.display = 'none';
     document.getElementById('cluster-summary-card').style.display = 'none';
+    hideErrorLog('cluster-error-log');
   }
   if (!Object.keys(state.results.madysCmd?.plots || {}).length) {
     document.getElementById('madys-cmd-results-panel').style.display = 'none';
     document.getElementById('madys-cmd-loader').style.display = 'none';
+    hideErrorLog('madys-cmd-error-log');
   }
 
   if (!target) {
@@ -114,6 +117,26 @@ export function loadClusterPageSettingsFromLocalStorage() {
   }
 }
 
+// state.results.cluster's "no result" sentinel is null (see defaultResults()
+// in state.js), not a status-flagged object like the joint-feeding methods
+// -- syncClusterInputs() already treats a falsy value as "nothing to show".
+export function deleteClusterResults() {
+  state.results.cluster = null;
+  document.getElementById('cluster-summary-card').style.display = 'none';
+  document.getElementById('cluster-results-panel').style.display = 'none';
+  hideErrorLog('cluster-error-log');
+  saveTargetState({ silent: true });
+  showToast('Cluster membership results deleted');
+}
+
+export function deleteMadysCmdResults() {
+  state.results.madysCmd = defaultResults().madysCmd;
+  document.getElementById('madys-cmd-results-panel').style.display = 'none';
+  hideErrorLog('madys-cmd-error-log');
+  saveTargetState({ silent: true });
+  showToast('MADYS CMD plot deleted');
+}
+
 export function setupClusterPageControls() {
   const runBtn = document.getElementById('btn-run-cluster');
   runBtn.addEventListener('click', runCluster);
@@ -122,8 +145,10 @@ export function setupClusterPageControls() {
     saveTargetState({ silent: true });
     saveClusterPageSettingsToLocalStorage();
   });
+  document.getElementById('btn-delete-cluster')?.addEventListener('click', deleteClusterResults);
 
   document.getElementById('btn-run-madys-cmd')?.addEventListener('click', runMadysCmd);
+  document.getElementById('btn-delete-madys-cmd')?.addEventListener('click', deleteMadysCmdResults);
   document.querySelectorAll('.chk-madys-model, .chk-madys-age, .chk-madys-mass').forEach(chk => {
     chk.addEventListener('change', () => {
       saveTargetState({ silent: true });
@@ -253,6 +278,7 @@ export async function runCluster() {
   const runBtn = document.getElementById('btn-run-cluster');
   document.getElementById('cluster-results-panel').style.display = 'none';
   document.getElementById('cluster-loader').style.display = 'flex';
+  hideErrorLog('cluster-error-log');
   runBtn.disabled = true;
 
   try {
@@ -267,7 +293,7 @@ export async function runCluster() {
     );
   } catch (err) {
     document.getElementById('cluster-loader').style.display = 'none';
-    showToast(`Cluster check failed: ${err.message}`);
+    showErrorLog('cluster-error-log', err.message);
   } finally {
     runBtn.disabled = false;
   }
@@ -373,6 +399,7 @@ export async function runMadysCmd() {
   const runBtn = document.getElementById('btn-run-madys-cmd');
   document.getElementById('madys-cmd-results-panel').style.display = 'none';
   document.getElementById('madys-cmd-loader').style.display = 'flex';
+  hideErrorLog('madys-cmd-error-log');
   runBtn.disabled = true;
 
   try {
@@ -401,7 +428,7 @@ export async function runMadysCmd() {
       : 'MADYS CMD plot completed');
   } catch (err) {
     document.getElementById('madys-cmd-loader').style.display = 'none';
-    showToast(`MADYS CMD plot failed: ${err.message}`);
+    showErrorLog('madys-cmd-error-log', err.message);
   } finally {
     runBtn.disabled = false;
   }
