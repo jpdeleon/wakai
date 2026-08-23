@@ -330,6 +330,15 @@ class GuiCatalogApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_madys_age_endpoint_requires_photometry(self):
+        # gaiaid alone is no longer enough -- see run_madys_age.py's
+        # docstring: this endpoint now takes frontend-supplied photometry
+        # (mode-2 SampleObject init) instead of re-querying Gaia/2MASS
+        # itself (which used to take 30s-2min+).
+        response = self.client.post("/api/run/madys-age", json={"gaiaid": "123456"})
+
+        self.assertEqual(response.status_code, 400)
+
     @patch("routes_run._run_wrapper")
     def test_madys_age_endpoint_forwards_gaiaid_and_model(self, run_wrapper):
         run_wrapper.return_value = {
@@ -343,6 +352,9 @@ class GuiCatalogApiTests(unittest.TestCase):
         response = self.client.post("/api/run/madys-age", json={
             "gaiaid": "6014331902471694464",
             "model": "mist",
+            "photometry": {"BP": [12.9, 0.005], "G": [12.3, 0.001], "RP": [11.6, 0.001]},
+            "parallax": 3.14,
+            "parallax_err": 0.02,
         })
 
         self.assertEqual(response.status_code, 200)
@@ -351,12 +363,18 @@ class GuiCatalogApiTests(unittest.TestCase):
         self.assertIn("run_madys_age.py", sent_script)
         self.assertEqual(sent_input["gaiaid"], "6014331902471694464")
         self.assertEqual(sent_input["model"], "mist")
+        self.assertEqual(sent_input["parallax"], 3.14)
 
     @patch("routes_run._run_wrapper")
     def test_madys_age_endpoint_defaults_model_to_parsec2(self, run_wrapper):
         run_wrapper.return_value = {"status": "ok", "median": 9.2}
 
-        response = self.client.post("/api/run/madys-age", json={"gaiaid": "123456"})
+        response = self.client.post("/api/run/madys-age", json={
+            "gaiaid": "123456",
+            "photometry": {"G": [12.3, 0.001]},
+            "parallax": 3.14,
+            "parallax_err": 0.02,
+        })
 
         self.assertEqual(response.status_code, 200)
         sent_input = run_wrapper.call_args.args[2]
@@ -366,7 +384,12 @@ class GuiCatalogApiTests(unittest.TestCase):
     def test_madys_age_endpoint_returns_500_on_wrapper_error(self, run_wrapper):
         run_wrapper.return_value = {"status": "error", "message": "MADYS fit failed"}
 
-        response = self.client.post("/api/run/madys-age", json={"gaiaid": "123456"})
+        response = self.client.post("/api/run/madys-age", json={
+            "gaiaid": "123456",
+            "photometry": {"G": [12.3, 0.001]},
+            "parallax": 3.14,
+            "parallax_err": 0.02,
+        })
 
         self.assertEqual(response.status_code, 500)
         self.assertEqual(response.get_json()["message"], "MADYS fit failed")
