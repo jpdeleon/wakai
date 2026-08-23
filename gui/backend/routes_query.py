@@ -1,6 +1,7 @@
 """Target-resolution routes: SIMBAD name resolution, VizieR reference-value
 lookup, and Gaia DR3 crossmatch (the Target page's "Select a star" flow).
 """
+import concurrent.futures
 import os
 import re
 import sys
@@ -34,6 +35,38 @@ _VIZIER_TARGET_CACHE = OrderedDict()
 # Guards _VIZIER_TARGET_CACHE's pop/insert/evict sequence, which isn't safe
 # under concurrent requests now that the dev server runs threaded=True.
 _VIZIER_CACHE_LOCK = threading.Lock()
+
+# SIMBAD name resolution and Gaia DR3 crossmatch each round-trip to a remote
+# archive that, independent of anything this process does, commonly takes
+# several seconds per call (profiled: ~2.5s for SIMBAD, ~4s per Gaia TAP
+# query) -- and query_gaia() below makes two of the latter. A target's
+# resolved identity (coordinates, source_id, photometry, ...) doesn't change
+# within a server's lifetime, so re-resolving the same target on every page
+# load/navigation (applyRoute's triggerMockSearch path, see routing.js) pays
+# that multi-second cost repeatedly for no new information. These caches
+# make a second request for the same target near-instant, same LRU-by-
+# insertion-order pattern as _VIZIER_TARGET_CACHE above.
+_RESOLVE_CACHE_MAX = 64
+_SIMBAD_CACHE = OrderedDict()
+_SIMBAD_CACHE_LOCK = threading.Lock()
+_GAIA_CACHE = OrderedDict()
+_GAIA_CACHE_LOCK = threading.Lock()
+
+
+def _cache_get(cache, lock, key):
+    with lock:
+        value = cache.pop(key, None)
+        if value is not None:
+            cache[key] = value  # move to most-recently-used position
+        return value
+
+
+def _cache_put(cache, lock, key, value, max_size):
+    with lock:
+        cache.pop(key, None)
+        cache[key] = value
+        while len(cache) > max_size:
+            cache.popitem(last=False)
 
 
 def _default_parameters():
@@ -89,12 +122,18 @@ def query_simbad():
     if not name:
         return jsonify({"status": "error", "message": "Provide a target name"}), 400
 
+    cache_key = name.lower()
+    cached = _cache_get(_SIMBAD_CACHE, _SIMBAD_CACHE_LOCK, cache_key)
+    if cached is not None:
+        return jsonify({"status": "ok", "target": cached})
+
     try:
         payload = simbad_target_payload(Star(name, verbose=False))
     except Exception as exc:
         return jsonify({"status": "error", "message": f"SIMBAD query failed: {exc}"}), 502
     if payload is None:
         return jsonify({"status": "error", "message": f"SIMBAD could not resolve {name}"}), 404
+    _cache_put(_SIMBAD_CACHE, _SIMBAD_CACHE_LOCK, cache_key, payload, _RESOLVE_CACHE_MAX)
     return jsonify({"status": "ok", "target": payload})
 
 
@@ -146,10 +185,20 @@ def query_gaia():
     ra = data.get("ra")
     dec = data.get("dec")
 
+    # known_source_id is set whenever the numeric source_id is already known
+    # from the request itself (rather than only discoverable from the main
+    # query's result row) -- that's the common "reload/revisit a target
+    # already resolved once" case (routing.js's numeric-gaia-id URL slug,
+    # or triggerMockSearch after SIMBAD already returned a gaiaid), and lets
+    # the two independent Gaia TAP round trips below (main astrometry query,
+    # 2MASS photometry query) run concurrently instead of back-to-back,
+    # since neither needs the other's result to start.
+    known_source_id = None
     if gaia_id:
         if not gaia_id.isdigit():
             return jsonify({"status": "error", "message": "Gaia ID must be numeric"}), 400
         where = f"source_id = {gaia_id}"
+        known_source_id = gaia_id
     elif ra is not None and dec is not None:
         try:
             ra, dec = float(ra), float(dec)
@@ -165,6 +214,7 @@ def query_gaia():
         try:
             numeric_id = int(name)
             where = f"source_id = {numeric_id}"
+            known_source_id = str(numeric_id)
         except ValueError:
             # Allowlist rather than blocklist a single quote: Gaia
             # designations only ever contain letters/digits/spaces/+-., so
@@ -178,6 +228,15 @@ def query_gaia():
     else:
         return jsonify({"status": "error", "message": "Provide 'name' or 'gaia_id'"}), 400
 
+    cache_key = (
+        f"id:{known_source_id}" if known_source_id
+        else f"pos:{ra}:{dec}" if ra is not None and dec is not None
+        else f"name:{name.lower()}"
+    )
+    cached = _cache_get(_GAIA_CACHE, _GAIA_CACHE_LOCK, cache_key)
+    if cached is not None:
+        return jsonify({"status": "ok", "target": cached})
+
     adql = f"""
         SELECT TOP 1 source_id, ra, dec, parallax, parallax_error,
                pmra, pmra_error, pmdec, pmdec_error,
@@ -186,17 +245,33 @@ def query_gaia():
         FROM gaiadr3.gaia_source
         WHERE {where}
     """
-    try:
-        # Module-qualified (not `from gaia_client import _gaia_tap_query`)
-        # so this call and _fetch_gaia_2mass_photometry's internal call
-        # below share the same patchable binding -- gaia_client._gaia_tap_query
-        # -- instead of two independent name bindings that a single mock
-        # can't intercept both of.
-        rows = gaia_client._gaia_tap_query(adql)
-    except GaiaQueryError as e:
-        return jsonify({"status": "error", "message": str(e)}), 502
-    if not rows:
-        return jsonify({"status": "error", "message": "No match found in Gaia DR3"}), 404
+    # Module-qualified (not `from gaia_client import _gaia_tap_query`) so
+    # this call and _fetch_gaia_2mass_photometry's internal call share the
+    # same patchable binding -- gaia_client._gaia_tap_query -- instead of
+    # two independent name bindings that a single mock can't intercept both
+    # of.
+    if known_source_id is not None:
+        # Run both TAP round trips concurrently -- see known_source_id's
+        # comment above for why this is safe here (2MASS query only needs
+        # the source_id, which is already known, not the main query's row).
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            rows_future = pool.submit(gaia_client._gaia_tap_query, adql)
+            photometry_future = pool.submit(_fetch_gaia_2mass_photometry, known_source_id)
+            try:
+                rows = rows_future.result()
+            except GaiaQueryError as e:
+                return jsonify({"status": "error", "message": str(e)}), 502
+            if not rows:
+                return jsonify({"status": "error", "message": "No match found in Gaia DR3"}), 404
+            photometry = photometry_future.result()["photometry"]
+    else:
+        try:
+            rows = gaia_client._gaia_tap_query(adql)
+        except GaiaQueryError as e:
+            return jsonify({"status": "error", "message": str(e)}), 502
+        if not rows:
+            return jsonify({"status": "error", "message": "No match found in Gaia DR3"}), 404
+        photometry = None  # fetched below once source_id is known
 
     r = rows[0]
     source_id = str(r[0])
@@ -250,8 +325,12 @@ def query_gaia():
 
     # Photometry (Gaia BP/G/RP + 2MASS J/H/Ks via Gaia's own crossmatch
     # table) for the Isochrones page -- fetched here, once, at target-resolve
-    # time, rather than re-fetched on every isochrones run.
-    photometry = _fetch_gaia_2mass_photometry(source_id)["photometry"]
+    # time, rather than re-fetched on every isochrones run. Already fetched
+    # (in parallel with the query above) whenever known_source_id was set;
+    # otherwise source_id was only just discovered from the row above, so
+    # fetch it now.
+    if photometry is None:
+        photometry = _fetch_gaia_2mass_photometry(source_id)["photometry"]
     for band, param_id, unit, reference, catalog in (
         ("BP", "bpmag", "mag", "Gaia DR3", "Gaia DR3"),
         ("G", "gmag", "mag", "Gaia DR3", "Gaia DR3"),
@@ -267,18 +346,22 @@ def query_gaia():
                 reference, catalog, band, gaia_source_url,
             )
 
-    return jsonify({
-        "status": "ok",
-        "target": {
-            "name": name or source_id,
-            "gaiaid": source_id,
-            "ra": float(ra),
-            "dec": float(dec),
-            "parallax": float(parallax) if parallax is not None else None,
-            "parallax_error": float(parallax_err) if parallax_err is not None else None,
-            "pmra": float(pmra) if pmra is not None else None,
-            "pmdec": float(pmdec) if pmdec is not None else None,
-            "rv": float(rv) if rv is not None else None,
-            "parameters": parameters,
-        },
-    })
+    target = {
+        "name": name or source_id,
+        "gaiaid": source_id,
+        "ra": float(ra),
+        "dec": float(dec),
+        "parallax": float(parallax) if parallax is not None else None,
+        "parallax_error": float(parallax_err) if parallax_err is not None else None,
+        "pmra": float(pmra) if pmra is not None else None,
+        "pmdec": float(pmdec) if pmdec is not None else None,
+        "rv": float(rv) if rv is not None else None,
+        "parameters": parameters,
+    }
+    _cache_put(_GAIA_CACHE, _GAIA_CACHE_LOCK, cache_key, target, _RESOLVE_CACHE_MAX)
+    # Also index by the resolved source_id -- a later request that already
+    # knows the Gaia ID (e.g. routing.js's numeric-slug fast path) should
+    # hit cache too, even if this particular request arrived by name/coords.
+    if cache_key != f"id:{source_id}":
+        _cache_put(_GAIA_CACHE, _GAIA_CACHE_LOCK, f"id:{source_id}", target, _RESOLVE_CACHE_MAX)
+    return jsonify({"status": "ok", "target": target})

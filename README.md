@@ -26,6 +26,20 @@ additional VizieR column. Catalog candidates are only added after the user
 selects a source, and every catalog-backed row includes an **Open ↗** link for
 verification in a new browser tab.
 
+SIMBAD name resolution and the Gaia DR3 crossmatch each round-trip to a
+remote archive that, independent of anything this process does, commonly
+takes several seconds per call (profiled: ~2.5s for SIMBAD, ~4s per Gaia
+TAP query) -- and a Gaia DR3 crossmatch makes two of the latter (astrometry
++ Teff, then a separate 2MASS photometry crossmatch). `gui/backend/
+routes_query.py` addresses both costs: the two Gaia TAP calls run
+concurrently whenever the target's `source_id` is already known up front
+(the common "revisit an already-resolved target" case), roughly halving a
+cold resolve's Gaia step; and both SIMBAD and Gaia responses are cached
+in-memory per server process (LRU, same pattern as the existing VizieR
+`_VIZIER_TARGET_CACHE`), so re-navigating to a target already resolved this
+session -- a bookmarked/shared `target=` URL, browser back/forward, opening
+the same target twice -- returns in milliseconds instead of ~7-10s.
+
 Pipeline results are saved under `~/ql/wakai/` by default. This directory is set
 by the GUI launcher (`wakai gui --output-dir`, or the `WAKAI_OUTPUT_DIR`
 env var) — not by the pipeline scripts. Target state is persisted in SQLite at
