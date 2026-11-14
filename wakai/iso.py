@@ -79,6 +79,21 @@ def plot_cmd(
     assert len(df) > 0, "df is empty"
     errmsg = f"color={color} not in {df.columns}"
     assert color in df.columns, errmsg
+    df = df.copy()  # derived columns below must not leak into the caller's frame
+    if df_target is not None:
+        df_target = df_target.copy()
+
+    def dereddened_bp_rp(frame):
+        """Intrinsic BP-RP, either from the catalog E(BP-RP) or estimated from A_G.
+
+        ``estimate_color`` used to call an undefined ``get_absolute_color_index``.
+        Without a catalog reddening, E(BP-RP) is approximated as A_G / 2
+        (A_G ~ 2 E(BP-RP); Andrae et al. 2018, A&A 616, A8).
+        """
+        if estimate_color:
+            bp_rp = frame["phot_bp_mean_mag"] - frame["phot_rp_mean_mag"]
+            return bp_rp - frame["a_g_val"] / 2.0
+        return frame["bp_rp"] - frame["e_bp_min_rp_val"]
 
     if ax is None:
         fig, ax = pl.subplots(1, 1, figsize=figsize, constrained_layout=True)
@@ -104,12 +119,7 @@ def plot_cmd(
             df["phot_g_mean_mag"], df["distance"], df["a_g_val"]
         )
         # compute intrinsic color index
-        if estimate_color:
-            df[xaxis] = get_absolute_color_index(
-                df["a_g_val"], df["phot_bp_mean_mag"], df["phot_rp_mean_mag"]
-            )
-        else:
-            df[xaxis] = df["bp_rp"] - df["e_bp_min_rp_val"]
+        df[xaxis] = dereddened_bp_rp(df)
         ax.set_xlabel(r"$G_{BP} - G_{RP}$ [mag]", fontsize=16)
         ax.set_ylabel(r"$G$ [mag]", fontsize=16)
 
@@ -131,29 +141,20 @@ def plot_cmd(
                 df_target["a_g_val"],
             )
             # compute intrinsic color index
-            if estimate_color:
-                df_target[xaxis] = get_absolute_color_index(
-                    df_target["a_g_val"],
-                    df_target["phot_bp_mean_mag"],
-                    df_target["phot_rp_mean_mag"],
-                )
-            else:
-                df_target[xaxis] = (
-                    df_target["bp_rp"] - df_target["e_bp_min_rp_val"]
-                )
+            df_target[xaxis] = dereddened_bp_rp(df_target)
             x, y = df_target[xaxis], df_target[yaxis]
-        if target_label is not None:
-            ax.legend(loc="best")
         ax.plot(
             x,
             y,
             marker=r"$\star$",
             c=target_color,
-            ms="25",
+            ms=25,
             label=target_label,
             # cmap=cmap,
             zorder=10,
         )
+        if target_label is not None:
+            ax.legend(loc="best")
     if log_age is not None:
         # plot isochrones
         try:
@@ -248,16 +249,16 @@ def plot_hrd(
                 parallax=df_target["parallax"] * u.mas
             ).pc
             x, y = df_target[xaxis], df_target[yaxis]
-        if target_label is not None:
-            ax.legend(loc="best")
         ax.plot(
             x,
             y,
             marker=r"$\star$",
             c=target_color,
-            ms="25",
+            ms=25,
             label=target_label,
         )
+        if target_label is not None:
+            ax.legend(loc="best")
     # df.plot.scatter(ax=ax, x="bp_rp", y="abs_gmag", marker=".")
     # luminosity can be computed from abs mag; note Mag_sun = 4.85
     # df["abs_gmag"] = get_absolute_gmag(
@@ -298,7 +299,7 @@ def plot_hrd(
         # assert fehs.isin([feh]).any(), errmsg
         assert abs(nearest_feh - feh) < 0.1, errmsg
         # get isochrone
-        iso_df = iso_grid.df.loc[nearest_log_age, nearest_feh]
+        iso_df = iso_grid.df.loc[nearest_log_age, nearest_feh].copy()
         iso_df["L"] = iso_df["logL"].apply(lambda x: 10**x)
         iso_df["Teff"] = iso_df["logTeff"].apply(lambda x: 10**x)
         label = f"log(t)={log_age:.2f}\nfeh={feh:.2f}"

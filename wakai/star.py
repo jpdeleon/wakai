@@ -3,6 +3,7 @@
 import re
 import warnings
 from dataclasses import dataclass, field
+from pathlib import Path
 from urllib.parse import quote
 
 import astropy.units as u
@@ -20,6 +21,7 @@ from .catalog_keys import (
     VIZIER_KEYS_BINARY_STAR_CATALOG,
     VIZIER_KEYS_VARIABLE_STAR_CATALOG,
 )
+from .config import DATA_PATH
 from .sed import get_mamajek_table
 
 
@@ -47,7 +49,11 @@ class Star:
         """Initialize query caches and derived stellar parameters."""
         self.search_radius = 3 * u.arcsec
         self._vizier_tables = None
-        self._gaia_sources = None
+        # (radius_arcsec, add_cols) of the cached Vizier query; None means the
+        # cache was filled externally and applies to any query.
+        self._vizier_query_key = None
+        # Raw Gaia query results keyed by (radius_arcsec, version).
+        self._gaia_sources = {}
         self.gaia_params = None
         self.variable_star = False
         self.ra = self.ra_deg
@@ -85,8 +91,10 @@ class Star:
         """
         verbose = self.verbose if verbose is None else verbose
         radius = self.search_radius if radius is None else radius * u.arcsec
+        extra_cols = (add_cols,) if isinstance(add_cols, str) else tuple(add_cols or ())
+        query_key = (round(radius.to_value(u.arcsec), 6), extra_cols)
 
-        if self._vizier_tables is not None:
+        if self._vizier_tables is not None and self._vizier_query_key in (None, query_key):
             return self._vizier_tables
 
         if verbose:
@@ -117,6 +125,7 @@ class Star:
             logger.info(pformat({k: tables[k]._meta.get("description", "") for k in tables.keys()}))
 
         self._vizier_tables = tables
+        self._vizier_query_key = query_key
         return tables
 
     @staticmethod
@@ -299,32 +308,32 @@ class Star:
         Returns:
             pd.DataFrame or pd.Series: Query results
         """
-        if self._gaia_sources is not None:
-            return self._gaia_sources.copy()
-
         radius_quantity = self.search_radius if radius is None else radius * u.arcsec
         verbose = self.verbose if verbose is None else verbose
+        cache_key = (round(radius_quantity.to_value(u.arcsec), 6), version)
 
-        if verbose:
-            logger.info(f"Querying Gaia DR{version} catalog at {self.target_coord().to_string()} within {radius_quantity:.2f}")
+        if cache_key not in self._gaia_sources:
+            if verbose:
+                logger.info(f"Querying Gaia DR{version} catalog at {self.target_coord().to_string()} within {radius_quantity:.2f}")
 
-        try:
-            tab = Catalogs.query_region(self.target_coord(), radius=radius_quantity, catalog="Gaia", version=version).to_pandas()
-        except Exception as e:
-            raise RuntimeError(f"Gaia query failed: {e}") from e
+            try:
+                tab = Catalogs.query_region(self.target_coord(), radius=radius_quantity, catalog="Gaia", version=version).to_pandas()
+            except Exception as e:
+                raise RuntimeError(f"Gaia query failed: {e}") from e
 
-        if tab.empty:
-            raise ValueError(f"No Gaia star found within {radius_quantity}")
+            if tab.empty:
+                raise ValueError(f"No Gaia star found within {radius_quantity}")
 
-        tab.rename(columns={"distance": "separation"}, inplace=True)
-        tab["separation"] *= u.arcmin.to(u.arcsec)
-        tab["source_id"] = tab["source_id"].astype(int)
+            tab = tab.rename(columns={"distance": "separation"})
+            tab["separation"] *= u.arcmin.to(u.arcsec)
+            tab["source_id"] = tab["source_id"].astype(int)
 
-        if not np.allclose(tab["ref_epoch"], 2015.5):
-            raise ValueError("Non-standard epoch found (expected 2015.5)")
+            if not np.allclose(tab["ref_epoch"], 2015.5):
+                raise ValueError("Non-standard epoch found (expected 2015.5)")
 
-        self._gaia_sources = tab
+            self._gaia_sources[cache_key] = tab
 
+        tab = self._gaia_sources[cache_key].copy()
         return self._process_nearest_match(tab, radius_quantity) if return_nearest_xmatch else self._process_multiple_matches(tab, radius_quantity)
 
 
@@ -361,18 +370,19 @@ class Star:
             self.gaiaid = int(target["source_id"])
         self.gaia_params = target
 
-        def log_if(condition, message):
-            if condition:
-                logger.info(message)
+        # Messages are only formatted when the column exists and the check fires;
+        # formatting them eagerly raised KeyError for sources lacking a column.
+        excess_noise_sig = target.get("astrometric_excess_noise_sig")
+        if excess_noise_sig is not None and excess_noise_sig >= 5:
+            logger.info(f"astrometric_excess_noise_sig={excess_noise_sig:.2f} suggests binarity.")
 
-        log_if(target.get("astrometric_excess_noise_sig", 0) >= 5,
-               f"astrometric_excess_noise_sig={target['astrometric_excess_noise_sig']:.2f} suggests binarity.")
+        gof_al = target.get("astrometric_gof_al")
+        if gof_al is not None and gof_al >= 20:
+            logger.info(f"astrometric_gof_al={gof_al:.2f} suggests binarity.")
 
-        log_if(target.get("astrometric_gof_al", 0) >= 20,
-               f"astrometric_gof_al={target['astrometric_gof_al']:.2f} suggests binarity.")
-
-        log_if(target.get("visibility_periods_used", 0) < 6,
-               "visibility_periods_used < 6: no astrometric solution")
+        visibility_periods = target.get("visibility_periods_used")
+        if visibility_periods is not None and visibility_periods < 6:
+            logger.info("visibility_periods_used < 6: no astrometric solution")
 
         ruwe_results = self.get_vizier_param(param="ruwe")
         if ruwe_results:
@@ -445,11 +455,9 @@ class Star:
 
         # Extract TOI ID
         if self.star_name.lower()[:3] == "toi":
-            parts = self.star_name.split("-")
-            if len(parts) > 1:
-                self.toiid = parts[-1]
-            else:
-                self.toiid = int(float(self.star_name.replace(" ", "")[3:]))
+            # "TOI-700", "TOI 700", "TOI700" and "TOI-700.01" all give 700.
+            digits = self.star_name.replace(" ", "")[3:].lstrip("-")
+            self.toiid = int(float(digits))
         else:
             idx = [i[:3].lower() == "toi" for i in self.star_names]
             if sum(idx) > 0:
@@ -478,7 +486,8 @@ class Star:
         if self.tfop_data is None:
             self.tfop_data = self.query_tfop_data()
 
-        params_dict = self.tfop_data.get(name, [])
+        # Skip ExoFOP provenance header rows, which hold no parameters.
+        params_dict = [p for p in self.tfop_data.get(name, []) if not p.get("prov")]
 
         if not params_dict:
             return {}
@@ -523,30 +532,35 @@ class Star:
         self.dec = float(self.data_json.get("coordinates", {}).get("dec", 0))
         self.ticid = self.data_json.get("basic_info", {}).get("tic_id", 0)
 
-        # Find parameters from the desired source
+        # ExoFOP lists a provenance header row ({"prov": "tic", ...}) followed by
+        # that source's data rows, which carry no "prov" of their own. Take the
+        # first data row under the requested source's header.
         stellar_params = self.data_json.get("stellar_parameters", [])
         self.tic_params = {}
-
-        for i, p in enumerate(stellar_params):
-            if p.get("prov") == self.source:
+        data_rows = []
+        current_prov = None
+        for p in stellar_params:
+            if p.get("prov"):
+                current_prov = p["prov"]
+                continue
+            data_rows.append(p)
+            if current_prov == self.source and not self.tic_params:
                 self.tic_params = p
-                break
 
-        if not self.tic_params and stellar_params:
-            self.tic_params = stellar_params[0]  # Use first set if source not found
+        if not self.tic_params and data_rows:
+            self.tic_params = data_rows[0]  # Use first data set if source not found
+
+        def num(key, default=np.nan):
+            """ExoFOP leaves missing values as "" or None; map those to default."""
+            value = self.tic_params.get(key)
+            return default if value in (None, "") else float(value)
 
         try:
             # Extract stellar radius
-            self.rstar = (
-                float(self.tic_params.get("srad", np.nan)),
-                float(self.tic_params.get("srad_e", np.nan))
-            )
+            self.rstar = (num("srad"), num("srad_e"))
 
             # Extract stellar mass
-            self.mstar = (
-                float(self.tic_params.get("mass", np.nan)),
-                float(self.tic_params.get("mass_e", np.nan))
-            )
+            self.mstar = (num("mass"), num("mass_e"))
 
             # Calculate stellar density in solar density units
             if not np.isnan(self.mstar[0]) and not np.isnan(self.rstar[0]) and self.rstar[0] > 0:
@@ -561,25 +575,13 @@ class Star:
                 self.rhostar = (np.nan, np.nan)
 
             # Extract temperature
-            self.teff = (
-                float(self.tic_params.get("teff", np.nan)),
-                float(self.tic_params.get("teff_e", 500))
-            )
+            self.teff = (num("teff"), num("teff_e", 500))
 
             # Extract surface gravity
-            self.logg = (
-                float(self.tic_params.get("logg", np.nan)),
-                float(self.tic_params.get("logg_e", 0.1))
-            )
+            self.logg = (num("logg"), num("logg_e", 0.1))
 
             # Extract metallicity
-            feh_val = self.tic_params.get("feh", 0)
-            feh_val = 0 if (feh_val is None or feh_val == "") else float(feh_val)
-
-            feh_err = self.tic_params.get("feh_e", 0.1)
-            feh_err = 0.1 if (feh_err is None or feh_err == "") else float(feh_err)
-
-            self.feh = (feh_val, feh_err)
+            self.feh = (num("feh", 0.0), num("feh_e", 0.1))
 
             # Print parameter summary
             if self.verbose:
@@ -641,14 +643,20 @@ class Star:
         if not result:
             return None
 
-        # Extract the object type category
-        category = result.to_pandas().squeeze().get("OTYPE", "")
+        # Extract the object type category (astroquery>=0.4.8 lowercases columns)
+        row = result.to_pandas().squeeze()
+        category = row.get("OTYPE", row.get("otype", ""))
 
         if not category or len(category) < 1:
             return None
 
         try:
-            # Load Simbad object type descriptions
+            # Load Simbad object type descriptions. The file is optional: it was
+            # referenced here but never defined, so this always raised NameError.
+            simbad_obj_list_file = Path(DATA_PATH, "simbad_obj_types.csv")
+            if not simbad_obj_list_file.exists():
+                logger.info(f"Simbad classifies {self.star_name} as {category}")
+                return category
             df = pd.read_csv(simbad_obj_list_file)
             matches = df[df["Id"] == category]
 
@@ -700,6 +708,14 @@ class Star:
         Check sptype from self.query_simbad()
         """
         df = get_mamajek_table()
+        # The CSV stores missing values as "....." placeholders and #SpT as
+        # plain strings: coerce colors to numbers and SpT to an ordered category
+        # (table order runs hot to cool) so `.cat.codes` below works.
+        for col in columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        df["#SpT"] = pd.Categorical(df["#SpT"], categories=df["#SpT"].dropna().unique(), ordered=True)
+        if self.magnitudes is None:
+            self.get_magnitudes()
         gaia_sources = self.query_gaia_catalog()
         self.gaia_params = gaia_sources.iloc[0].squeeze()
 
