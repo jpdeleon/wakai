@@ -75,7 +75,7 @@ def plot_rdp_pmrv(
     x, y = "ra", "dec"
     # _ = df.plot.scatter(x=x, y=y, c=color, marker=marker, ax=ax[n], cmap=cmap)
     errmsg = f"color={color} not in {df.columns}"
-    assert color in df.columns, errmsg
+    assert color is None or color in df.columns, errmsg
     c = df[color] if color is not None else None
     cbar = ax[n].scatter(df[x], df[y], c=c, marker=marker, cmap=cmap)
     if color is not None and show_colorbar:
@@ -164,10 +164,10 @@ def plot_rdp_pmrv(
                 df_target[y],
                 marker=r"$\star$",
                 c=target_color,
-                ms="25",
+                ms=target_ms,
             )
-    ax[n].set_xlabel("PM R.A. [deg]")
-    ax[n].set_ylabel("PM Dec. [deg]")
+    ax[n].set_xlabel("PM R.A. [mas/yr]")
+    ax[n].set_ylabel("PM Dec. [mas/yr]")
     text = len(df[["pmra", "pmdec"]].dropna())
     ax[n].text(0.8, 0.9, f"n={text}", fontsize=14, transform=ax[n].transAxes)
     n = 2
@@ -203,11 +203,13 @@ def plot_rdp_pmrv(
         )
     except Exception as e:
         ax[n].clear()
-        logger.error("Error: ", e)
+        # loguru drops positional args with no "{}" placeholder, so the old
+        # logger.error("Error: ", e) logged just "Error: ".
+        logger.error(f"Error: {e}")
         npar = len(df[par].dropna())
         if npar < 10:
             errmsg = f"Cluster members have only {npar} {par} measurements."
-            logger.error("Error: ", errmsg)
+            logger.error(f"Error: {errmsg}")
             # raise ValueError(errmsg)
     return fig
 
@@ -343,7 +345,11 @@ def plot_xyz_uvw(df: pd.DataFrame, target_gaiaid=None, match_id: bool=True,
     # 1. Coordinate Transformation (Vectorized)
 
     required = ["X", "Y", "Z", "U", "V", "W"]
-    if not all(col in df.columns for col in required):
+    if all(col in df.columns for col in required):
+        # Copy so the in-place kpc rescaling below never touches the caller's
+        # frame (repeat calls used to divide X/Y/Z by 1e3 again each time).
+        df = df.copy()
+    else:
         df = get_transformed_coord(df, **kwargs)
 
     pos_cols = ["X", "Y", "Z"]
@@ -445,6 +451,7 @@ def plot_xyz_3d(
 
     errmsg = f"color={color} not in {df.columns}"
     assert color in df.columns, errmsg
+    df = df.copy()  # don't add distance/x/y/z columns to the caller's frame
     if "distance" not in df.columns:
         df["distance"] = Distance(parallax=df.parallax.values * u.mas).pc
 
@@ -454,23 +461,18 @@ def plot_xyz_3d(
         distance=df.distance.values * u.pc,
     )
     xyz = coords.galactocentric
-    df["x"] = xyz.x.copy()
-    df["y"] = xyz.y.copy()
-    df["z"] = xyz.z.copy()
+    df["x"] = xyz.x.to_value(u.pc)
+    df["y"] = xyz.y.to_value(u.pc)
+    df["z"] = xyz.z.to_value(u.pc)
 
-    idx1 = np.zeros_like(df.x, dtype=bool)
-    if xlim:
-        assert isinstance(xlim, tuple)
-        idx1 = (df.x > xlim[0]) & (df.x < xlim[1])
-    idx2 = np.zeros_like(df.y, dtype=bool)
-    if ylim:
-        assert isinstance(ylim, tuple)
-        idx2 = (df.y > ylim[0]) & (df.y < ylim[1])
-    idx3 = np.zeros_like(df.z, dtype=bool)
-    if zlim:
-        assert isinstance(zlim, tuple)
-        idx3 = (df.z > zlim[0]) & (df.z < zlim[1])
-    idx = idx1 | idx2 | idx3
+    # Each limit narrows the selection; an unset limit keeps every star. The
+    # old masks defaulted to False and were OR-ed, so with no limits nothing
+    # was plotted, and with several limits they widened instead of narrowing.
+    idx = np.ones(len(df), dtype=bool)
+    for col, lim in (("x", xlim), ("y", ylim), ("z", zlim)):
+        if lim:
+            assert isinstance(lim, tuple)
+            idx &= ((df[col] > lim[0]) & (df[col] < lim[1])).to_numpy()
     c = df.loc[idx, color]
     cbar = ax.scatter(
         xs=df[idx].x,

@@ -58,89 +58,57 @@ class Planet(Star):
         if "planet_parameters" not in self.data_json or not self.data_json["planet_parameters"]:
             raise ValueError(f"No planet parameters found for {self.star_name}")
 
-        # Get available sources for planet parameters
-        sources = set([p.get("prov") for p in self.data_json["planet_parameters"] if p.get("prov")])
-        if not sources:
+        # ExoFOP lists a provenance header row ({"prov": "toi", ...}) followed by
+        # that source's planet rows, which carry no "prov" of their own. The old
+        # code selected the header row itself, so every parameter came out NaN.
+        rows_by_source = {}
+        current_prov = None
+        for p in self.data_json["planet_parameters"]:
+            if p.get("prov"):
+                current_prov = p["prov"]
+                rows_by_source.setdefault(current_prov, [])
+            elif current_prov is not None:
+                rows_by_source[current_prov].append(p)
+        if not rows_by_source:
             raise ValueError(f"No valid sources found in planet parameters for {self.star_name}")
 
-        errmsg = f"{self.source} must be in {sources}"
-        assert self.source in sources, errmsg
+        errmsg = f"{self.source} must be in {set(rows_by_source)}"
+        assert self.source in rows_by_source, errmsg
+        rows = rows_by_source[self.source]
+        if not rows:
+            raise ValueError(f"No {self.source} planet parameters for {self.star_name}")
 
-        # Parse alias to get index
+        # Pick the row whose TOI suffix matches alias (e.g. "TOI 700.01" for "01"),
+        # falling back to the alias-th row of this source.
+        alias = str(self.alias).lstrip(".").zfill(2)
+        matching = [p for p in rows if str(p.get("toi") or p.get("name") or "").endswith(f".{alias}")]
+        if matching:
+            planet_params = matching[0]
+        else:
+            try:
+                idx = int(alias) - 1
+            except ValueError:
+                idx = 0
+            planet_params = rows[idx] if 0 <= idx < len(rows) else rows[0]
+
+        def num(key, default):
+            """ExoFOP leaves missing values as "" or None; map those to default."""
+            value = planet_params.get(key)
+            return default if value in (None, "") else float(value)
+
         try:
-            idx = int(self.alias.replace('.', '')) - 1  # Convert to 0-indexed
-        except ValueError:
-            idx = 0
-
-        # Fallback index finding logic
-        for i, p in enumerate(self.data_json["planet_parameters"]):
-            if p.get("prov") == self.source:
-                idx = i
-                break
-
-        # Make sure idx is in bounds
-        if idx < 0 or idx >= len(self.data_json["planet_parameters"]):
-            idx = 0
-
-        planet_params = self.data_json["planet_parameters"][idx]
-
-        try:
-            self.t0 = tuple(
-                map(
-                    float,
-                    (
-                        planet_params.get("epoch", np.nan),
-                        planet_params.get("epoch_e", 0.1),
-                    ),
-                )
-            )
-            self.period = tuple(
-                map(
-                    float,
-                    (
-                        planet_params.get("per", np.nan),
-                        planet_params.get("per_e", 0.1),
-                    ),
-                )
-            )
-            self.tdur = (
-                np.array(
-                    tuple(
-                        map(
-                            float,
-                            (
-                                planet_params.get("tdur", 0),
-                                planet_params.get("dur_e", 0),
-                            ),
-                        )
-                    )
-                )
-                / 24
-            )
-            self.rprs = np.sqrt(
-                np.array(
-                    tuple(
-                        map(
-                            float,
-                            (
-                                planet_params.get("dep_p", 0),
-                                planet_params.get("dep_p_e", 0),
-                            ),
-                        )
-                    )
-                )
-                / 1e6
-            )
-            self.imp = tuple(
-                map(
-                    float,
-                    (
-                        float(0 if planet_params.get("imp", 0) == "" else planet_params.get("imp", 0)),
-                        float(0.1 if planet_params.get("imp_e", 0.1) == "" else planet_params.get("imp_e", 0.1)),
-                    ),
-                )
-            )
-            print(f"t0={self.t0} BJD\nP={self.period} d\nRp/Rs={self.rprs}")
+            self.t0 = (num("epoch", np.nan), num("epoch_e", 0.1))
+            self.period = (num("per", np.nan), num("per_e", 0.1))
+            # ExoFOP's duration key is "dur" (hours); "tdur" never existed, so
+            # the duration was always 0. Older dumps may still use "tdur".
+            duration = num("dur", num("tdur", 0.0))
+            self.tdur = np.array((duration, num("dur_e", 0.0))) / 24
+            # NOTE: sqrt of the depth uncertainty is not the Rp/Rs uncertainty;
+            # kept as-is for backward compatibility with existing results.
+            self.rprs = np.sqrt(np.array((num("dep_p", 0.0), num("dep_p_e", 0.0))) / 1e6)
+            self.imp = (num("imp", 0.0), num("imp_e", 0.1))
+            if self.verbose:
+                logger.info(f"t0={self.t0} BJD\nP={self.period} d\nRp/Rs={self.rprs}")
 
             rhostar = self.star_params["rhostar"]
             self.a_Rs = (
@@ -156,8 +124,8 @@ class Planet(Star):
             self.planet_params = self.params_to_dict()
 
         except Exception as e:
-            print(f"Error processing planet parameters: {e}")
-            raise ValueError(f"Check exofop: {self.exofop_url}")
+            logger.error(f"Error processing planet parameters: {e}")
+            raise ValueError(f"Check exofop: {self.exofop_url}") from e
 
     def params_to_dict(self):
         """
@@ -259,11 +227,11 @@ def get_tois(
         ]
         keys = []
         for key in planet_keys:
-            idx = ~np.array(
-                df["Comments"].str.contains(key).tolist(), dtype=bool
-            )
-            df = df[idx]
-            if idx.sum() > 0:
+            # na=False: rows without comments are not known planets. Previously
+            # NaN became True and every comment-less TOI was dropped.
+            is_known = df["Comments"].str.contains(key, na=False, regex=False)
+            df = df[~is_known]
+            if is_known.any():
                 keys.append(key)
         msg += f"{keys} planets are removed.\n"
     msg += f"Saved: {fp}\n"
@@ -328,7 +296,7 @@ def get_nexsci_data(table_name="ps", method="Transit", outdir=DATA_PATH, clobber
         logger.info(e)
     assert table_name in ["ps", "pscomppars"]
     url = "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
-    logger.info("Column definitions: ", url)
+    logger.info(f"Column definitions: {url}")
     fp = Path(outdir, f'nexsci_{table_name}.csv')
     if not fp.exists() or clobber:
         #pstable combines data from the Confirmed Planets and Extended Planet Parameters tables
@@ -360,6 +328,8 @@ def query_tfop_data(target_name: str) -> dict:
 def get_params_from_tfop(tfop_data, name="planet_parameters", idx=None):
     params_dict = tfop_data.get(name)
     if idx is None:
+        # Never pick an ExoFOP provenance header row ({"prov": ...} only).
+        params_dict = [d for d in params_dict if not d.get("prov")]
         key = "pdate" if name == "planet_parameters" else "sdate"
         # get the latest parameter based on upload date
         dates = []
